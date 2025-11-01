@@ -1,0 +1,125 @@
+# main.py
+# FastAPI application for the Vecinita RAG Q&A system.
+# This version includes an explicit rule for response language.
+
+import os
+import time
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+from supabase import create_client, Client
+from langchain_groq import ChatGroq
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_huggingface import HuggingFaceEmbeddings
+from langdetect import detect, LangDetectException
+
+# Load environment variables from .env file
+load_dotenv()
+
+# --- Initialize FastAPI App ---
+app = FastAPI()
+
+# --- Add CORS Middleware ---
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], allow_credentials=True,
+    allow_methods=["*"], allow_headers=["*"],
+)
+
+# --- Load Environment Variables & Validate ---
+supabase_url = os.environ.get("SUPABASE_URL")
+supabase_key = os.environ.get("SUPABASE_KEY")
+groq_api_key = os.environ.get("GROQ_API_KEY")
+if not supabase_url or not supabase_key or not groq_api_key:
+    raise ValueError("Supabase, Groq keys, and URL must be set.")
+
+# --- Initialize Clients ---
+try:
+    supabase: Client = create_client(supabase_url, supabase_key)
+    llm = ChatGroq(temperature=0, groq_api_key=groq_api_key, model_name="llama-3.1-8b-instant")
+    model_name = "sentence-transformers/all-MiniLM-L6-v2"
+    embedding_model = HuggingFaceEmbeddings(model_name=model_name)
+except Exception as e:
+    raise RuntimeError(f"Failed to initialize clients: {e}")
+
+# --- API Endpoints ---
+@app.get("/")
+def read_root():
+    return {"status": "ok", "message": "Welcome to the Vecinita Q&A API!"}
+
+@app.get("/ask")
+async def ask_question(question: str):
+    if not question:
+        raise HTTPException(status_code=400, detail="Question parameter cannot be empty.")
+
+    try:
+        lang = detect(question)
+    except LangDetectException:
+        lang = "en"
+
+    print(f"\n--- New request received: '{question}' (Detected Language: {lang}) ---")
+
+    try:
+        if lang == 'es':
+            prompt_template_str = """
+            Eres un asistente comunitario, servicial y profesional para el proyecto Vecinita.
+            Tu objetivo es dar respuestas claras, concisas y precisas basadas únicamente en el siguiente contexto.
+
+            Reglas a seguir:
+            1. Responde directamente a la pregunta del usuario utilizando la información de la sección 'CONTEXTO'.
+            2. No inventes información ni utilices conocimientos fuera del contexto proporcionado.
+            3. Al final de tu respuesta, DEBES citar la fuente de la información. Por ejemplo: "(Fuente: https://ejemplo.com)".
+            4. Si el contexto no contiene la información para responder, DEBES decir: "No pude encontrar una respuesta definitiva en los documentos proporcionados."
+            5. Debes responder en español.
+
+            CONTEXTO:
+            {context}
+
+            PREGUNTA:
+            {question}
+
+            RESPUESTA:
+            """
+        else: # Default to English
+            prompt_template_str = """
+            You are a helpful and professional community assistant for the Vecinita project.
+            Your goal is to provide clear, concise, and accurate answers based *only* on the following context.
+
+            Follow these rules:
+            1. Directly answer the user's question using the information from the 'CONTEXT' section below.
+            2. Do not make up information or use any knowledge outside of the provided context.
+            3. At the end of your answer, you MUST cite the source of the information. For example: "(Source: https://example.com)".
+            4. If the context does not contain the information to answer, you MUST state: "I could not find a definitive answer in the provided documents."
+            5. You must answer in English.
+
+            CONTEXT:
+            {context}
+
+            QUESTION:
+            {question}
+
+            ANSWER:
+            """
+        
+        question_embedding = embedding_model.embed_query(question)
+        relevant_docs = supabase.rpc(
+            "search_similar_documents",
+            {"query_embedding": question_embedding, "match_threshold": 0.3, "match_count": 5},
+        ).execute()
+
+        if not relevant_docs.data:
+            answer = "No pude encontrar una respuesta definitiva en los documentos proporcionados." if lang == 'es' else "I could not find a definitive answer in the provided documents."
+            return {"answer": answer, "context": []}
+
+        context_text = "\n\n---\n\n".join([f"Content from {doc['source']}:\n{doc['content']}" for doc in relevant_docs.data])
+        prompt_template = ChatPromptTemplate.from_template(prompt_template_str)
+        prompt = prompt_template.format(context=context_text, question=question)
+
+        response = llm.invoke(prompt)
+        
+        return {"answer": response.content, "context": relevant_docs.data}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+#--end-of-file
