@@ -4,6 +4,8 @@ pydantic
 langchain-community
 langchain-core
 langchain-groq
+langchain-openai
+langgraph
 supabase==2.20.0
 python-dotenv
 fastembed
