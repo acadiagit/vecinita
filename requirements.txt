@@ -6,7 +6,7 @@ langchain-core
 langchain-groq
 langchain-openai
 langgraph
-supabase==2.20.0
+supabase
 python-dotenv
 fastembed
 requests
@@ -16,7 +16,7 @@ langchain-huggingface
 pypdf
 sentence-transformers
 psycopg2-binary
-httpx==0.28.1
+httpx
 playwright
 unstructured
 langdetect

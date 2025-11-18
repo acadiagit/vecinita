@@ -12,61 +12,56 @@ keywords = ["rag", "langgraph", "langchain", "supabase", "fastapi", "ai", "assis
 
 dependencies = [
     # Web Framework
-    "fastapi>=0.104.0",
-    "uvicorn>=0.24.0",
-    
+    "fastapi",
+    "uvicorn",
     # LangChain & LangGraph
-    "langchain>=0.3.0",
-    "langchain-community>=0.3.0",
-    "langchain-core>=0.3.0",
-    "langchain-openai>=0.2.0",
-    "langchain-groq>=0.2.0",
-    "langchain-text-splitters>=0.3.0",
-    "langchain-huggingface>=0.1.0",
-    "langgraph>=0.2.0",
-    
+    "langchain",
+    "langchain-community",
+    "langchain-core",
+    "langchain-openai",
+    "langchain-groq",
+    "langchain-text-splitters",
+    "langchain-huggingface",
+    "langgraph",
     # Database & Vector Store
-    "supabase==2.20.0",
-    "psycopg2-binary>=2.9.0",
-    
+    "supabase",
+    "psycopg2-binary",
     # ML & Embeddings
-    "sentence-transformers>=2.2.0",
-    "fastembed>=0.3.0",
-    
+    "sentence-transformers",
+    "fastembed",
     # Document Processing
-    "beautifulsoup4>=4.12.0",
-    "pypdf>=3.17.0",
-    "unstructured>=0.10.0",
-    "playwright>=1.40.0",
-    
+    "beautifulsoup4",
+    "pypdf",
+    "unstructured",
+    "playwright",
     # Utilities
-    "python-dotenv>=1.0.0",
-    "pydantic>=2.0.0",
-    "requests>=2.31.0",
-    "httpx==0.28.1",
-    "langdetect>=1.0.9",
-    "tqdm>=4.66.0",
+    "python-dotenv",
+    "pydantic",
+    "requests",
+    "httpx",
+    "langdetect",
+    "tqdm",
+    "supabase-auth[all,async,http]",
 ]
 
 [project.optional-dependencies]
 dev = [
     # Development Tools
-    "pytest>=7.4.0",
-    "pytest-asyncio>=0.21.0",
-    "pytest-cov>=4.1.0",
-    "black>=23.0.0",
-    "ruff>=0.1.0",
-    "mypy>=1.7.0",
-    
+    "pytest",
+    "pytest-asyncio",
+    "pytest-cov",
+    "black",
+    "ruff",
+    "mypy",
     # Jupyter for experimentation
-    "jupyter>=1.0.0",
-    "ipython>=8.18.0",
+    "jupyter",
+    "ipython",
 ]
 
 visualization = [
     # For graph visualization
-    "graphviz>=0.20.0",
-    "pygraphviz>=1.11",
+    "graphviz",
+    "pygraphviz",
 ]
 
 all = [
@@ -74,8 +69,11 @@ all = [
 ]
 
 [project.scripts]
-vecinita-setup = "setup_check:main"
-vecinita-example = "example_rag_usage:main"
+vecinita-main = "src.main:main"
+vecinita-agent = "src.rag_agent:main"
+vecinita-setup = "src.setup_check:main"
+vecinita-example = "scripts.example_rag_usage:main"
+vecinita-fastapi = "scripts.fastapi_integration_example:main"
 
 [project.urls]
 Homepage = "https://github.com/acadiagit/vecinita"
@@ -87,7 +85,6 @@ requires = ["setuptools>=68.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["vecinita"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
