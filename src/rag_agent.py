@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
 from langchain.chat_models import init_chat_model
-from langchain.tools.retriever import create_retriever_tool
+from langchain_core.tools import create_retriever_tool
 from langgraph.graph import StateGraph, MessagesState, START, END
 from langgraph.prebuilt import ToolNode, tools_condition
 
