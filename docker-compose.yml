@@ -28,6 +28,7 @@ services:
       - ./src:/app/src
       - ./scripts:/app/scripts
       - ./docs:/app/docs
+      - ./pyproject.toml:/app/pyproject.toml
     
     restart: unless-stopped
     

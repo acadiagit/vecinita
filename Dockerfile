@@ -5,11 +5,11 @@ FROM python:3.10-slim
 WORKDIR /app
 
 # Copy the file with dependencies first, to leverage Docker cache
-COPY requirements.txt .
+COPY pyproject.toml .
 
-# Install any needed packages specified in requirements.txt
+# Install any needed packages specified in pyproject.toml
 RUN pip install --no-cache-dir --upgrade pip
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -e .
 
 # --- ADD THIS NEW STEP ---
 # Download and cache the embedding model during the build
