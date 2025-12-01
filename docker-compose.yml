@@ -1,0 +1,54 @@
+services:
+  vecinita-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vecinita-agent
+    ports:
+      - "8000:8000"
+    environment:
+      # Supabase Configuration (Required)
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      
+      # LLM API Keys (At least one required)
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - OPEN_API_KEY=${OPEN_API_KEY}
+      
+      # Optional Configuration
+      - DATABASE_URL=${DATABASE_URL}
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-text-embedding-3-small}
+      - USE_LOCAL_EMBEDDINGS=${USE_LOCAL_EMBEDDINGS:-false}
+    
+    env_file:
+      - .env
+    
+    volumes:
+      # Mount source code for development (optional - comment out for production)
+      - ./src:/app/src
+      - ./scripts:/app/scripts
+      - ./docs:/app/docs
+    
+    restart: unless-stopped
+    
+    # Health check to ensure the service is running
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # Resource limits (adjust as needed)
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+
+networks:
+  default:
+    name: vecinita-network

@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version >= '3.14'",
@@ -5672,6 +5672,11 @@ visualization = [
     { name = "pygraphviz" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "beautifulsoup4" },
@@ -5712,6 +5717,9 @@ requires-dist = [
     { name = "vecinita", extras = ["dev", "visualization"], marker = "extra == 'all'" },
 ]
 provides-extras = ["dev", "visualization", "all"]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pytest", specifier = ">=9.0.0" }]
 
 [[package]]
 name = "wcwidth"
