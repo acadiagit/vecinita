@@ -475,7 +475,7 @@ def main():
             is_success = load_url(url, args.output_file, args.failed_log, args.loader)
             if is_success:
                 successful_sources.append(url)
-            # Failure is handled inside load_url
+            # Failure is handled inside load_url by writing to the failed_log
 
     # --- Process Local Files (only if NOT in forced-loader mode) ---
     if not args.loader:
@@ -562,4 +562,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-##--end-of-file
+##--end-of-filr--

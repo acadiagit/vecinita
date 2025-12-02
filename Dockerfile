@@ -17,6 +17,10 @@ RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTr
 
 # --- ADD THIS NEW STEP for Playwright ---
 RUN playwright install
+
+# --- THIS IS THE MISSING LINE ---
+COPY ./index.html /app/
+
 # Copy the rest of the application's code
 COPY . .
 

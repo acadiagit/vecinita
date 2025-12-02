@@ -1,0 +1,67 @@
+.
+├── Dockerfile
+├── Dockerfile.bck
+├── LICENSE
+├── README.md
+├── __pycache__
+│   └── main.cpython-311.pyc
+├── data
+│   ├── MentalandBehavioralResourceGuide-english_11162022.pdf
+│   ├── RIOSpdf.pdf
+│   ├── Rhode-Island-Hospital-2016.pdf
+│   ├── Rhode-Island-Hospital.pdf
+│   ├── config
+│   ├── failed_urls.txt
+│   ├── new_content_chunks.txt
+│   ├── nov01_chunks.txt
+│   ├── oct31_chunks.txt
+│   ├── test_faq.md
+│   ├── urls.txt
+│   └── vecinita_faq.md
+├── data_scrape_load.sh
+├── env.txt
+├── file_structure.txt
+├── index.html
+├── logs
+│   ├── oct28_chunks.txt
+│   └── vecinita_loader.log
+├── main.py
+├── main.py.bck
+├── requirements.txt
+├── schema_install.sql
+├── scraper
+│   ├── Source attribution.rtf
+│   ├── cleaned_urls_txt.txt
+│   ├── rag_with_sources_example.py
+│   ├── test_urls_script.py
+│   ├── text_to_vector_loader.py
+│   ├── vecina_quick_reference.md
+│   ├── vecina_scraper.py
+│   ├── vecina_scraper_readme.md
+│   └── vecina_txt_scraper.py
+├── test
+│   ├── GettingVecinita.pdf
+│   ├── check_db.sh
+│   ├── disk_check.sh
+│   ├── scraped_content_20.txt
+│   ├── supabase_test.sh
+│   └── urls.txt
+├── utils
+│   ├── faq_loader.py
+│   ├── load_faq.py
+│   ├── old_vector_loader
+│   ├── scraper_to_text.py
+│   ├── scraper_to_text.py.bck
+│   ├── supabase_db_test.py
+│   ├── vector_loader.py
+│   └── vector_loader.py.bck
+├── vecinita_loader.log
+└── venv
+    ├── bin
+    ├── include
+    ├── lib
+    ├── lib64 -> lib
+    ├── pyvenv.cfg
+    └── share
+
+14 directories, 51 files

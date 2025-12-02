@@ -1,9 +1,11 @@
 # main.py
 # FastAPI application for the Vecinita RAG Q&A system.
 # This version includes an explicit rule for response language.
+# Serves the index.html UI at the root "/" endpoint.
 
 import os
 import time
+from fastapi.responses import FileResponse
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
@@ -43,12 +45,18 @@ except Exception as e:
     raise RuntimeError(f"Failed to initialize clients: {e}")
 
 # --- API Endpoints ---
-@app.get("/")
-def read_root():
-    return {"status": "ok", "message": "Welcome to the Vecinita Q&A API!"}
+
+# --- THIS IS THE NEW ROOT ENDPOINT ---
+@app.get("/", response_class=FileResponse)
+async def get_ui():
+    """Serves the main chat UI (index.html)"""
+    return "index.html"
+# --- OLD "/ui" ENDPOINT IS NOW THE ROOT ---
+
 
 @app.get("/ask")
 async def ask_question(question: str):
+    """Handles Q&A requests from the UI or API"""
     if not question:
         raise HTTPException(status_code=400, detail="Question parameter cannot be empty.")
 
@@ -122,4 +130,4 @@ async def ask_question(question: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-#--end-of-file
+#--end-of-file--
