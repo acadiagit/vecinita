@@ -1,0 +1,6 @@
+# Configuration for uv package manager
+# Use stable versions only to avoid compatibility issues on Windows
+
+# Prerelease handling: only use prerelease if necessary
+# This prevents accidental installation of dev versions that might lack Windows wheels
+prerelease = "if-necessary"

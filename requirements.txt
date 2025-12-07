@@ -1,12 +1,16 @@
 fastapi
 uvicorn
 pydantic
+langchain
 langchain-community
 langchain-core
 langchain-groq
 langchain-openai
+langchain-ollama
 langgraph
-supabase
+langsmith
+supabase>=2.0.0
+gotrue>=2.0.0
 python-dotenv
 fastembed
 requests

@@ -71,6 +71,8 @@ python -m scripts.example_rag_usage
 ✅ Multi-language prompts (EN/ES)  
 ✅ Supabase vectorstore integration  
 ✅ Works with Groq (free) or OpenAI models  
+✅ **Local LLM fallback** with Ollama (offline support)  
+✅ Automatic retry with cascading fallbacks  
 ✅ Modular configuration in `src/agent_config.py`
 
 ---
@@ -79,9 +81,10 @@ python -m scripts.example_rag_usage
 
 - Python **3.10+** (verified with 3.12 as well)
 - Supabase project (with `document_chunks` table and RPC `search_similar_documents` function)
-- API key for at least one LLM provider:
- 	- Groq: `llama-3.1-8b-instant` (default example)
- 	- OpenAI: `gpt-4o` (configure in `agent_config.py`)
+- **At least one** LLM provider:
+  - Groq: `llama-3.1-8b-instant` (free tier, fast)
+  - OpenAI: `gpt-4o-mini` (paid, reliable)
+  - Ollama: Local LLM (free, offline) - [Setup Guide](docs/LOCAL_LLM_SETUP.md)
 - (Optional) GPU / optimized BLAS increases embedding/model speed
 
 ---
@@ -92,13 +95,47 @@ python -m scripts.example_rag_usage
 |----------|----------|-------------|
 | `SUPABASE_URL` | ✅ | Your Supabase project URL (starts with https://) |
 | `SUPABASE_KEY` | ✅ | Service Role key (store securely, do NOT expose publicly) |
-| `OPEN_API_KEY` | ⚠️ | OpenAI key (optional if using Groq) |
-| `GROQ_API_KEY` | ⚠️ | Groq key (optional if using OpenAI) |
+| `OPEN_API_KEY` | ⚠️ | OpenAI key (optional if using Groq/Ollama) |
+| `GROQ_API_KEY` | ⚠️ | Groq key (optional if using OpenAI/Ollama) |
+| `OLLAMA_BASE_URL` | Optional | Local Ollama server URL (default: http://localhost:11434) |
+| `OLLAMA_MODEL` | Optional | Ollama model to use (default: llama3.2) |
 | `DATABASE_URL` | ⚠️ | Direct Postgres connection for loaders (postgresql://...) |
 | `EMBEDDING_MODEL` | Optional | Defaults: `text-embedding-3-small` or local model |
 | `USE_LOCAL_EMBEDDINGS` | Optional | `true`/`false` to switch to HuggingFace local embeddings |
 
 > Important: Keys currently committed in `.env` should be **revoked and rotated**. Never commit real production credentials. Add `.env` to version control ignore (already in `.gitignore`).
+
+---
+
+## 🔄 LLM Fallback System
+
+Vecinita uses a **cascading fallback system** to ensure reliability:
+
+```
+Primary: Groq API (fast, free tier)
+    ↓ (if fails)
+Fallback: OpenAI API (reliable, paid)
+    ↓ (if fails)
+Final: Ollama Local LLM (offline, free)
+```
+
+**Benefits:**
+- ✅ No single point of failure
+- ✅ Works offline with Ollama
+- ✅ Automatic fallback (no configuration needed)
+- ✅ Continues working when API quotas exceeded
+
+**Setup Local LLM:**
+
+See **[Local LLM Setup Guide](docs/LOCAL_LLM_SETUP.md)** for detailed instructions.
+
+Quick setup:
+```powershell
+# Install Ollama from https://ollama.ai
+ollama pull llama3.2
+
+# That's it! Vecinita will use it automatically as fallback
+```
 
 ---
 
