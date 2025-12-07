@@ -26,8 +26,7 @@ dependencies = [
     # Database & Vector Store
     "supabase",
     "psycopg2-binary",
-    # ML & Embeddings
-    "sentence-transformers",
+    # ML & Embeddings (sentence-transformers moved to optional-dependencies due to numpy 2.x conflict)
     "fastembed",
     # Document Processing
     "beautifulsoup4",
@@ -43,7 +42,7 @@ dependencies = [
     "tqdm",
     "gotrue>=2.0.0",
     "langchain-ollama>=1.0.0",
-    # LangSmith for tracing and monitoring
+    # LangSmith for tracing and monitoring (now compatible with numpy 2.x)
     "langsmith>=0.4.56",
     # Pin onnxruntime and tokenizers to stable versions to avoid Windows compatibility issues
     # onnxruntime dev releases don't have Windows wheels
@@ -53,6 +52,11 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+embedding = [
+    # Local embeddings with SentenceTransformers (optional, use fastembed for main)
+    "sentence-transformers",
+]
+
 dev = [
     # Development Tools
     "pytest",
@@ -73,7 +77,7 @@ visualization = [
 ]
 
 all = [
-    "vecinita[dev,visualization]",
+    "vecinita[dev,visualization,embedding]",
 ]
 
 [project.scripts]

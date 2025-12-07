@@ -3,6 +3,7 @@
 ## Start Tracing in 3 Steps
 
 ### 1. Start Your FastAPI Server
+
 ```bash
 python -m src.main
 # or
@@ -10,12 +11,14 @@ python scripts/run_fastapi.py
 ```
 
 ### 2. Make a Query
+
 ```bash
 curl "http://localhost:8000/ask?question=What%20services%20does%20Vecinita%20offer?"
 ```
 
 ### 3. View Trace
-Visit: https://smith.langchain.com/projects/pr-trustworthy-sundial-70
+
+Visit: <https://smith.langchain.com/projects/pr-trustworthy-sundial-70>
 
 ---
 
@@ -24,8 +27,8 @@ Visit: https://smith.langchain.com/projects/pr-trustworthy-sundial-70
 | Item | Value |
 |------|-------|
 | **Project Name** | `pr-trustworthy-sundial-70` |
-| **Dashboard URL** | https://smith.langchain.com/projects/pr-trustworthy-sundial-70 |
-| **Endpoint** | https://api.smith.langchain.com |
+| **Dashboard URL** | <https://smith.langchain.com/projects/pr-trustworthy-sundial-70> |
+| **Endpoint** | <https://api.smith.langchain.com> |
 | **Config Module** | `src/langsmith_config.py` |
 | **Status** | ✓ Configured and Ready |
 
@@ -34,14 +37,15 @@ Visit: https://smith.langchain.com/projects/pr-trustworthy-sundial-70
 ## Configuration Files
 
 ### Environment Variables (.env)
+
 ```env
 LANGSMITH_TRACING=true
 LANGSMITH_ENDPOINT=https://api.smith.langchain.com
-LANGSMITH_API_KEY=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
 LANGSMITH_PROJECT=pr-trustworthy-sundial-70
 ```
 
 ### Main Application (src/main.py)
+
 ```python
 from .langsmith_config import initialize_langsmith
 
@@ -55,21 +59,25 @@ print(f"[INFO] LangSmith Status: {langsmith_config['status']}")
 ## Common Tasks
 
 ### Verify Setup
+
 ```bash
 python verify_langsmith_only.py
 ```
 
 ### Run Example Agent
+
 ```bash
 python scripts/langsmith_agent_example.py
 ```
 
 ### Check Dashboard
-1. Go to: https://smith.langchain.com/projects/pr-trustworthy-sundial-70
+
+1. Go to: <https://smith.langchain.com/projects/pr-trustworthy-sundial-70>
 2. Look for recent runs
 3. Click to inspect traces
 
 ### Run with Tracing Disabled (if needed)
+
 ```bash
 export LANGSMITH_TRACING=false
 python scripts/run_fastapi.py
@@ -99,6 +107,7 @@ The LangSmith dashboard shows:
 4. **Feedback Tab** - Manual quality feedback
 
 Each trace shows:
+
 - Input question/prompt
 - Output/response
 - Tools used
@@ -129,7 +138,7 @@ A: Yes, change `LANGSMITH_PROJECT` in `.env`
 - Full Setup Guide: `docs/LANGSMITH_SETUP.md`
 - Example Agent: `scripts/langsmith_agent_example.py`
 - Config Module: `src/langsmith_config.py`
-- LangSmith Docs: https://docs.smith.langchain.com/
+- LangSmith Docs: <https://docs.smith.langchain.com/>
 
 ---
 

@@ -14,7 +14,6 @@ Your Vecinita project is now fully configured for **LangSmith tracing, monitorin
 2. **✓ Configured `.env` File**
    - `LANGSMITH_TRACING=true` - Enables automatic tracing
    - `LANGSMITH_ENDPOINT=https://api.smith.langchain.com` - LangSmith API
-   - `LANGSMITH_API_KEY=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` - Your API key
    - `LANGSMITH_PROJECT=pr-trustworthy-sundial-70` - Your project name
 
 3. **✓ Created `src/langsmith_config.py`**
@@ -47,6 +46,7 @@ Your Vecinita project is now fully configured for **LangSmith tracing, monitorin
 ## Next Steps
 
 ### 1. Start Your FastAPI Server
+
 ```bash
 python -m src.main
 # or
@@ -54,38 +54,46 @@ python scripts/run_fastapi.py
 ```
 
 You'll see this output on startup:
+
 ```
 [INFO] LangSmith tracing enabled for project 'pr-trustworthy-sundial-70'
 [INFO] Traces will be sent to project: pr-trustworthy-sundial-70
 ```
 
 ### 2. Make API Requests
+
 ```bash
 curl "http://localhost:8000/ask?question=What%20services%20does%20Vecinita%20offer?"
 ```
 
 ### 3. View Traces in Dashboard
-Visit: https://smith.langchain.com/projects/pr-trustworthy-sundial-70
+
+Visit: <https://smith.langchain.com/projects/pr-trustworthy-sundial-70>
 
 You'll see:
+
 - All agent runs captured automatically
 - Input/output for each query
 - Token usage and execution time
 - Tool calls and intermediate steps
 
 ### 4. Run the Example Agent
+
 ```bash
 python scripts/langsmith_agent_example.py
 ```
 
 This demonstrates:
+
 - Creating a tool-using agent
 - Automatic trace capture
 - Multiple query handling
 - Dashboard integration
 
 ### 5. Read the Full Guide
+
 See `docs/LANGSMITH_SETUP.md` for:
+
 - Detailed configuration options
 - Dashboard usage tips
 - Creating evaluation datasets
@@ -97,7 +105,7 @@ See `docs/LANGSMITH_SETUP.md` for:
 | Feature | Status | Details |
 |---------|--------|---------|
 | Automatic Tracing | ✓ Enabled | All agent runs traced to LangSmith |
-| Dashboard | ✓ Ready | View at https://smith.langchain.com/projects/pr-trustworthy-sundial-70 |
+| Dashboard | ✓ Ready | View at <https://smith.langchain.com/projects/pr-trustworthy-sundial-70> |
 | Monitoring | ✓ Ready | Performance metrics and error tracking |
 | Evaluation | ✓ Ready | Create datasets and run evaluations |
 | Debugging | ✓ Ready | Inspect inputs, outputs, and tool calls |
@@ -105,6 +113,7 @@ See `docs/LANGSMITH_SETUP.md` for:
 ## Environment Variables
 
 Your `.env` file now contains:
+
 ```env
 LANGSMITH_TRACING=true
 LANGSMITH_ENDPOINT=https://api.smith.langchain.com
@@ -116,12 +125,14 @@ LANGSMITH_PROJECT=pr-trustworthy-sundial-70
 
 ## Files Modified/Created
 
-### Modified:
+### Modified
+
 - `requirements.txt` - Added langchain and langsmith
 - `.env` - Added LangSmith configuration
 - `src/main.py` - Added LangSmith initialization
 
-### Created:
+### Created
+
 - `src/langsmith_config.py` - LangSmith configuration module
 - `scripts/langsmith_agent_example.py` - Example agent
 - `docs/LANGSMITH_SETUP.md` - Complete setup guide
@@ -132,17 +143,20 @@ LANGSMITH_PROJECT=pr-trustworthy-sundial-70
 If traces don't appear in the dashboard:
 
 1. **Verify LangSmith is enabled:**
+
    ```bash
    python verify_langsmith_only.py
    ```
 
 2. **Check environment variables:**
+
    ```bash
    echo $LANGSMITH_TRACING
    echo $LANGSMITH_PROJECT
    ```
 
 3. **Verify API connection:**
+
    ```bash
    curl -H "x-api-key: $LANGSMITH_API_KEY" \
      https://api.smith.langchain.com/info
@@ -152,9 +166,9 @@ If traces don't appear in the dashboard:
 
 ## Resources
 
-- **LangSmith Docs**: https://docs.smith.langchain.com/
-- **Your Dashboard**: https://smith.langchain.com/projects/pr-trustworthy-sundial-70
-- **LangChain Docs**: https://python.langchain.com/
+- **LangSmith Docs**: <https://docs.smith.langchain.com/>
+- **Your Dashboard**: <https://smith.langchain.com/projects/pr-trustworthy-sundial-70>
+- **LangChain Docs**: <https://python.langchain.com/>
 - **Setup Guide**: See `docs/LANGSMITH_SETUP.md`
 
 ---

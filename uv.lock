@@ -5783,7 +5783,6 @@ dependencies = [
     { name = "pypdf" },
     { name = "python-dotenv" },
     { name = "requests" },
-    { name = "sentence-transformers" },
     { name = "supabase" },
     { name = "tokenizers" },
     { name = "tqdm" },
@@ -5804,6 +5803,7 @@ all = [
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
     { name = "ruff" },
+    { name = "sentence-transformers" },
 ]
 dev = [
     { name = "black" },
@@ -5815,6 +5815,9 @@ dev = [
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
     { name = "ruff" },
+]
+embedding = [
+    { name = "sentence-transformers" },
 ]
 visualization = [
     { name = "graphviz" },
@@ -5861,15 +5864,15 @@ requires-dist = [
     { name = "python-dotenv" },
     { name = "requests" },
     { name = "ruff", marker = "extra == 'dev'" },
-    { name = "sentence-transformers" },
+    { name = "sentence-transformers", marker = "extra == 'embedding'" },
     { name = "supabase" },
     { name = "tokenizers", specifier = ">=0.15.0,<0.22.0rc0" },
     { name = "tqdm" },
     { name = "unstructured" },
     { name = "uvicorn" },
-    { name = "vecinita", extras = ["dev", "visualization"], marker = "extra == 'all'" },
+    { name = "vecinita", extras = ["dev", "visualization", "embedding"], marker = "extra == 'all'" },
 ]
-provides-extras = ["dev", "visualization", "all"]
+provides-extras = ["embedding", "dev", "visualization", "all"]
 
 [package.metadata.requires-dev]
 dev = [{ name = "pytest", specifier = ">=9.0.0" }]

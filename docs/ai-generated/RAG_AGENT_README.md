@@ -50,11 +50,13 @@ The RAG agent follows this workflow:
 ## Installation
 
 1. **Install dependencies**:
+
    ```bash
    pip install -r requirements.txt
    ```
 
 2. **Set up environment variables** in `.env`:
+
    ```env
    # Choose your model provider
    OPEN_API_KEY=your_openai_key  # For GPT-4o
@@ -99,6 +101,7 @@ python example_rag_usage.py
 ```
 
 This will demonstrate:
+
 1. Questions requiring retrieval
 2. Simple questions answered directly
 3. Interactive mode for testing
@@ -173,6 +176,7 @@ Centralized prompts and settings for easy customization.
 ### Import Errors
 
 If you see import errors, install dependencies:
+
 ```bash
 pip install -U langgraph "langchain[openai]" langchain-community langchain-text-splitters langchain-huggingface
 ```
@@ -180,6 +184,7 @@ pip install -U langgraph "langchain[openai]" langchain-community langchain-text-
 ### API Key Issues
 
 Ensure your `.env` file has the correct API keys:
+
 - `OPEN_API_KEY` for OpenAI models
 - `GROQ_API_KEY` for Groq models
 - `SUPABASE_URL` and `SUPABASE_KEY` for database access
@@ -187,6 +192,7 @@ Ensure your `.env` file has the correct API keys:
 ### No Documents Retrieved
 
 Check:
+
 1. Your vectorstore has documents loaded (run `vector_loader.py`)
 2. Similarity threshold in `agent_config.py` isn't too high
 3. Embeddings model matches the one used for indexing

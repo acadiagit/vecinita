@@ -46,7 +46,6 @@ from supabase import create_client, Client
 from langchain_groq import ChatGroq
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_huggingface import HuggingFaceEmbeddings
 from langdetect import detect, LangDetectException
 from .langsmith_config import initialize_langsmith
 
@@ -288,10 +287,22 @@ try:
             "2. Install and run Ollama: https://ollama.ai"
         )
 
-    print("[DEBUG] Loading HuggingFace embeddings model...")
-    model_name = "sentence-transformers/all-MiniLM-L6-v2"
-    embedding_model = HuggingFaceEmbeddings(model_name=model_name)
-    print("[DEBUG] HuggingFace embeddings loaded.")
+    # Try to load embeddings - use FastEmbed as primary (HuggingFace has numpy 2.x conflicts)
+    print("[DEBUG] Loading embeddings model...")
+    embedding_model = None
+    try:
+        print("[DEBUG] Attempting to load FastEmbed embeddings model...")
+        from fastembed.embedding import FlagEmbedding
+        embedding_model = FlagEmbedding(model_name="BAAI/bge-small-en-v1.5", cache_dir=None)
+        print("[DEBUG] ✓ FastEmbed embeddings loaded successfully.")
+    except ImportError as e:
+        print(f"[WARNING] FastEmbed not available: {e}")
+        print("[INFO] To enable embeddings: pip install fastembed")
+        print("[INFO] Continuing without embeddings - RAG functionality will be limited")
+        embedding_model = None
+    
+    if embedding_model is None:
+        print("[WARNING] No embedding model loaded. RAG retrieval will be disabled.")
 except Exception as e:
     print(f"[ERROR] Failed to initialize clients: {e}")
     raise RuntimeError(f"Failed to initialize clients: {e}")
