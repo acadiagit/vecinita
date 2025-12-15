@@ -116,3 +116,4 @@ index.html
 check_db.sh
 rag_examples.py
 scraper/
+.venv*
