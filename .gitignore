@@ -112,7 +112,6 @@ utils/old_vector_loader
 
 # Ignore other project-specific files
 test/
-index.html
 check_db.sh
 rag_examples.py
 scraper/
