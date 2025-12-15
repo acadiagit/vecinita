@@ -9,6 +9,7 @@ from pathlib import Path
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 from supabase import create_client, Client
 from langchain_groq import ChatGroq
@@ -28,6 +29,11 @@ app.add_middleware(
     allow_origins=["*"], allow_credentials=True,
     allow_methods=["*"], allow_headers=["*"],
 )
+
+# --- Mount Static Files ---
+static_dir = Path(__file__).parent / "static"
+if static_dir.exists():
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
 # --- Load Environment Variables & Validate ---
 supabase_url = os.environ.get("SUPABASE_URL")
@@ -58,6 +64,13 @@ async def get_ui():
     static_dir = Path(__file__).parent / "static" / "index.html"
     return FileResponse(static_dir)
 # --- OLD "/ui" ENDPOINT IS NOW THE ROOT ---
+
+
+@app.get("/favicon.ico", response_class=FileResponse)
+async def get_favicon():
+    """Serves the favicon"""
+    favicon_path = Path(__file__).parent / "static" / "favicon.ico"
+    return FileResponse(favicon_path)
 
 
 @app.get("/ask")
