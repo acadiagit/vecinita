@@ -5,9 +5,11 @@
 
 import os
 import time
-from fastapi.responses import FileResponse
+from pathlib import Path
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 from supabase import create_client, Client
 from langchain_groq import ChatGroq
@@ -28,6 +30,11 @@ app.add_middleware(
     allow_methods=["*"], allow_headers=["*"],
 )
 
+# --- Mount Static Files ---
+static_dir = Path(__file__).parent / "static"
+if static_dir.exists():
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+
 # --- Load Environment Variables & Validate ---
 supabase_url = os.environ.get("SUPABASE_URL")
 supabase_key = os.environ.get("SUPABASE_KEY")
@@ -38,7 +45,8 @@ if not supabase_url or not supabase_key or not groq_api_key:
 # --- Initialize Clients ---
 try:
     supabase: Client = create_client(supabase_url, supabase_key)
-    llm = ChatGroq(temperature=0, groq_api_key=groq_api_key, model_name="llama-3.1-8b-instant")
+    llm = ChatGroq(temperature=0, groq_api_key=groq_api_key,
+                   model_name="llama-3.1-8b-instant")
     model_name = "sentence-transformers/all-MiniLM-L6-v2"
     embedding_model = HuggingFaceEmbeddings(model_name=model_name)
 except Exception as e:
@@ -47,25 +55,49 @@ except Exception as e:
 # --- API Endpoints ---
 
 # --- THIS IS THE NEW ROOT ENDPOINT ---
+
+
 @app.get("/", response_class=FileResponse)
 async def get_ui():
     """Serves the main chat UI (index.html)"""
-    return "index.html"
+    # Get the directory of this file and construct the path to index.html
+    index_path = Path(__file__).parent / "static" / "index.html"
+    if not index_path.exists():
+        # Provide a helpful error if the UI file is missing
+        raise HTTPException(
+            status_code=404,
+            detail=f"UI not found. Expected file at: {index_path}. Ensure the static assets are built and available.",
+        )
+    return FileResponse(index_path)
 # --- OLD "/ui" ENDPOINT IS NOW THE ROOT ---
+
+
+@app.get("/favicon.ico", response_class=FileResponse)
+async def get_favicon():
+    """Serves the favicon"""
+    favicon_path = Path(__file__).parent / "static" / "favicon.ico"
+    if not favicon_path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail=f"Favicon not found. Expected file at: {favicon_path}. Ensure the static assets are available.",
+        )
+    return FileResponse(favicon_path)
 
 
 @app.get("/ask")
 async def ask_question(question: str):
     """Handles Q&A requests from the UI or API"""
     if not question:
-        raise HTTPException(status_code=400, detail="Question parameter cannot be empty.")
+        raise HTTPException(
+            status_code=400, detail="Question parameter cannot be empty.")
 
     try:
         lang = detect(question)
     except LangDetectException:
         lang = "en"
 
-    print(f"\n--- New request received: '{question}' (Detected Language: {lang}) ---")
+    print(
+        f"\n--- New request received: '{question}' (Detected Language: {lang}) ---")
 
     try:
         if lang == 'es':
@@ -88,7 +120,7 @@ async def ask_question(question: str):
 
             RESPUESTA:
             """
-        else: # Default to English
+        else:  # Default to English
             prompt_template_str = """
             You are a helpful and professional community assistant for the Vecinita project.
             Your goal is to provide clear, concise, and accurate answers based *only* on the following context.
@@ -108,26 +140,34 @@ async def ask_question(question: str):
 
             ANSWER:
             """
-        
+
         question_embedding = embedding_model.embed_query(question)
         relevant_docs = supabase.rpc(
             "search_similar_documents",
-            {"query_embedding": question_embedding, "match_threshold": 0.3, "match_count": 5},
+            {"query_embedding": question_embedding,
+                "match_threshold": 0.3, "match_count": 5},
         ).execute()
 
         if not relevant_docs.data:
             answer = "No pude encontrar una respuesta definitiva en los documentos proporcionados." if lang == 'es' else "I could not find a definitive answer in the provided documents."
             return {"answer": answer, "context": []}
 
-        context_text = "\n\n---\n\n".join([f"Content from {doc['source']}:\n{doc['content']}" for doc in relevant_docs.data])
+        context_text = "\n\n---\n\n".join(
+            [f"Content from {doc['source']}:\n{doc['content']}" for doc in relevant_docs.data])
         prompt_template = ChatPromptTemplate.from_template(prompt_template_str)
-        prompt = prompt_template.format(context=context_text, question=question)
+        prompt = prompt_template.format(
+            context=context_text, question=question)
 
         response = llm.invoke(prompt)
-        
+
         return {"answer": response.content, "context": relevant_docs.data}
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-#--end-of-file--
+
+@app.get("/health")
+def health():
+    return JSONResponse({"status": "ok"})
+
+# --end-of-file--

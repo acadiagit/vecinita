@@ -10,8 +10,8 @@
 CHUNK_FILE="data/new_content_chunks.txt" # Use a different name for new chunks
 MAIN_URL_FILE="data/urls.txt"
 FAILED_URL_LOG="data/failed_urls.txt"
-SCRAPER_SCRIPT="utils/scraper_to_text.py"
-LOADER_SCRIPT="utils/vector_loader.py"
+SCRAPER_SCRIPT="src/utils/scraper_to_text.py"
+LOADER_SCRIPT="src/utils/vector_loader.py"
 APP_CONTAINER_NAME="vecinita-app"
 
 # Exit immediately if any command fails
