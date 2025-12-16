@@ -269,7 +269,10 @@ class TestBatchProcessing:
         mock_create_client.return_value = mock_client
 
         mock_sentence_transformer = MagicMock()
-        mock_sentence_transformer.encode.return_value = [0.1] * 384
+        # Return a numpy-like object with tolist() to match implementation
+        mock_array = MagicMock()
+        mock_array.tolist.return_value = [0.1] * 384
+        mock_sentence_transformer.encode.return_value = mock_array
         mock_sentence_transformer.get_sentence_embedding_dimension.return_value = 384
         mock_sentence_transformer_cls.return_value = mock_sentence_transformer
 
@@ -334,7 +337,10 @@ class TestFileLoading:
         mock_create_client.return_value = mock_client
 
         mock_sentence_transformer = MagicMock()
-        mock_sentence_transformer.encode.return_value = [0.1] * 384
+        # Return a numpy-like object with tolist() to match implementation
+        mock_array = MagicMock()
+        mock_array.tolist.return_value = [0.1] * 384
+        mock_sentence_transformer.encode.return_value = mock_array
         mock_sentence_transformer.get_sentence_embedding_dimension.return_value = 384
         mock_sentence_transformer_cls.return_value = mock_sentence_transformer
 
@@ -382,7 +388,10 @@ class TestDirectoryLoading:
         mock_create_client.return_value = mock_client
 
         mock_sentence_transformer = MagicMock()
-        mock_sentence_transformer.encode.return_value = [0.1] * 384
+        # Return a numpy-like object with tolist() to match implementation
+        mock_array = MagicMock()
+        mock_array.tolist.return_value = [0.1] * 384
+        mock_sentence_transformer.encode.return_value = mock_array
         mock_sentence_transformer.get_sentence_embedding_dimension.return_value = 384
         mock_sentence_transformer_cls.return_value = mock_sentence_transformer
 

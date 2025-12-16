@@ -30,7 +30,8 @@ case $TEST_TYPE in
     "ui")
         echo "🎨 Running UI tests..."
         echo "⚠️  Make sure the server is running: uv run uvicorn main:app --host localhost --port 8000"
-        pytest tests/test_ui.py -m ui $VERBOSE --run-skipped
+        # Note: --run-skipped is not a valid pytest flag; use markers only
+        pytest tests/test_ui.py -m ui $VERBOSE
         ;;
     "db")
         echo "🗄️  Running database tests..."

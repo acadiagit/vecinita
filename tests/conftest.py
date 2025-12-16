@@ -51,9 +51,17 @@ def mock_llm():
 
 
 @pytest.fixture
-def fastapi_client():
-    """Create a FastAPI test client."""
-    # Import here to avoid circular imports
+def fastapi_client(env_vars, monkeypatch):
+    """Create a FastAPI test client with env vars applied before app import.
+
+    This ensures any environment-based configuration in `main` is picked up
+    after tests set or mock environment variables.
+    """
+    # Ensure required env vars are set prior to importing the app module
+    for key, value in env_vars.items():
+        monkeypatch.setenv(key, value)
+
+    # Import here (after env setup) to avoid premature initialization
     from main import app
     return TestClient(app)
 

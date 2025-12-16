@@ -43,8 +43,10 @@ class TestRootEndpoint:
     def test_get_root_content_type(self, fastapi_client):
         """Test that root endpoint has appropriate content type."""
         response = fastapi_client.get("/")
-        # Could be text/html or application/octet-stream depending on FileResponse
         assert response.status_code == 200
+        # Assert explicit expected content type for HTML
+        content_type = response.headers.get("content-type", "")
+        assert content_type.startswith("text/html")
 
 
 @pytest.mark.unit

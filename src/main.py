@@ -61,8 +61,14 @@ except Exception as e:
 async def get_ui():
     """Serves the main chat UI (index.html)"""
     # Get the directory of this file and construct the path to index.html
-    static_dir = Path(__file__).parent / "static" / "index.html"
-    return FileResponse(static_dir)
+    index_path = Path(__file__).parent / "static" / "index.html"
+    if not index_path.exists():
+        # Provide a helpful error if the UI file is missing
+        raise HTTPException(
+            status_code=404,
+            detail=f"UI not found. Expected file at: {index_path}. Ensure the static assets are built and available.",
+        )
+    return FileResponse(index_path)
 # --- OLD "/ui" ENDPOINT IS NOW THE ROOT ---
 
 
@@ -70,6 +76,11 @@ async def get_ui():
 async def get_favicon():
     """Serves the favicon"""
     favicon_path = Path(__file__).parent / "static" / "favicon.ico"
+    if not favicon_path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail=f"Favicon not found. Expected file at: {favicon_path}. Ensure the static assets are available.",
+        )
     return FileResponse(favicon_path)
 
 

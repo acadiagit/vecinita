@@ -149,12 +149,11 @@ class TestLoadFAQMain:
             assert call_args is not None
 
     @patch("utils.load_faq.HuggingFaceEmbeddings")
-    @patch("utils.load_faq.os.environ.get")
     @patch("utils.load_faq.create_client")
     @patch("utils.load_faq.load_dotenv")
     @patch("utils.load_faq.os.environ.get")
     @patch("builtins.open")
-    def test_file_not_found_handling(self, mock_open, mock_environ1, mock_load_dotenv, mock_create_client, mock_environ2, mock_embeddings):
+    def test_file_not_found_handling(self, mock_open, mock_environ, mock_load_dotenv, mock_create_client, mock_embeddings):
         """Test handling of missing FAQ file."""
         def env_side_effect(key, default=None):
             env_map = {
@@ -164,8 +163,7 @@ class TestLoadFAQMain:
             }
             return env_map.get(key, default)
 
-        mock_environ1.side_effect = env_side_effect
-        mock_environ2.side_effect = env_side_effect
+        mock_environ.side_effect = env_side_effect
         mock_open.side_effect = FileNotFoundError()
         mock_embeddings.return_value = MagicMock()
 

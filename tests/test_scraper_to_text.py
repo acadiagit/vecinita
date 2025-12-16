@@ -217,7 +217,7 @@ class TestDocumentProcessing:
         """Test processing empty document list."""
         from utils.scraper_to_text import process_documents
 
-        result = process_documents([], "source", "TestLoader")
+        result = process_documents([], "source", "TestLoader", None)
         assert result == 0
 
     @patch("builtins.open", new_callable=mock_open)
