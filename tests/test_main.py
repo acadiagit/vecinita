@@ -61,6 +61,7 @@ class TestHealthEndpoint:
 
 
 @pytest.mark.unit
+@pytest.mark.llm
 class TestAskEndpoint:
     """Test the Q&A endpoint with various scenarios."""
 

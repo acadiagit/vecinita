@@ -44,6 +44,7 @@ class TestUIWithFastAPI:
 
     def test_ask_api_endpoint_with_question(self):
         """Test the /ask API endpoint with a question returns 200 with mocks."""
+        pytest.mark.llm
         with patch('main.supabase') as mock_supabase, \
                 patch('main.embedding_model') as mock_embedding_model, \
                 patch('main.llm') as mock_llm, \
@@ -66,6 +67,7 @@ class TestUIWithFastAPI:
 
     def test_ask_endpoint_accepts_get(self):
         """Test that /ask endpoint accepts GET requests."""
+        pytest.mark.llm
         response = self.client.get(
             "/ask",
             params={"question": "Test question"}
@@ -76,6 +78,7 @@ class TestUIWithFastAPI:
 
     def test_ask_endpoint_requires_question(self):
         """Test that /ask endpoint requires question parameter."""
+        pytest.mark.llm
         response = self.client.get("/ask")
 
         # Should not accept GET without question parameter
@@ -83,6 +86,7 @@ class TestUIWithFastAPI:
 
     def test_spanish_question_handling(self):
         """Test that the API handles Spanish questions and returns 200 with mocks."""
+        pytest.mark.llm
         with patch('main.supabase') as mock_supabase, \
                 patch('main.embedding_model') as mock_embedding_model, \
                 patch('main.llm') as mock_llm, \
@@ -105,6 +109,7 @@ class TestUIWithFastAPI:
 
     def test_api_response_structure(self):
         """Test that API responses have expected structure."""
+        pytest.mark.llm
         # Test with mocked data
         with patch('main.supabase') as mock_supabase:
             mock_supabase.return_value = MagicMock()
@@ -135,6 +140,7 @@ class TestUIErrorHandling:
 
     def test_ask_without_question_field(self):
         """Test that /ask endpoint validates request parameters."""
+        pytest.mark.llm
         response = self.client.get(
             "/ask",
             params={"invalid_field": "test"}
@@ -145,6 +151,7 @@ class TestUIErrorHandling:
 
     def test_ask_with_empty_question(self):
         """Test that /ask endpoint handles empty questions."""
+        pytest.mark.llm
         response = self.client.get(
             "/ask",
             params={"question": ""}
@@ -155,6 +162,7 @@ class TestUIErrorHandling:
 
     def test_post_request_to_ask_endpoint(self):
         """Test that /ask endpoint doesn't accept POST requests."""
+        pytest.mark.llm
         response = self.client.post(
             "/ask",
             json={"question": "test"}
