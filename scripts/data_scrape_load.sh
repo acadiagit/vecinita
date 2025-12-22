@@ -65,7 +65,7 @@ if [ -s "$FAILED_URL_LOG" ]; then
     python $SCRAPER_SCRIPT \
         --input "$FAILED_URL_LOG" \
         --output-file "$CHUNK_FILE" \
-	--failed-log "$FAILED_URL_LOG" \
+	    --failed-log "$FAILED_URL_LOG" \
         --loader playwright
 else
     echo "No failed URLs found. Skipping re-run."
