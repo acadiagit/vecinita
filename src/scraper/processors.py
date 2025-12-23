@@ -151,8 +151,8 @@ class DocumentProcessor:
             try:
                 transformed = bs_transformer.transform_documents(
                     docs,
-                    tags_to_extract=["main", "article", "section", "p",
-                                     "h1", "h2", "h3", "h4", "li", "td", "th", "pre"]
+                    tags_to_extract=["main", "article", "section", "div", "p",
+                                     "h1", "h2", "h3", "h4", "h5", "h6", "li", "td", "th", "pre", "span"]
                 )
                 # Only replace if transformation produced non-empty content; otherwise keep originals
                 if transformed and any(getattr(d, 'page_content', '') for d in transformed):
