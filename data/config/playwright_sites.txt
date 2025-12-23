@@ -1,0 +1,22 @@
+# Playwright (JavaScript rendering) requirement list for VECINA data pipeline
+# These sites require JavaScript rendering to capture content properly
+# Format: Domain pattern (one per line, can be partial domain match)
+# Last updated: 2025-12-22
+
+# Government portals with heavy JavaScript rendering
+enrollri.org
+providenceschools.org
+ride.ri.gov
+
+# Educational and documentation platforms with dynamic content
+qubeshub.org
+math-data-justice-collaborative.github.io
+
+# Health and community platforms
+nuestrasalud.com
+rihca.org
+
+# Services requiring interactive elements
+immigrationadvocates.org
+immigrantcoalitionri.org
+diiri.org

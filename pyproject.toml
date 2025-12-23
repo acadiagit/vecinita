@@ -42,6 +42,7 @@ dependencies = [
     "tqdm",
     "gotrue>=2.0.0",
     "langchain-ollama>=1.0.0",
+    "docker>=7.0.0",
     # LangSmith for tracing and monitoring (now compatible with numpy 2.x)
     "langsmith>=0.4.56",
     # Pin onnxruntime and tokenizers to stable versions to avoid Windows compatibility issues
@@ -50,6 +51,7 @@ dependencies = [
     "onnxruntime>=1.18.0,<1.24.0.dev; sys_platform == 'win32'",
     "tokenizers>=0.15.0,<0.22.0rc",
     "sentence-transformers>=5.1.2",
+    "tf-keras>=2.20.1",
 ]
 
 [project.optional-dependencies]
@@ -91,6 +93,7 @@ vecinita-agent = "src.rag_agent:main"
 vecinita-setup = "src.setup_check:main"
 vecinita-example = "scripts.example_rag_usage:main"
 vecinita-fastapi = "scripts.fastapi_integration_example:main"
+vecinita-scrape = "src.scraper.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/acadiagit/vecinita"

@@ -1,0 +1,153 @@
+
+======================================================================
+SOURCE: https://www.providenceschools.org/
+LINKS EXTRACTED: 1
+======================================================================
+https://www.providenceschools.org/
+
+======================================================================
+SOURCE: https://enrollri.org/
+LINKS EXTRACTED: 1
+======================================================================
+https://enrollri.org/
+
+======================================================================
+SOURCE: https://www.nuestrasalud.com/
+LINKS EXTRACTED: 1
+======================================================================
+https://www.nuestrasalud.com/
+
+======================================================================
+SOURCE: https://qubeshub.org/community/groups/rios
+LINKS EXTRACTED: 1
+======================================================================
+https://qubeshub.org/community/groups/rios
+
+======================================================================
+SOURCE: https://www.immigrationadvocates.org/nonprofit/legaldirectory/organization.393282-Catholic_Charities_of_Providence_Office_of_Immigration_and_Refugee_Service
+LINKS EXTRACTED: 1
+======================================================================
+https://www.immigrationadvocates.org/nonprofit/legaldirectory/organization.393282-Catholic_Charities_of_Providence_Office_of_Immigration_and_Refugee_Service
+
+======================================================================
+SOURCE: https://www.providenceschools.org/
+LINKS EXTRACTED: 1
+======================================================================
+https://www.providenceschools.org/
+
+======================================================================
+SOURCE: https://www.providenceschools.org/
+LINKS EXTRACTED: 1
+======================================================================
+https://www.providenceschools.org/
+
+======================================================================
+SOURCE: https://enrollri.org/
+LINKS EXTRACTED: 1
+======================================================================
+https://enrollri.org/
+
+======================================================================
+SOURCE: https://www.providenceschools.org/
+LINKS EXTRACTED: 1
+======================================================================
+https://www.providenceschools.org/
+
+======================================================================
+SOURCE: https://enrollri.org/
+LINKS EXTRACTED: 1
+======================================================================
+https://enrollri.org/
+
+======================================================================
+SOURCE: https://www.nuestrasalud.com/
+LINKS EXTRACTED: 1
+======================================================================
+https://www.nuestrasalud.com/
+
+======================================================================
+SOURCE: https://qubeshub.org/community/groups/rios
+LINKS EXTRACTED: 1
+======================================================================
+https://qubeshub.org/community/groups/rios
+
+======================================================================
+SOURCE: https://www.immigrationadvocates.org/nonprofit/legaldirectory/organization.393282-Catholic_Charities_of_Providence_Office_of_Immigration_and_Refugee_Service
+LINKS EXTRACTED: 1
+======================================================================
+https://www.immigrationadvocates.org/nonprofit/legaldirectory/organization.393282-Catholic_Charities_of_Providence_Office_of_Immigration_and_Refugee_Service
+
+======================================================================
+SOURCE: https://www.immigrationadvocates.org/nonprofit/legaldirectory/organization.393284-Dorcas_International_Institute_of_Rhode_Island_Citizenship_and_Immigration
+LINKS EXTRACTED: 1
+======================================================================
+https://www.immigrationadvocates.org/nonprofit/legaldirectory/organization.393284-Dorcas_International_Institute_of_Rhode_Island_Citizenship_and_Immigration
+
+======================================================================
+SOURCE: https://github.com/Math-Data-Justice-Collaborative/VECINA-Nuestra_Salud_data_scraping_and_cleaning/blob/f877a81de34044f97b930d75f3dc5ddc0d691cd8/CT_MA_RI_2020_Hispanic_census_data.csv
+LINKS EXTRACTED: 412
+======================================================================
+data/temp_CT_MA_RI_2020_Hispanic_census_data.csv_1766429326.csv
+
+======================================================================
+SOURCE: https://github.com/Math-Data-Justice-Collaborative/VECINA-Nuestra_Salud_data_scraping_and_cleaning/blob/f877a81de34044f97b930d75f3dc5ddc0d691cd8/Nuestra_Salud_directoria.csv
+LINKS EXTRACTED: 995
+======================================================================
+data/temp_Nuestra_Salud_directoria.csv_1766429334.csv
+
+======================================================================
+SOURCE: https://github.com/Math-Data-Justice-Collaborative/VECINA-Nuestra_Salud_data_scraping_and_cleaning/blob/f877a81de34044f97b930d75f3dc5ddc0d691cd8/tipo_data.csv
+LINKS EXTRACTED: 489
+======================================================================
+data/temp_tipo_data.csv_1766429365.csv
+
+======================================================================
+LINK EXTRACTION SUMMARY
+Timestamp: 2025-12-22T10:50:17.077961
+======================================================================
+
+Source: https://www.providenceschools.org/
+Links found: 1
+----------------------------------------------------------------------
+  • https://www.providenceschools.org/
+
+Source: https://enrollri.org/
+Links found: 1
+----------------------------------------------------------------------
+  • https://enrollri.org/
+
+Source: https://www.nuestrasalud.com/
+Links found: 1
+----------------------------------------------------------------------
+  • https://www.nuestrasalud.com/
+
+Source: https://qubeshub.org/community/groups/rios
+Links found: 1
+----------------------------------------------------------------------
+  • https://qubeshub.org/community/groups/rios
+
+Source: https://www.immigrationadvocates.org/nonprofit/legaldirectory/organization.393282-Catholic_Charities_of_Providence_Office_of_Immigration_and_Refugee_Service
+Links found: 1
+----------------------------------------------------------------------
+  • https://www.immigrationadvocates.org/nonprofit/legaldirectory/organization.393282-Catholic_Charities_of_Providence_Office_of_Immigration_and_Refugee_Service
+
+Source: https://www.immigrationadvocates.org/nonprofit/legaldirectory/organization.393284-Dorcas_International_Institute_of_Rhode_Island_Citizenship_and_Immigration
+Links found: 1
+----------------------------------------------------------------------
+  • https://www.immigrationadvocates.org/nonprofit/legaldirectory/organization.393284-Dorcas_International_Institute_of_Rhode_Island_Citizenship_and_Immigration
+
+Source: https://github.com/Math-Data-Justice-Collaborative/VECINA-Nuestra_Salud_data_scraping_and_cleaning/blob/f877a81de34044f97b930d75f3dc5ddc0d691cd8/CT_MA_RI_2020_Hispanic_census_data.csv
+Links found: 1
+----------------------------------------------------------------------
+  • data/temp_CT_MA_RI_2020_Hispanic_census_data.csv_1766429326.csv
+
+Source: https://github.com/Math-Data-Justice-Collaborative/VECINA-Nuestra_Salud_data_scraping_and_cleaning/blob/f877a81de34044f97b930d75f3dc5ddc0d691cd8/Nuestra_Salud_directoria.csv
+Links found: 1
+----------------------------------------------------------------------
+  • data/temp_Nuestra_Salud_directoria.csv_1766429334.csv
+
+Source: https://github.com/Math-Data-Justice-Collaborative/VECINA-Nuestra_Salud_data_scraping_and_cleaning/blob/f877a81de34044f97b930d75f3dc5ddc0d691cd8/tipo_data.csv
+Links found: 1
+----------------------------------------------------------------------
+  • data/temp_tipo_data.csv_1766429365.csv
+

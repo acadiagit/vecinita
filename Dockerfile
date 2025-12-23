@@ -20,6 +20,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Install any needed packages specified in pyproject.toml
 ENV PYTHONUNBUFFERED=1
+ENV TF_ENABLE_ONEDNN_OPTS=0
 RUN pip install --no-cache-dir --upgrade pip
 # Install the package with only embedding optional dependency (skip dev and visualization to reduce size and network issues)
 # Visualization/pygraphviz pulls huge CUDA libraries that cause SSL download failures
@@ -29,7 +30,7 @@ RUN pip install --no-cache-dir --retries 5 --default-timeout=1000 ".[embedding]"
 RUN rm -rf /var/lib/apt/lists/*
 
 # Pre-cache embedding model to speed up first run (optional)
-RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')" || true
+RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('sentence-transformers/all-mpnet-base-v2')" || true
 
 # Ensure Playwright browsers are installed
 RUN playwright install --with-deps
@@ -38,4 +39,4 @@ RUN playwright install --with-deps
 EXPOSE 8000
 
 # Command to run the application
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "src.agent.main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -56,8 +56,9 @@ logger = logging.getLogger(__name__)
 BATCH_SIZE = 100  # Number of chunks to process in one batch
 EMBEDDING_MODEL = os.getenv(
     "EMBEDDING_MODEL", "text-embedding-3-large")  # OpenAI model - higher quality
-# Local embedding model (384 dims) - matches all-MiniLM-L6-v2 used in main.py
-LOCAL_EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+# Local embedding model name to use when USE_LOCAL_EMBEDDINGS=true
+# Tests expect 'all-mpnet-base-v2'
+LOCAL_EMBEDDING_MODEL = "all-mpnet-base-v2"
 EMBEDDING_DIMENSION = 3072  # OpenAI text-embedding-3-large dimension
 USE_LOCAL_EMBEDDINGS = os.getenv(
     "USE_LOCAL_EMBEDDINGS", "false").lower() == "true"

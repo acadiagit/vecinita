@@ -1,16 +1,21 @@
 #!/bin/bash
 #
-#utils/load_data.sh
-# Orchestrator script for the VECINA data pipeline.
+# data_scrape_load.sh
+# Orchestrator script for the VECINA data pipeline (Bash version)
 # Default mode: Additive. Adds new content without deleting old data.
 # Use "--clean" flag to wipe the database and start fresh.
 #
+# Usage:
+#   bash scripts/data_scrape_load.sh
+#   bash scripts/data_scrape_load.sh --clean
+#
 
 # --- Configuration ---
-CHUNK_FILE="data/new_content_chunks.txt" # Use a different name for new chunks
+CHUNK_FILE="data/new_content_chunks.txt"
+LINKS_FILE="data/extracted_links.txt"
 MAIN_URL_FILE="data/urls.txt"
 FAILED_URL_LOG="data/failed_urls.txt"
-SCRAPER_SCRIPT="src/utils/scraper_to_text.py"
+SCRAPER_MODULE="src.utils.scraper.main"
 LOADER_SCRIPT="src/utils/vector_loader.py"
 APP_CONTAINER_NAME="vecinita-app"
 
@@ -45,15 +50,16 @@ fi
 
 echo "--- 2. CLEANING OLD LOG/CHUNK FILES ---"
 # We still clean the local log/chunk files for this *specific run*
-rm -f "$CHUNK_FILE" "$FAILED_URL_LOG" "vecinita_loader.log"
+rm -f "$CHUNK_FILE" "$FAILED_URL_LOG" "$LINKS_FILE" "vecinita_loader.log"
 touch "$CHUNK_FILE" # Create a new empty chunk file
 
 echo "--- 3. RUNNING INITIAL SCRAPE ---"
 # This run uses the "smart" logic and logs any failures.
-python $SCRAPER_SCRIPT \
+python -m $SCRAPER_MODULE \
     --input "$MAIN_URL_FILE" \
     --output-file "$CHUNK_FILE" \
-    --failed-log "$FAILED_URL_LOG"
+    --failed-log "$FAILED_URL_LOG" \
+    --links-file "$LINKS_FILE"
 
 echo "--- 4. RE-RUNNING FAILED URLS WITH PLAYWRIGHT ---"
 # Check if the failed log exists and is not empty
@@ -62,10 +68,11 @@ if [ -s "$FAILED_URL_LOG" ]; then
     
     # This run forces Playwright for all URLs in the failed log
     # It appends the new chunks to the *same* output file
-    python $SCRAPER_SCRIPT \
+    python -m $SCRAPER_MODULE \
         --input "$FAILED_URL_LOG" \
         --output-file "$CHUNK_FILE" \
-	    --failed-log "$FAILED_URL_LOG" \
+        --failed-log "$FAILED_URL_LOG" \
+        --links-file "$LINKS_FILE" \
         --loader playwright
 else
     echo "No failed URLs found. Skipping re-run."
@@ -82,3 +89,6 @@ echo "--- 6. RESTARTING APPLICATION ---"
 docker restart "$APP_CONTAINER_NAME"
 
 echo "--- ✅ PIPELINE COMPLETE! ---"
+echo "📄 Chunks saved to: $CHUNK_FILE"
+echo "🔗 Links saved to: $LINKS_FILE"
+echo "❌ Failed URLs logged to: $FAILED_URL_LOG"
