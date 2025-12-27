@@ -1,116 +1,124 @@
 """Web search tool for Vecinita agent.
 
-This tool performs external web scraping to retrieve content from URLs
-when the internal database doesn't have sufficient information.
+Provides web search via Tavily when available and falls back to DuckDuckGo
+otherwise. Use when the internal database doesn't have relevant info or for
+external, up-to-date sources.
 """
 
 import logging
-from typing import Optional, Dict, Any
+import os
+from typing import Optional, Dict, Any, List
 from langchain_core.tools import tool
 
 logger = logging.getLogger(__name__)
 
 
 @tool
-def web_search_tool(url: str) -> Optional[Dict[str, Any]]:
-    """Search external web sources for information.
-
-    Use this tool as a FALLBACK when the database search doesn't return
-    relevant results. It scrapes and cleans content from a specified URL.
-
-    IMPORTANT: This tool requires a specific URL to scrape. If you need to
-    search for information but don't have a URL, you should use the database
-    search tool instead.
+def web_search_tool(query: str) -> List[Dict[str, Any]]:
+    """Search the web for information using Tavily or DuckDuckGo.
 
     Args:
-        url: The URL to scrape and extract content from
+        query: The search query to find information on the web.
 
     Returns:
-        A dictionary with 'content' and 'source_url' if successful,
-        or None if scraping fails.
-
-    Example:
-        >>> result = web_search_tool("https://example.com/community-services")
-        >>> if result:
-        ...     print(f"Content: {result['content']}")
-        ...     print(f"Source: {result['source_url']}")
+        A list of result dicts with 'title', 'content'/'snippet', and 'url'.
     """
-    # This will be implemented with actual scraper integration
-    # For now, this is a placeholder that will be properly configured in main.py
+    # Placeholder; real implementation provided by create_web_search_tool
     raise NotImplementedError(
-        "This tool must be configured with scraper components. "
-        "Use create_web_search_tool() to create a properly configured instance."
+        "This tool must be created via create_web_search_tool() to configure "
+        "the provider (Tavily or DuckDuckGo)."
     )
 
 
-def create_web_search_tool(scraper_config: Optional[Dict[str, Any]] = None):
-    """Create a configured web_search tool with access to scraper utilities.
+def create_web_search_tool() -> tool:
+    """Create a configured web_search tool using Tavily or DuckDuckGo.
 
-    Args:
-        scraper_config: Optional configuration for the web scraper
-                       (rate limits, user agents, etc.)
-
-    Returns:
-        A configured tool function that can be used with LangGraph
+    Prefers Tavily when `TAVILY_API_KEY` (or `TVLY_API_KEY`) is set; otherwise
+    falls back to DuckDuckGo. Results are normalized into a list of dicts with
+    keys: 'title', 'content' (or 'snippet'), and 'url'.
     """
-    # Import scraper utilities (avoid circular imports)
-    try:
-        from ..utils.html_cleaner import clean_html
-        from ..utils.scraper_to_text import scrape_url_content
-    except ImportError:
-        logger.warning(
-            "Scraper utilities not available. Web search tool will be limited.")
-        clean_html = None
-        scrape_url_content = None
+    # Support multiple env var names to avoid setup friction
+    tavily_key = (
+        os.getenv("TAVILY_API_KEY")
+        or os.getenv("TAVILY_API_AI_KEY")
+        or os.getenv("TVLY_API_KEY")
+    )
+    use_tavily = bool(tavily_key)
+
+    tavily = None
+    ddg = None
+
+    if use_tavily:
+        try:
+            from langchain_community.tools.tavily_search import TavilySearchResults
+            tavily = TavilySearchResults(
+                max_results=5,
+                search_depth="advanced",
+                include_answer=True,
+                include_raw_content=False,
+                api_key=tavily_key,
+            )
+            logger.info("Web search initialized with Tavily API")
+        except Exception as e:
+            logger.warning(
+                f"Failed to initialize Tavily, falling back to DuckDuckGo: {e}")
+            use_tavily = False
+
+    if not use_tavily:
+        try:
+            from langchain_community.tools import DuckDuckGoSearchResults
+            ddg = DuckDuckGoSearchResults(num_results=5)
+            logger.info("Web search initialized with DuckDuckGo")
+        except Exception as e:
+            logger.error(f"Failed to initialize DuckDuckGo search: {e}")
 
     @tool
-    def web_search(url: str) -> Optional[Dict[str, Any]]:
-        """Search external web sources for information.
-
-        Use this tool as a FALLBACK when the database search doesn't return
-        relevant results. It scrapes and cleans content from a specified URL.
+    def web_search(query: str) -> List[Dict[str, Any]]:
+        """Search the web for information.
 
         Args:
-            url: The URL to scrape and extract content from
+            query: The search query
 
         Returns:
-            A dictionary with 'content' and 'source_url' if successful,
-            or None if scraping fails.
+            List of normalized results with 'title', 'content'/'snippet', 'url'.
         """
         try:
-            logger.info(f"Web Search: Scraping content from URL: {url}")
+            if use_tavily and tavily is not None:
+                logger.info(f"Web search (Tavily): {query}")
+                results = tavily.invoke({"query": query})
+                normalized: List[Dict[str, Any]] = []
+                for r in results or []:
+                    normalized.append({
+                        "title": r.get("title") or "",
+                        "content": r.get("content") or r.get("answer") or "",
+                        "url": r.get("url") or r.get("source") or "",
+                    })
+                return normalized
 
-            # Validate URL format
-            if not url.startswith(('http://', 'https://')):
-                logger.error(f"Web Search: Invalid URL format: {url}")
-                return None
+            # DuckDuckGo fallback
+            if ddg is not None:
+                logger.info(f"Web search (DuckDuckGo): {query}")
+                results = ddg.invoke(query)
+                normalized: List[Dict[str, Any]] = []
+                if isinstance(results, list):
+                    for r in results:
+                        normalized.append({
+                            "title": r.get("title") or "",
+                            "content": r.get("snippet") or "",
+                            "url": r.get("link") or "",
+                        })
+                elif isinstance(results, str) and results:
+                    normalized.append({
+                        "title": "DuckDuckGo Result",
+                        "content": results,
+                        "url": "",
+                    })
+                return normalized
 
-            # For now, return a placeholder since we need to properly integrate
-            # the scraper utilities which may require async operations
-            logger.warning(
-                "Web Search: Full scraper integration pending. Returning placeholder.")
-
-            return {
-                'content': f"Web scraping for {url} is not yet fully implemented. "
-                "Please use the database search tool for now.",
-                'source_url': url,
-                'scraped': False
-            }
-
-            # TODO: Implement full scraping logic
-            # if scrape_url_content:
-            #     raw_content = scrape_url_content(url)
-            #     if raw_content and clean_html:
-            #         cleaned_content = clean_html(raw_content)
-            #         return {
-            #             'content': cleaned_content,
-            #             'source_url': url,
-            #             'scraped': True
-            #         }
-            # return None
-
+            logger.error("No web search provider available")
+            return []
         except Exception as e:
-            logger.error(f"Web Search: Error scraping URL {url}: {e}")
-            return None
+            logger.error(f"Web search error: {e}")
+            return []
 
     return web_search

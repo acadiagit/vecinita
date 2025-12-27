@@ -207,7 +207,7 @@ async def ask_question(question: str, thread_id: str = "default"):
             REGLAS A SEGUIR:
             1. Intenta primero con static_response_tool para preguntas sobre Vecinita
             2. Si no hay respuesta estática, usa db_search para buscar en documentos internos
-            3. Solo usa web_search si los otros métodos no funcionan (requiere URL específica)
+            3. Usa web_search como ÚLTIMO RECURSO para buscar información externa
             4. Al final de tu respuesta, DEBES citar la fuente. Ejemplo: "(Fuente: https://ejemplo.com)"
             5. Si no encuentras información, di: "No pude encontrar una respuesta definitiva en los documentos proporcionados."
             6. Responde SIEMPRE en español
@@ -220,12 +220,12 @@ async def ask_question(question: str, thread_id: str = "default"):
             AVAILABLE TOOLS:
             1. static_response_tool: Use FIRST for frequently asked questions about Vecinita
             2. db_search: Search the internal database of community documents
-            3. web_search: Use as LAST RESORT for external information (requires specific URL)
+            3. web_search: Use as LAST RESORT for external information
 
             RULES TO FOLLOW:
             1. Try static_response_tool first for questions about Vecinita itself
             2. If no static answer, use db_search to find information in internal documents
-            3. Only use web_search if other methods fail (requires specific URL)
+            3. Only use web_search if other methods fail
             4. At the end of your answer, you MUST cite sources. Example: "(Source: https://example.com)"
             5. If you cannot find information, state: "I could not find a definitive answer in the provided documents."
             6. Always answer in English
