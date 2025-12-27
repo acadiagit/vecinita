@@ -12,12 +12,23 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from typing import Annotated, TypedDict
 from dotenv import load_dotenv
 from supabase import create_client, Client
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langchain_huggingface import HuggingFaceEmbeddings
 from langdetect import detect, LangDetectException
+from langgraph.graph import StateGraph, START, END
+from langgraph.graph.message import add_messages
+from langgraph.prebuilt import ToolNode
+from langgraph.checkpoint.memory import MemorySaver
+
+# Import tools
+from .tools.db_search import create_db_search_tool
+from .tools.static_response import static_response_tool
+from .tools.web_search import create_web_search_tool
 
 # Load environment variables from .env file
 load_dotenv()
@@ -73,6 +84,64 @@ except Exception as e:
     logger.error(traceback.format_exc())
     raise RuntimeError(f"Failed to initialize clients: {e}")
 
+# --- Define LangGraph State ---
+
+
+class AgentState(TypedDict):
+    """State for the Vecinita agent."""
+    messages: Annotated[list[BaseMessage], add_messages]
+    question: str
+    language: str
+
+
+# --- Initialize Tools ---
+logger.info("Initializing agent tools...")
+db_search_tool_instance = create_db_search_tool(supabase, embedding_model)
+web_search_tool_instance = create_web_search_tool()
+tools = [db_search_tool_instance,
+         static_response_tool, web_search_tool_instance]
+logger.info(f"Initialized {len(tools)} tools: {[tool.name for tool in tools]}")
+
+# Bind tools to LLM
+llm_with_tools = llm.bind_tools(tools)
+
+# --- Define Agent Node ---
+
+
+def agent_node(state: AgentState) -> AgentState:
+    """Agent node that calls the LLM with tool binding."""
+    logger.info("Agent node: Processing messages...")
+    response = llm_with_tools.invoke(state["messages"])
+    return {"messages": [response]}
+
+
+def should_continue(state: AgentState) -> str:
+    """Determine if the agent should continue or end."""
+    last_message = state["messages"][-1]
+    # If there are no tool calls, we're done
+    if not hasattr(last_message, "tool_calls") or not last_message.tool_calls:
+        return END
+    return "tools"
+
+
+# --- Build LangGraph ---
+logger.info("Building LangGraph workflow...")
+workflow = StateGraph(AgentState)
+
+# Add nodes
+workflow.add_node("agent", agent_node)
+workflow.add_node("tools", ToolNode(tools))
+
+# Add edges
+workflow.add_edge(START, "agent")
+workflow.add_conditional_edges("agent", should_continue, ["tools", END])
+workflow.add_edge("tools", "agent")
+
+# Compile with memory
+memory = MemorySaver()
+graph = workflow.compile(checkpointer=memory)
+logger.info("LangGraph workflow compiled successfully")
+
 # --- API Endpoints ---
 
 # --- THIS IS THE NEW ROOT ENDPOINT ---
@@ -106,115 +175,90 @@ async def get_favicon():
 
 
 @app.get("/ask")
-async def ask_question(question: str):
-    """Handles Q&A requests from the UI or API"""
+async def ask_question(question: str, thread_id: str = "default"):
+    """Handles Q&A requests from the UI or API using LangGraph agent"""
     if not question:
         raise HTTPException(
             status_code=400, detail="Question parameter cannot be empty.")
 
     try:
-        lang = detect(question)
-    except LangDetectException:
-        lang = "en"
-        logger.warning(
-            f"Language detection failed for question: '{question}'. Defaulting to English.")
+        # Detect language
+        try:
+            lang = detect(question)
+        except LangDetectException:
+            lang = "en"
+            logger.warning(
+                f"Language detection failed for question: '{question}'. Defaulting to English.")
 
-    logger.info(
-        f"\n--- New request received: '{question}' (Detected Language: {lang}) ---")
+        logger.info(
+            f"\n--- New request received: '{question}' (Detected Language: {lang}, Thread: {thread_id}) ---")
 
-    try:
-        logger.debug(f"Building prompt template for language: {lang}")
+        # Build system prompt based on language
         if lang == 'es':
-            prompt_template_str = """
+            system_prompt = """
             Eres un asistente comunitario, servicial y profesional para el proyecto Vecinita.
-            Tu objetivo es dar respuestas claras, concisas y precisas basadas únicamente en el siguiente contexto.
+            Tu objetivo es dar respuestas claras, concisas y precisas basadas en la información disponible.
 
-            Reglas a seguir:
-            1. Responde directamente a la pregunta del usuario utilizando la información de la sección 'CONTEXTO'.
-            2. No inventes información ni utilices conocimientos fuera del contexto proporcionado.
-            3. Al final de tu respuesta, DEBES citar la fuente de la información. Por ejemplo: "(Fuente: https://ejemplo.com)".
-            4. Si el contexto no contiene la información para responder, DEBES decir: "No pude encontrar una respuesta definitiva en los documentos proporcionados."
-            5. Debes responder en español.
+            HERRAMIENTAS DISPONIBLES:
+            1. static_response_tool: Usa PRIMERO para preguntas frecuentes sobre Vecinita
+            2. db_search: Busca en la base de datos interna de documentos comunitarios
+            3. web_search: Usa como ÚLTIMO RECURSO para buscar información externa
 
-            CONTEXTO:
-            {context}
-
-            PREGUNTA:
-            {question}
-
-            RESPUESTA:
+            REGLAS A SEGUIR:
+            1. Intenta primero con static_response_tool para preguntas sobre Vecinita
+            2. Si no hay respuesta estática, usa db_search para buscar en documentos internos
+            3. Solo usa web_search si los otros métodos no funcionan (requiere URL específica)
+            4. Al final de tu respuesta, DEBES citar la fuente. Ejemplo: "(Fuente: https://ejemplo.com)"
+            5. Si no encuentras información, di: "No pude encontrar una respuesta definitiva en los documentos proporcionados."
+            6. Responde SIEMPRE en español
             """
         else:  # Default to English
-            prompt_template_str = """
+            system_prompt = """
             You are a helpful and professional community assistant for the Vecinita project.
-            Your goal is to provide clear, concise, and accurate answers based *only* on the following context.
+            Your goal is to provide clear, concise, and accurate answers based on available information.
 
-            Follow these rules:
-            1. Directly answer the user's question using the information from the 'CONTEXT' section below.
-            2. Do not make up information or use any knowledge outside of the provided context.
-            3. At the end of your answer, you MUST cite the source of the information. For example: "(Source: https://example.com)".
-            4. If the context does not contain the information to answer, you MUST state: "I could not find a definitive answer in the provided documents."
-            5. You must answer in English.
+            AVAILABLE TOOLS:
+            1. static_response_tool: Use FIRST for frequently asked questions about Vecinita
+            2. db_search: Search the internal database of community documents
+            3. web_search: Use as LAST RESORT for external information (requires specific URL)
 
-            CONTEXT:
-            {context}
-
-            QUESTION:
-            {question}
-
-            ANSWER:
+            RULES TO FOLLOW:
+            1. Try static_response_tool first for questions about Vecinita itself
+            2. If no static answer, use db_search to find information in internal documents
+            3. Only use web_search if other methods fail (requires specific URL)
+            4. At the end of your answer, you MUST cite sources. Example: "(Source: https://example.com)"
+            5. If you cannot find information, state: "I could not find a definitive answer in the provided documents."
+            6. Always answer in English
             """
 
-        logger.info("Generating embedding for question...")
-        question_embedding = embedding_model.embed_query(question)
-        logger.info(
-            f"Embedding generated. Dimension: {len(question_embedding)}")
+        # Create messages for the agent
+        messages = [
+            SystemMessage(content=system_prompt),
+            HumanMessage(content=question)
+        ]
 
-        logger.info("Searching for similar documents in Supabase...")
-        relevant_docs = supabase.rpc(
-            "search_similar_documents",
-            {"query_embedding": question_embedding,
-                "match_threshold": 0.3, "match_count": 5},
-        ).execute()
-        logger.info(
-            f"Found {len(relevant_docs.data) if relevant_docs.data else 0} relevant documents")
+        # Prepare state
+        initial_state = {
+            "messages": messages,
+            "question": question,
+            "language": lang
+        }
 
-        if not relevant_docs.data:
-            answer = "No pude encontrar una respuesta definitiva en los documentos proporcionados." if lang == 'es' else "I could not find a definitive answer in the provided documents."
-            logger.info(
-                "No relevant documents found. Returning fallback message.")
-            return {"answer": answer, "context": []}
+        # Configure graph execution with thread_id for conversation history
+        config = {"configurable": {"thread_id": thread_id}}
 
-        # Debug: Log the structure of the first document to see available fields
-        if relevant_docs.data:
-            logger.debug(
-                f"Sample document keys: {list(relevant_docs.data[0].keys())}")
+        logger.info("Invoking LangGraph agent...")
+        result = graph.invoke(initial_state, config)
+        logger.info("Agent execution completed")
 
-        logger.debug("Building context from retrieved documents...")
-        # Handle different possible field names (source_url, source, url, etc.)
-        context_parts = []
-        for doc in relevant_docs.data:
-            source = doc.get('source_url') or doc.get(
-                'source') or doc.get('url') or 'Unknown source'
-            content = doc.get('content') or doc.get(
-                'text') or doc.get('chunk_text') or ''
-            context_parts.append(f"Content from {source}:\n{content}")
+        # Extract the final answer from messages
+        final_message = result["messages"][-1]
+        answer = final_message.content if hasattr(
+            final_message, "content") else str(final_message)
 
-        context_text = "\n\n---\n\n".join(context_parts)
-        logger.debug(
-            f"Context built. Total length: {len(context_text)} characters")
+        logger.info(f"Agent response: {answer[:200]}...")
 
-        logger.info("Creating prompt template and formatting prompt...")
-        prompt_template = ChatPromptTemplate.from_template(prompt_template_str)
-        prompt = prompt_template.format(
-            context=context_text, question=question)
-        logger.debug(f"Prompt length: {len(prompt)} characters")
-
-        logger.info("Invoking LLM with prompt...")
-        response = llm.invoke(prompt)
-        logger.info("LLM response received successfully")
-
-        return {"answer": response.content, "context": relevant_docs.data}
+        return {"answer": answer, "thread_id": thread_id}
 
     except Exception as e:
         logger.error(f"Error processing question '{question}': {str(e)}")
