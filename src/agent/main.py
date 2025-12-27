@@ -56,12 +56,12 @@ try:
     logger.info("Initializing Supabase client...")
     supabase: Client = create_client(supabase_url, supabase_key)
     logger.info("Supabase client initialized successfully")
-    
+
     logger.info("Initializing ChatGroq LLM...")
     llm = ChatGroq(temperature=0, groq_api_key=groq_api_key,
                    model_name="llama-3.1-8b-instant")
     logger.info("ChatGroq LLM initialized successfully")
-    
+
     # Use all-MiniLM-L6-v2 with 384 dimensions or all-mpnet-base-v2 with 768 dimensions
     # The schema was created for 1536 dimensions, but we'll use 384 for faster inference
     model_name = "sentence-transformers/all-MiniLM-L6-v2"
@@ -116,9 +116,11 @@ async def ask_question(question: str):
         lang = detect(question)
     except LangDetectException:
         lang = "en"
-        logger.warning(f"Language detection failed for question: '{question}'. Defaulting to English.")
+        logger.warning(
+            f"Language detection failed for question: '{question}'. Defaulting to English.")
 
-    logger.info(f"\n--- New request received: '{question}' (Detected Language: {lang}) ---")
+    logger.info(
+        f"\n--- New request received: '{question}' (Detected Language: {lang}) ---")
 
     try:
         logger.debug(f"Building prompt template for language: {lang}")
@@ -165,36 +167,43 @@ async def ask_question(question: str):
 
         logger.info("Generating embedding for question...")
         question_embedding = embedding_model.embed_query(question)
-        logger.info(f"Embedding generated. Dimension: {len(question_embedding)}")
-        
+        logger.info(
+            f"Embedding generated. Dimension: {len(question_embedding)}")
+
         logger.info("Searching for similar documents in Supabase...")
         relevant_docs = supabase.rpc(
             "search_similar_documents",
             {"query_embedding": question_embedding,
                 "match_threshold": 0.3, "match_count": 5},
         ).execute()
-        logger.info(f"Found {len(relevant_docs.data) if relevant_docs.data else 0} relevant documents")
+        logger.info(
+            f"Found {len(relevant_docs.data) if relevant_docs.data else 0} relevant documents")
 
         if not relevant_docs.data:
             answer = "No pude encontrar una respuesta definitiva en los documentos proporcionados." if lang == 'es' else "I could not find a definitive answer in the provided documents."
-            logger.info("No relevant documents found. Returning fallback message.")
+            logger.info(
+                "No relevant documents found. Returning fallback message.")
             return {"answer": answer, "context": []}
 
         # Debug: Log the structure of the first document to see available fields
         if relevant_docs.data:
-            logger.debug(f"Sample document keys: {list(relevant_docs.data[0].keys())}")
-        
+            logger.debug(
+                f"Sample document keys: {list(relevant_docs.data[0].keys())}")
+
         logger.debug("Building context from retrieved documents...")
         # Handle different possible field names (source_url, source, url, etc.)
         context_parts = []
         for doc in relevant_docs.data:
-            source = doc.get('source_url') or doc.get('source') or doc.get('url') or 'Unknown source'
-            content = doc.get('content') or doc.get('text') or doc.get('chunk_text') or ''
+            source = doc.get('source_url') or doc.get(
+                'source') or doc.get('url') or 'Unknown source'
+            content = doc.get('content') or doc.get(
+                'text') or doc.get('chunk_text') or ''
             context_parts.append(f"Content from {source}:\n{content}")
-        
+
         context_text = "\n\n---\n\n".join(context_parts)
-        logger.debug(f"Context built. Total length: {len(context_text)} characters")
-        
+        logger.debug(
+            f"Context built. Total length: {len(context_text)} characters")
+
         logger.info("Creating prompt template and formatting prompt...")
         prompt_template = ChatPromptTemplate.from_template(prompt_template_str)
         prompt = prompt_template.format(
