@@ -77,12 +77,13 @@ class Config:
     APP_CONTAINER_NAME = "vecinita-app"
     LOG_FILE = Path("vecinita_loader.log")
 
-    # Database configuration
-    DB_HOST = "db.dosbzlhijkeircyainwz.supabase.co"
-    DB_PORT = 5432
-    DB_NAME = "postgres"
-    DB_USER = "postgres"
-    DB_PASSWORD = "batesvecinita2025"  # Should use env var in production
+    # Database configuration - loaded from environment variables
+    DB_HOST = os.getenv("DB_HOST", "db.dosbzlhijkeircyainwz.supabase.co")
+    DB_PORT = int(os.getenv("DB_PORT", "5432"))
+    DB_NAME = os.getenv("DB_NAME", "postgres")
+    DB_USER = os.getenv("DB_USER", "postgres")
+    # REQUIRED: Must be set in .env file
+    DB_PASSWORD = os.getenv("DB_PASSWORD")
 
 
 def setup_logging(verbose: bool = False) -> logging.Logger:

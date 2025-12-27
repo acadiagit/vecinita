@@ -34,13 +34,29 @@ if [ "$1" == "--clean" ]; then
     fi
     
     echo "--- 1. CLEANING DATABASE ---"
-    # Set password from your .env file
-    export PGPASSWORD='batesvecinita2025' 
+    # Load database credentials from .env file
+    if [ -f .env ]; then
+        export $(grep -E '^(DB_HOST|DB_PORT|DB_USER|DB_NAME|DB_PASSWORD)=' .env | xargs)
+    fi
+    
+    # Check if password is set
+    if [ -z "$DB_PASSWORD" ]; then
+        echo "[ERROR] DB_PASSWORD not found in .env file"
+        exit 1
+    fi
+    
+    # Set defaults if not found in .env
+    : ${DB_HOST:="db.dosbzlhijkeircyainwz.supabase.co"}
+    : ${DB_PORT:="5432"}
+    : ${DB_USER:="postgres"}
+    : ${DB_NAME:="postgres"}
+    
+    export PGPASSWORD="$DB_PASSWORD"
 
-    psql --host=db.dosbzlhijkeircyainwz.supabase.co \
-         --port=5432 \
-         --username=postgres \
-         --dbname=postgres \
+    psql --host="$DB_HOST" \
+         --port="$DB_PORT" \
+         --username="$DB_USER" \
+         --dbname="$DB_NAME" \
          --set=sslmode=require \
          -c "TRUNCATE TABLE public.document_chunks, public.search_queries, public.processing_queue;"
 else

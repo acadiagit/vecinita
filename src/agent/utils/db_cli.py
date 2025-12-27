@@ -52,7 +52,8 @@ class DBConfig:
             'port': int(os.getenv('DB_PORT', '5432')),
             'database': os.getenv('DB_NAME', 'postgres'),
             'user': os.getenv('DB_USER', 'postgres'),
-            'password': os.getenv('DB_PASSWORD', 'batesvecinita2025'),
+            # REQUIRED: Must be set in .env file
+            'password': os.getenv('DB_PASSWORD'),
             'sslmode': os.getenv('DB_SSLMODE', 'require'),
         }
 

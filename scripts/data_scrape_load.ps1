@@ -58,14 +58,42 @@ if ($Clean) {
     
     Write-Section "1. CLEANING DATABASE"
     
-    # Set password environment variable
-    $env:PGPASSWORD = 'batesvecinita2025'
+    # Load database credentials from .env file
+    if (Test-Path ".env") {
+        Get-Content ".env" | ForEach-Object {
+            if ($_ -match '^DB_PASSWORD=(.*)$') {
+                $env:PGPASSWORD = $matches[1]
+            }
+            if ($_ -match '^DB_HOST=(.*)$') {
+                $script:DB_HOST = $matches[1]
+            }
+            if ($_ -match '^DB_PORT=(.*)$') {
+                $script:DB_PORT = $matches[1]
+            }
+            if ($_ -match '^DB_USER=(.*)$') {
+                $script:DB_USER = $matches[1]
+            }
+            if ($_ -match '^DB_NAME=(.*)$') {
+                $script:DB_NAME = $matches[1]
+            }
+        }
+    }
+    
+    # Set defaults if not found in .env
+    if (-not $env:PGPASSWORD) {
+        Write-Error-Custom "[ERR] DB_PASSWORD not found in .env file"
+        exit 1
+    }
+    if (-not $script:DB_HOST) { $script:DB_HOST = "db.dosbzlhijkeircyainwz.supabase.co" }
+    if (-not $script:DB_PORT) { $script:DB_PORT = "5432" }
+    if (-not $script:DB_USER) { $script:DB_USER = "postgres" }
+    if (-not $script:DB_NAME) { $script:DB_NAME = "postgres" }
     
     try {
-        psql --host=db.dosbzlhijkeircyainwz.supabase.co `
-             --port=5432 `
-             --username=postgres `
-             --dbname=postgres `
+        psql --host=$script:DB_HOST `
+             --port=$script:DB_PORT `
+             --username=$script:DB_USER `
+             --dbname=$script:DB_NAME `
              --set=sslmode=require `
              -c "TRUNCATE TABLE public.document_chunks, public.search_queries, public.processing_queue;"
         
