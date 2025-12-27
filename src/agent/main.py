@@ -5,6 +5,8 @@
 
 import os
 import time
+import logging
+import traceback
 from pathlib import Path
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi import FastAPI, HTTPException
@@ -19,6 +21,13 @@ from langdetect import detect, LangDetectException
 
 # Load environment variables from .env file
 load_dotenv()
+
+# --- Configure Logging ---
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # --- Initialize FastAPI App ---
 app = FastAPI()
@@ -44,14 +53,24 @@ if not supabase_url or not supabase_key or not groq_api_key:
 
 # --- Initialize Clients ---
 try:
+    logger.info("Initializing Supabase client...")
     supabase: Client = create_client(supabase_url, supabase_key)
+    logger.info("Supabase client initialized successfully")
+    
+    logger.info("Initializing ChatGroq LLM...")
     llm = ChatGroq(temperature=0, groq_api_key=groq_api_key,
                    model_name="llama-3.1-8b-instant")
+    logger.info("ChatGroq LLM initialized successfully")
+    
     # Use all-MiniLM-L6-v2 with 384 dimensions or all-mpnet-base-v2 with 768 dimensions
     # The schema was created for 1536 dimensions, but we'll use 384 for faster inference
     model_name = "sentence-transformers/all-MiniLM-L6-v2"
+    logger.info(f"Initializing embedding model: {model_name}...")
     embedding_model = HuggingFaceEmbeddings(model_name=model_name)
+    logger.info("Embedding model initialized successfully")
 except Exception as e:
+    logger.error(f"Failed to initialize clients: {e}")
+    logger.error(traceback.format_exc())
     raise RuntimeError(f"Failed to initialize clients: {e}")
 
 # --- API Endpoints ---
@@ -97,11 +116,12 @@ async def ask_question(question: str):
         lang = detect(question)
     except LangDetectException:
         lang = "en"
+        logger.warning(f"Language detection failed for question: '{question}'. Defaulting to English.")
 
-    print(
-        f"\n--- New request received: '{question}' (Detected Language: {lang}) ---")
+    logger.info(f"\n--- New request received: '{question}' (Detected Language: {lang}) ---")
 
     try:
+        logger.debug(f"Building prompt template for language: {lang}")
         if lang == 'es':
             prompt_template_str = """
             Eres un asistente comunitario, servicial y profesional para el proyecto Vecinita.
@@ -143,28 +163,53 @@ async def ask_question(question: str):
             ANSWER:
             """
 
+        logger.info("Generating embedding for question...")
         question_embedding = embedding_model.embed_query(question)
+        logger.info(f"Embedding generated. Dimension: {len(question_embedding)}")
+        
+        logger.info("Searching for similar documents in Supabase...")
         relevant_docs = supabase.rpc(
             "search_similar_documents",
             {"query_embedding": question_embedding,
                 "match_threshold": 0.3, "match_count": 5},
         ).execute()
+        logger.info(f"Found {len(relevant_docs.data) if relevant_docs.data else 0} relevant documents")
 
         if not relevant_docs.data:
             answer = "No pude encontrar una respuesta definitiva en los documentos proporcionados." if lang == 'es' else "I could not find a definitive answer in the provided documents."
+            logger.info("No relevant documents found. Returning fallback message.")
             return {"answer": answer, "context": []}
 
-        context_text = "\n\n---\n\n".join(
-            [f"Content from {doc['source_url']}:\n{doc['content']}" for doc in relevant_docs.data])
+        # Debug: Log the structure of the first document to see available fields
+        if relevant_docs.data:
+            logger.debug(f"Sample document keys: {list(relevant_docs.data[0].keys())}")
+        
+        logger.debug("Building context from retrieved documents...")
+        # Handle different possible field names (source_url, source, url, etc.)
+        context_parts = []
+        for doc in relevant_docs.data:
+            source = doc.get('source_url') or doc.get('source') or doc.get('url') or 'Unknown source'
+            content = doc.get('content') or doc.get('text') or doc.get('chunk_text') or ''
+            context_parts.append(f"Content from {source}:\n{content}")
+        
+        context_text = "\n\n---\n\n".join(context_parts)
+        logger.debug(f"Context built. Total length: {len(context_text)} characters")
+        
+        logger.info("Creating prompt template and formatting prompt...")
         prompt_template = ChatPromptTemplate.from_template(prompt_template_str)
         prompt = prompt_template.format(
             context=context_text, question=question)
+        logger.debug(f"Prompt length: {len(prompt)} characters")
 
+        logger.info("Invoking LLM with prompt...")
         response = llm.invoke(prompt)
+        logger.info("LLM response received successfully")
 
         return {"answer": response.content, "context": relevant_docs.data}
 
     except Exception as e:
+        logger.error(f"Error processing question '{question}': {str(e)}")
+        logger.error(f"Full traceback:\n{traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
