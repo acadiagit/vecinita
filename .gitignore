@@ -96,23 +96,9 @@ coverage.xml
 
 # --- VECINA Project Specific ---
 
-# Ignore the data directory...
-data/
-
-# ...but DO NOT ignore the main URL list...
-!data/urls.txt
-
-# ...and DO NOT ignore the config files.
-!data/config/
-!data/config/*.txt
-
 # Ignore backup files
 *.bck
 utils/old_vector_loader
 
 # Ignore other project-specific files
-test/
-check_db.sh
-rag_examples.py
-scraper/
 .venv*

@@ -31,6 +31,9 @@ services:
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL}
       OLLAMA_MODEL: ${OLLAMA_MODEL}
 
+      # TensorFlow and Performance
+      TF_ENABLE_ONEDNN_OPTS: "0"
+
       # App runtime
       PORT: "8000"
       PYTHONUNBUFFERED: "1"

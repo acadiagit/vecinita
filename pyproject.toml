@@ -42,6 +42,7 @@ dependencies = [
     "tqdm",
     "gotrue>=2.0.0",
     "langchain-ollama>=1.0.0",
+    "docker>=7.0.0",
     # LangSmith for tracing and monitoring (now compatible with numpy 2.x)
     "langsmith>=0.4.56",
     # Pin onnxruntime and tokenizers to stable versions to avoid Windows compatibility issues
@@ -49,13 +50,19 @@ dependencies = [
     # tokenizers pre-releases require Rust compilation
     "onnxruntime>=1.18.0,<1.24.0.dev; sys_platform == 'win32'",
     "tokenizers>=0.15.0,<0.22.0rc",
-    "sentence-transformers>=5.1.2",
+    # Heavy ML libraries moved to optional extras to keep CI lean
+    # Install these only when needed locally or in production builds
 ]
 
 [project.optional-dependencies]
 embedding = [
     # Local embeddings with SentenceTransformers (optional, use fastembed for main)
-    "sentence-transformers",
+    "sentence-transformers>=5.1.2",
+]
+
+ml = [
+    # Optional TensorFlow/Keras stack (pulls large CUDA libs on Linux runners)
+    "tf-keras>=2.20.1",
 ]
 
 dev = [
@@ -75,6 +82,15 @@ dev = [
     "ipython",
 ]
 
+ci = [
+    # Minimal test dependencies for CI to avoid large installs
+    "pytest",
+    "pytest-asyncio",
+    "pytest-cov",
+    # Keep httpx for API tests without launching browsers
+    "httpx",
+]
+
 visualization = [
     # For graph visualization
     "graphviz",
@@ -91,6 +107,7 @@ vecinita-agent = "src.rag_agent:main"
 vecinita-setup = "src.setup_check:main"
 vecinita-example = "scripts.example_rag_usage:main"
 vecinita-fastapi = "scripts.fastapi_integration_example:main"
+vecinita-scrape = "src.scraper.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/acadiagit/vecinita"

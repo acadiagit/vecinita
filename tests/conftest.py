@@ -61,9 +61,30 @@ def fastapi_client(env_vars, monkeypatch):
     for key, value in env_vars.items():
         monkeypatch.setenv(key, value)
 
-    # Import here (after env setup) to avoid premature initialization
-    from main import app
-    return TestClient(app)
+    # Patch dependencies before importing app
+    from unittest.mock import MagicMock, patch
+    with patch("src.agent.main.create_client") as mock_supabase, \
+            patch("src.agent.main.ChatGroq") as mock_groq, \
+            patch("src.agent.main.HuggingFaceEmbeddings") as mock_embeddings:
+
+        # Setup mocks
+        mock_supabase_client = MagicMock()
+        mock_supabase_client.rpc.return_value.execute.return_value.data = []
+        mock_supabase.return_value = mock_supabase_client
+
+        mock_llm = MagicMock()
+        mock_response = MagicMock()
+        mock_response.content = "Test response"
+        mock_llm.invoke.return_value = mock_response
+        mock_groq.return_value = mock_llm
+
+        mock_embedding_model = MagicMock()
+        mock_embedding_model.embed_query.return_value = [0.1] * 384
+        mock_embeddings.return_value = mock_embedding_model
+
+        # Import after mocks are set
+        from main import app
+        return TestClient(app)
 
 
 @pytest.fixture
