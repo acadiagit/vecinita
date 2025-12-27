@@ -50,14 +50,19 @@ dependencies = [
     # tokenizers pre-releases require Rust compilation
     "onnxruntime>=1.18.0,<1.24.0.dev; sys_platform == 'win32'",
     "tokenizers>=0.15.0,<0.22.0rc",
-    "sentence-transformers>=5.1.2",
-    "tf-keras>=2.20.1",
+    # Heavy ML libraries moved to optional extras to keep CI lean
+    # Install these only when needed locally or in production builds
 ]
 
 [project.optional-dependencies]
 embedding = [
     # Local embeddings with SentenceTransformers (optional, use fastembed for main)
-    "sentence-transformers",
+    "sentence-transformers>=5.1.2",
+]
+
+ml = [
+    # Optional TensorFlow/Keras stack (pulls large CUDA libs on Linux runners)
+    "tf-keras>=2.20.1",
 ]
 
 dev = [
@@ -75,6 +80,15 @@ dev = [
     # Jupyter for experimentation
     "jupyter",
     "ipython",
+]
+
+ci = [
+    # Minimal test dependencies for CI to avoid large installs
+    "pytest",
+    "pytest-asyncio",
+    "pytest-cov",
+    # Keep httpx for API tests without launching browsers
+    "httpx",
 ]
 
 visualization = [

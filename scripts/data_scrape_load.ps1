@@ -44,6 +44,24 @@ function Write-Warning-Custom {
     Write-Host $Message -ForegroundColor Yellow
 }
 
+# --- Helper: Parse DATABASE_URL into components ---
+function Parse-DatabaseUrl {
+    param([string]$Url)
+    # Supports: postgresql://user:pass@host:port/dbname
+    $pattern = '^(?<scheme>postgres(?:ql)?)://(?<user>[^:]+):(?<pass>[^@]+)@(?<host>[^:/]+)(?::(?<port>\d+))?/(?<db>[^\s/?#]+)'
+    $m = [Regex]::Match($Url, $pattern)
+    if ($m.Success) {
+        return [PSCustomObject]@{
+            User = $m.Groups['user'].Value
+            Password = $m.Groups['pass'].Value
+            Host = $m.Groups['host'].Value
+            Port = if ($m.Groups['port'].Success) { $m.Groups['port'].Value } else { '5432' }
+            Database = $m.Groups['db'].Value
+        }
+    }
+    return $null
+}
+
 # --- 1. Check for -Clean Flag ---
 if ($Clean) {
     Write-Section "[WARNING] CLEAN MODE DETECTED"
@@ -58,30 +76,43 @@ if ($Clean) {
     
     Write-Section "1. CLEANING DATABASE"
     
-    # Load database credentials from .env file
+    # Load database credentials from .env file (robust parsing)
     if (Test-Path ".env") {
-        Get-Content ".env" | ForEach-Object {
-            if ($_ -match '^DB_PASSWORD=(.*)$') {
-                $env:PGPASSWORD = $matches[1]
+        $lines = Get-Content ".env" | Where-Object { $_ -match '=' -and $_ -notmatch '^\s*#' }
+        foreach ($line in $lines) {
+            $line = $line.Trim()
+            $line = $line -replace '^export\s+', ''
+            if ($line -match '^DATABASE_URL=(.+)$') {
+                $urlVal = $matches[1].Trim('"').Trim("'")
+                $parsed = Parse-DatabaseUrl -Url $urlVal
+                if ($parsed) {
+                    $script:DB_HOST = $parsed.Host
+                    $script:DB_PORT = $parsed.Port
+                    $script:DB_USER = $parsed.User
+                    $script:DB_NAME = $parsed.Database
+                    $env:PGPASSWORD = $parsed.Password
+                }
+                continue
             }
-            if ($_ -match '^DB_HOST=(.*)$') {
-                $script:DB_HOST = $matches[1]
-            }
-            if ($_ -match '^DB_PORT=(.*)$') {
-                $script:DB_PORT = $matches[1]
-            }
-            if ($_ -match '^DB_USER=(.*)$') {
-                $script:DB_USER = $matches[1]
-            }
-            if ($_ -match '^DB_NAME=(.*)$') {
-                $script:DB_NAME = $matches[1]
-            }
+            if ($line -match '^DB_PASSWORD=(.+)$') { $env:PGPASSWORD = $matches[1].Trim('"').Trim("'") }
+            elseif ($line -match '^DB_HOST=(.+)$') { $script:DB_HOST = $matches[1].Trim('"').Trim("'") }
+            elseif ($line -match '^DB_PORT=(.+)$') { $script:DB_PORT = $matches[1].Trim('"').Trim("'") }
+            elseif ($line -match '^DB_USER=(.+)$') { $script:DB_USER = $matches[1].Trim('"').Trim("'") }
+            elseif ($line -match '^DB_NAME=(.+)$') { $script:DB_NAME = $matches[1].Trim('"').Trim("'") }
         }
     }
     
-    # Set defaults if not found in .env
+    # Prompt for password if not found in .env
     if (-not $env:PGPASSWORD) {
-        Write-Error-Custom "[ERR] DB_PASSWORD not found in .env file"
+        Write-Warning-Custom "[WARN] DB_PASSWORD not found in .env; prompting for input."
+        $securePwd = Read-Host "Enter PostgreSQL password" -AsSecureString
+        if ($securePwd) {
+            $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($securePwd)
+            try { $env:PGPASSWORD = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr) } finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr) }
+        }
+    }
+    if (-not $env:PGPASSWORD) {
+        Write-Error-Custom "[ERR] No database password provided. Aborting clean operation."
         exit 1
     }
     if (-not $script:DB_HOST) { $script:DB_HOST = "db.dosbzlhijkeircyainwz.supabase.co" }
@@ -89,6 +120,12 @@ if ($Clean) {
     if (-not $script:DB_USER) { $script:DB_USER = "postgres" }
     if (-not $script:DB_NAME) { $script:DB_NAME = "postgres" }
     
+    # Ensure psql is available
+    if (-not (Get-Command psql -ErrorAction SilentlyContinue)) {
+        Write-Error-Custom "[ERR] 'psql' command not found. Please install the PostgreSQL client."
+        exit 1
+    }
+
     try {
         psql --host=$script:DB_HOST `
              --port=$script:DB_PORT `

@@ -6409,9 +6409,7 @@ dependencies = [
     { name = "pypdf" },
     { name = "python-dotenv" },
     { name = "requests" },
-    { name = "sentence-transformers" },
     { name = "supabase" },
-    { name = "tf-keras" },
     { name = "tokenizers" },
     { name = "tqdm" },
     { name = "unstructured" },
@@ -6435,6 +6433,12 @@ all = [
     { name = "ruff" },
     { name = "sentence-transformers" },
 ]
+ci = [
+    { name = "httpx" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+]
 dev = [
     { name = "black" },
     { name = "fastapi" },
@@ -6450,6 +6454,9 @@ dev = [
 ]
 embedding = [
     { name = "sentence-transformers" },
+]
+ml = [
+    { name = "tf-keras" },
 ]
 visualization = [
     { name = "graphviz" },
@@ -6472,6 +6479,7 @@ requires-dist = [
     { name = "gotrue", specifier = ">=2.0.0" },
     { name = "graphviz", marker = "extra == 'visualization'" },
     { name = "httpx" },
+    { name = "httpx", marker = "extra == 'ci'" },
     { name = "httpx", marker = "extra == 'dev'" },
     { name = "ipython", marker = "extra == 'dev'" },
     { name = "jupyter", marker = "extra == 'dev'" },
@@ -6493,23 +6501,25 @@ requires-dist = [
     { name = "pydantic" },
     { name = "pygraphviz", marker = "extra == 'visualization'" },
     { name = "pypdf" },
+    { name = "pytest", marker = "extra == 'ci'" },
     { name = "pytest", marker = "extra == 'dev'" },
+    { name = "pytest-asyncio", marker = "extra == 'ci'" },
     { name = "pytest-asyncio", marker = "extra == 'dev'" },
+    { name = "pytest-cov", marker = "extra == 'ci'" },
     { name = "pytest-cov", marker = "extra == 'dev'" },
     { name = "python-dotenv" },
     { name = "requests" },
     { name = "ruff", marker = "extra == 'dev'" },
-    { name = "sentence-transformers", specifier = ">=5.1.2" },
-    { name = "sentence-transformers", marker = "extra == 'embedding'" },
+    { name = "sentence-transformers", marker = "extra == 'embedding'", specifier = ">=5.1.2" },
     { name = "supabase" },
-    { name = "tf-keras", specifier = ">=2.20.1" },
+    { name = "tf-keras", marker = "extra == 'ml'", specifier = ">=2.20.1" },
     { name = "tokenizers", specifier = ">=0.15.0,<0.22.0rc0" },
     { name = "tqdm" },
     { name = "unstructured" },
     { name = "uvicorn" },
     { name = "vecinita", extras = ["dev", "visualization", "embedding"], marker = "extra == 'all'" },
 ]
-provides-extras = ["embedding", "dev", "visualization", "all"]
+provides-extras = ["embedding", "ml", "dev", "ci", "visualization", "all"]
 
 [package.metadata.requires-dev]
 dev = [{ name = "pytest", specifier = ">=9.0.0" }]
