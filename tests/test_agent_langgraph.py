@@ -1,10 +1,38 @@
 """Integration tests for the LangGraph refactored agent.
 
 These tests verify that the agent properly uses tools and responds correctly.
+
+**IMPORTANT:** These are integration tests that require:
+- Valid SUPABASE_URL and SUPABASE_KEY environment variables
+- Valid GROQ_API_KEY environment variable
+- Active Supabase database with search_similar_documents RPC function
+- Network connectivity for API calls
+
+To run these tests:
+    pytest tests/test_agent_langgraph.py -m integration
+
+To skip these tests (e.g., in CI without credentials):
+    pytest tests/test_agent_langgraph.py -m "not integration"
+
+For unit tests with mocked dependencies, see:
+    - test_db_search_tool.py
+    - test_web_search_tool.py
+    - test_static_response_tool.py
 """
 
+import os
 import pytest
 from fastapi.testclient import TestClient
+
+# Skip all integration tests if required environment variables are not set
+pytestmark = pytest.mark.skipif(
+    not all([
+        os.getenv("SUPABASE_URL"),
+        os.getenv("SUPABASE_KEY"),
+        os.getenv("GROQ_API_KEY")
+    ]),
+    reason="Integration tests require SUPABASE_URL, SUPABASE_KEY, and GROQ_API_KEY environment variables"
+)
 
 
 @pytest.mark.integration

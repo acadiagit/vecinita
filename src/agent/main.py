@@ -12,7 +12,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from typing import Annotated, TypedDict
+from typing import Annotated, List, TypedDict
 from dotenv import load_dotenv
 from supabase import create_client, Client
 from langchain_groq import ChatGroq
@@ -89,7 +89,7 @@ except Exception as e:
 
 class AgentState(TypedDict):
     """State for the Vecinita agent."""
-    messages: Annotated[list[BaseMessage], add_messages]
+    messages: Annotated[List[BaseMessage], add_messages]
     question: str
     language: str
 

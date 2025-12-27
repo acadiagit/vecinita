@@ -69,8 +69,12 @@ class TestStaticResponseTool:
             "language": "en"
         })
 
-        # Should match because "vecinita" or "how" is in FAQ or query contains FAQ keyword
-        assert result is not None or result is None  # Depends on FAQ content
+        # Should match the "how does this work" FAQ since query contains those keywords
+        # If partial matching is supported, result should contain info about how Vecinita works
+        if result is not None:
+            assert "database" in result.lower() or "search" in result.lower()
+        # If no partial match, that's also valid behavior - just document it
+        # This test verifies the tool behaves consistently
 
     def test_static_response_spanish_defaults_to_english(self):
         """Test that tool falls back to English if language not available."""

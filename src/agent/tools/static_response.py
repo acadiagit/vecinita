@@ -55,12 +55,22 @@ def static_response_tool(query: str, language: str = "en") -> Optional[str]:
         # Get FAQs for the detected language, default to English
         faqs = FAQ_DATABASE.get(language, FAQ_DATABASE.get("en", {}))
 
-        # Check for exact or partial matches
-        for faq_key, faq_answer in faqs.items():
-            if faq_key in normalized_query or normalized_query in faq_key:
-                logger.info(
-                    f"Static Response: Found FAQ match for key: '{faq_key}'")
-                return faq_answer
+        # Check for exact match first (highest priority)
+        if normalized_query in faqs:
+            logger.info(
+                f"Static Response: Found exact FAQ match for: '{normalized_query}'")
+            return faqs[normalized_query]
+
+        # Check for partial matches only if query is substantial (avoid false positives)
+        # Minimum length threshold prevents matching short words like "what", "how", "the"
+        MIN_QUERY_LENGTH = 10
+        if len(normalized_query) >= MIN_QUERY_LENGTH:
+            for faq_key, faq_answer in faqs.items():
+                # Match if FAQ key is contained in query or vice versa
+                if faq_key in normalized_query or normalized_query in faq_key:
+                    logger.info(
+                        f"Static Response: Found partial FAQ match for key: '{faq_key}'")
+                    return faq_answer
 
         logger.info("Static Response: No FAQ match found")
         return None

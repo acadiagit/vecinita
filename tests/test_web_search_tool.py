@@ -45,6 +45,10 @@ class TestWebSearchToolWithTavily:
         tool = create_web_search_tool()
         results = tool.invoke("health services")
 
+        # Verify Tavily was called with correct query
+        mock_tavily.invoke.assert_called_once_with(
+            {"query": "health services"})
+
         assert len(results) == 1
         assert results[0]["title"] == "Health Services"
         assert results[0]["content"] == "Information about local health services"
@@ -111,6 +115,9 @@ class TestWebSearchToolWithDuckDuckGo:
         tool = create_web_search_tool()
         results = tool.invoke("test query")
 
+        # Verify DuckDuckGo was called with correct query
+        mock_ddg.invoke.assert_called_once_with("test query")
+
         assert len(results) == 2
         assert results[0]["title"] == "Result 1"
         assert results[0]["content"] == "First result snippet"
@@ -127,6 +134,9 @@ class TestWebSearchToolWithDuckDuckGo:
         tool = create_web_search_tool()
         results = tool.invoke("test query")
 
+        # Verify DuckDuckGo was called with correct query
+        mock_ddg.invoke.assert_called_once_with("test query")
+
         assert len(results) == 1
         assert results[0]["title"] == "DuckDuckGo Result"
         assert results[0]["content"] == "Some search result text"
@@ -141,6 +151,9 @@ class TestWebSearchToolWithDuckDuckGo:
 
         tool = create_web_search_tool()
         results = tool.invoke("test query")
+
+        # Verify DuckDuckGo was called with correct query
+        mock_ddg.invoke.assert_called_once_with("test query")
 
         assert results == []
 
@@ -161,6 +174,9 @@ class TestWebSearchToolErrorHandling:
 
             tool = create_web_search_tool()
             results = tool.invoke("test")
+
+            # Verify DuckDuckGo was called with correct query
+            mock_ddg.invoke.assert_called_once_with("test")
 
             # Should use DuckDuckGo
             assert len(results) == 1

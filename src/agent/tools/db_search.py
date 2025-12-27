@@ -11,6 +11,31 @@ from langchain_core.tools import tool
 logger = logging.getLogger(__name__)
 
 
+def _normalize_document(doc: Dict[str, Any]) -> Dict[str, Any]:
+    """Normalize document field names from Supabase response.
+
+    Different Supabase schemas may use different field names.
+    This function provides fallback logic to handle variations.
+
+    Args:
+        doc: Raw document dictionary from Supabase
+
+    Returns:
+        Normalized document with 'content', 'source_url', and 'similarity' fields
+    """
+    source = doc.get('source_url') or doc.get(
+        'source') or doc.get('url') or 'Unknown source'
+    content = doc.get('content') or doc.get(
+        'text') or doc.get('chunk_text') or ''
+    similarity = doc.get('similarity', 0.0)
+
+    return {
+        'content': content,
+        'source_url': source,
+        'similarity': similarity
+    }
+
+
 @tool
 def db_search_tool(query: str) -> List[Dict[str, Any]]:
     """Search the internal knowledge base for relevant information.
@@ -92,20 +117,8 @@ def create_db_search_tool(supabase_client, embedding_model, match_threshold: flo
             if not relevant_docs.data:
                 return []
 
-            # Normalize document format
-            results = []
-            for doc in relevant_docs.data:
-                source = doc.get('source_url') or doc.get(
-                    'source') or doc.get('url') or 'Unknown source'
-                content = doc.get('content') or doc.get(
-                    'text') or doc.get('chunk_text') or ''
-                similarity = doc.get('similarity', 0.0)
-
-                results.append({
-                    'content': content,
-                    'source_url': source,
-                    'similarity': similarity
-                })
+            # Normalize document format using helper function
+            results = [_normalize_document(doc) for doc in relevant_docs.data]
 
             return results
 

@@ -82,11 +82,12 @@ def create_web_search_tool() -> tool:
         Returns:
             List of normalized results with 'title', 'content'/'snippet', 'url'.
         """
+        normalized: List[Dict[str, Any]] = []
+
         try:
             if use_tavily and tavily is not None:
                 logger.info(f"Web search (Tavily): {query}")
                 results = tavily.invoke({"query": query})
-                normalized: List[Dict[str, Any]] = []
                 for r in results or []:
                     normalized.append({
                         "title": r.get("title") or "",
@@ -99,7 +100,6 @@ def create_web_search_tool() -> tool:
             if ddg is not None:
                 logger.info(f"Web search (DuckDuckGo): {query}")
                 results = ddg.invoke(query)
-                normalized: List[Dict[str, Any]] = []
                 if isinstance(results, list):
                     for r in results:
                         normalized.append({
