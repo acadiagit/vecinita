@@ -19,6 +19,7 @@ from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
 from langdetect import detect, LangDetectException
 from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages
@@ -73,12 +74,19 @@ try:
                    model_name="llama-3.1-8b-instant")
     logger.info("ChatGroq LLM initialized successfully")
 
-    # Use all-MiniLM-L6-v2 with 384 dimensions or all-mpnet-base-v2 with 768 dimensions
-    # The schema was created for 1536 dimensions, but we'll use 384 for faster inference
+    # Use all-MiniLM-L6-v2 with 384 dimensions by default.
+    # If sentence-transformers is unavailable (CI minimal deps), fall back to FastEmbed.
     model_name = "sentence-transformers/all-MiniLM-L6-v2"
     logger.info(f"Initializing embedding model: {model_name}...")
-    embedding_model = HuggingFaceEmbeddings(model_name=model_name)
-    logger.info("Embedding model initialized successfully")
+    try:
+        embedding_model = HuggingFaceEmbeddings(model_name=model_name)
+        logger.info("Embedding model initialized successfully (HuggingFace)")
+    except Exception as emb_exc:
+        logger.warning(
+            f"HuggingFaceEmbeddings unavailable ({emb_exc}); falling back to FastEmbedEmbeddings."
+        )
+        embedding_model = FastEmbedEmbeddings()
+        logger.info("Embedding model initialized successfully (FastEmbed)")
 except Exception as e:
     logger.error(f"Failed to initialize clients: {e}")
     logger.error(traceback.format_exc())
@@ -192,6 +200,19 @@ async def ask_question(question: str, thread_id: str = "default"):
 
         logger.info(
             f"\n--- New request received: '{question}' (Detected Language: {lang}, Thread: {thread_id}) ---")
+
+        # Try static response first for deterministic FAQ handling in both languages
+        try:
+            static_answer = static_response_tool.invoke({
+                "query": question,
+                "language": lang
+            })
+            if static_answer:
+                logger.info(
+                    "Returning static FAQ answer without invoking agent.")
+                return {"answer": static_answer, "thread_id": thread_id}
+        except Exception as static_exc:
+            logger.warning(f"Static response check failed: {static_exc}")
 
         # Build system prompt based on language
         if lang == 'es':
