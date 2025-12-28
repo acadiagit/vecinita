@@ -28,7 +28,7 @@ from langgraph.checkpoint.memory import MemorySaver
 
 # Import tools
 from .tools.db_search import create_db_search_tool
-from .tools.static_response import static_response_tool
+from .tools.static_response import static_response_tool, list_faqs
 from .tools.web_search import create_web_search_tool
 
 # Load environment variables from .env file
@@ -119,8 +119,47 @@ llm_with_tools = llm.bind_tools(tools)
 def agent_node(state: AgentState) -> AgentState:
     """Agent node that calls the LLM with tool binding."""
     logger.info("Agent node: Processing messages...")
-    response = llm_with_tools.invoke(state["messages"])
-    return {"messages": [response]}
+    # Rate-limit handling: retry on Groq 429 errors with suggested wait
+    # Import groq lazily to avoid hard dependency in environments where it's unavailable
+    try:
+        import re
+        import groq  # type: ignore
+    except Exception:
+        re = None
+        groq = None
+
+    attempts = 0
+    max_attempts = 3
+    last_exc = None
+    while attempts < max_attempts:
+        try:
+            response = llm_with_tools.invoke(state["messages"])
+            return {"messages": [response]}
+        except Exception as e:
+            last_exc = e
+            is_rate_limit = e.__class__.__name__ == "RateLimitError" or (
+                groq is not None and isinstance(
+                    e, getattr(groq, "RateLimitError", Exception))
+            )
+            if not is_rate_limit:
+                raise
+            # Parse suggested wait time from message, fallback to 5s
+            wait_seconds = 5.0
+            msg = str(e)
+            if re is not None:
+                m = re.search(r"try again in ([0-9]+(?:\.[0-9]+)?)s", msg)
+                if m:
+                    try:
+                        wait_seconds = float(m.group(1))
+                    except Exception:
+                        pass
+            logger.warning(
+                f"Groq rate limit hit. Waiting {wait_seconds:.2f}s before retry ({attempts+1}/{max_attempts})."
+            )
+            time.sleep(wait_seconds)
+            attempts += 1
+    # If all retries failed, re-raise the last exception
+    raise last_exc
 
 
 def should_continue(state: AgentState) -> str:
@@ -151,6 +190,43 @@ graph = workflow.compile(checkpointer=memory)
 logger.info("LangGraph workflow compiled successfully")
 
 # --- API Endpoints ---
+
+# --- Helper: Deterministic static FAQ matcher ---
+
+
+def _find_static_faq_answer(question: str, language: str) -> str | None:
+    try:
+        import string
+        import unicodedata
+        q = question.lower().strip()
+        table = str.maketrans('', '', string.punctuation + "¿¡")
+        q_clean = q.translate(table)
+        # Remove accents for robust matching
+
+        def _unaccent(s: str) -> str:
+            return ''.join(c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn')
+        q_unaccent = _unaccent(q_clean)
+        faqs = list_faqs(language) or {}
+        # Exact match against original
+        if q in faqs:
+            return faqs[q]
+        # Exact match against cleaned
+        for k, v in faqs.items():
+            if k.translate(table) == q_clean:
+                return v
+        # Partial match using cleaned strings
+        if len(q_clean) >= 10:
+            for k, v in faqs.items():
+                k_clean = k.translate(table)
+                k_unaccent = _unaccent(k_clean)
+                if (
+                    k_clean in q_clean or q_clean in k_clean or
+                    k_unaccent in q_unaccent or q_unaccent in k_unaccent
+                ):
+                    return v
+        return None
+    except Exception:
+        return None
 
 # --- THIS IS THE NEW ROOT ENDPOINT ---
 
@@ -196,12 +272,21 @@ async def ask_question(question: str, thread_id: str = "default"):
         except LangDetectException:
             lang = "en"
             logger.warning(
-                f"Language detection failed for question: '{question}'. Defaulting to English.")
+                "Language detection failed for question: '%s'. Defaulting to English.", question)
+        # Heuristic override: treat as Spanish if question contains Spanish punctuation or accents
+        if lang != 'es':
+            if any(ch in question for ch in ['¿', '¡', 'á', 'é', 'í', 'ó', 'ú', 'ñ']):
+                lang = 'es'
 
         logger.info(
             f"\n--- New request received: '{question}' (Detected Language: {lang}, Thread: {thread_id}) ---")
 
         # Try static response first for deterministic FAQ handling in both languages
+        local_static = _find_static_faq_answer(question, lang)
+        if local_static:
+            logger.info("Returning static FAQ answer (local matcher).")
+            return {"answer": local_static, "thread_id": thread_id}
+        # Fallback to tool-based static matcher (optional)
         try:
             static_answer = static_response_tool.invoke({
                 "query": question,
@@ -209,7 +294,7 @@ async def ask_question(question: str, thread_id: str = "default"):
             })
             if static_answer:
                 logger.info(
-                    "Returning static FAQ answer without invoking agent.")
+                    "Returning static FAQ answer without invoking agent (tool).")
                 return {"answer": static_answer, "thread_id": thread_id}
         except Exception as static_exc:
             logger.warning(f"Static response check failed: {static_exc}")
@@ -282,8 +367,42 @@ async def ask_question(question: str, thread_id: str = "default"):
         return {"answer": answer, "thread_id": thread_id}
 
     except Exception as e:
-        logger.error(f"Error processing question '{question}': {str(e)}")
-        logger.error(f"Full traceback:\n{traceback.format_exc()}")
+        logger.error("Error processing question '%s': %s", question, str(e))
+        logger.error("Full traceback:\n%s", traceback.format_exc())
+        # Graceful handling of Groq rate limits: return a friendly message instead of 500
+        try:
+            import re
+            import groq  # type: ignore
+        except Exception:
+            re = None
+            groq = None
+        is_rate_limit = e.__class__.__name__ == "RateLimitError" or (
+            groq is not None and isinstance(
+                e, getattr(groq, "RateLimitError", Exception))
+        )
+        if is_rate_limit:
+            wait_seconds = 10.0
+            msg = str(e)
+            if re is not None:
+                m = re.search(r"try again in ([0-9]+(?:\.[0-9]+)?)s", msg)
+                if m:
+                    try:
+                        wait_seconds = float(m.group(1))
+                    except Exception:
+                        pass
+            # Language-aware fallback
+            if 'lang' in locals() and lang == 'es':
+                fallback = (
+                    f"El asistente está limitado por tasa temporalmente. Intenta nuevamente en {wait_seconds:.0f} segundos. "
+                    "Si necesitas una descripción rápida: Vecinita es un asistente comunitario de preguntas y respuestas (Q&A)."
+                )
+            else:
+                fallback = (
+                    f"The assistant is temporarily rate limited. Please try again in {wait_seconds:.0f} seconds. "
+                    "Quick summary: Vecinita is a community Q&A assistant."
+                )
+            return {"answer": fallback, "thread_id": thread_id}
+        # Non-rate-limit errors: propagate as HTTP 500
         raise HTTPException(status_code=500, detail=str(e))
 
 

@@ -5,6 +5,7 @@ without needing to search the database or external sources.
 """
 
 import logging
+import string
 from typing import Optional
 from langchain_core.tools import tool
 
@@ -52,8 +53,10 @@ def static_response_tool(query: str, language: str = "en") -> Optional[str]:
         logger.info(
             f"Static Response: Checking FAQ for query: '{query}' in language: {language}")
 
-        # Normalize query: lowercase and strip
+        # Normalize query: lowercase and strip + remove punctuation (incl. Spanish ¿¡)
         normalized_query = query.lower().strip()
+        punctuation_table = str.maketrans('', '', string.punctuation + "¿¡")
+        normalized_query_clean = normalized_query.translate(punctuation_table)
 
         # Get FAQs for the detected language, default to English
         faqs = FAQ_DATABASE.get(language, FAQ_DATABASE.get("en", {}))
@@ -63,13 +66,21 @@ def static_response_tool(query: str, language: str = "en") -> Optional[str]:
             logger.info(
                 f"Static Response: Found exact FAQ match for: '{normalized_query}'")
             return faqs[normalized_query]
+        # Also check exact match against cleaned query to handle punctuation
+        for faq_key, faq_answer in faqs.items():
+            if faq_key.translate(punctuation_table) == normalized_query_clean:
+                logger.info(
+                    f"Static Response: Found exact cleaned FAQ match for: '{normalized_query_clean}'")
+                return faq_answer
 
         # Check for partial matches only if query is substantial (avoid false positives)
         # Minimum length threshold prevents matching short words like "what", "how", "the"
-        if len(normalized_query) >= MIN_QUERY_LENGTH:
+        if len(normalized_query_clean) >= MIN_QUERY_LENGTH:
             for faq_key, faq_answer in faqs.items():
+                # Compare against cleaned versions to handle punctuation
+                faq_key_clean = faq_key.translate(punctuation_table)
                 # Match if FAQ key is contained in query or vice versa
-                if faq_key in normalized_query or normalized_query in faq_key:
+                if faq_key_clean in normalized_query_clean or normalized_query_clean in faq_key_clean:
                     logger.info(
                         f"Static Response: Found partial FAQ match for key: '{faq_key}'")
                     return faq_answer
