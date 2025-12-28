@@ -5,11 +5,15 @@ FROM mcr.microsoft.com/playwright/python:v1.49.0-jammy
 # Set the working directory in the container
 WORKDIR /app
 
-# Copy pyproject.toml and README.md for dependency installation
-COPY pyproject.toml README.md ./
+# Note: This root Dockerfile is kept for convenience builds.
+# The canonical backend Dockerfile lives in ./backend/Dockerfile and is used by docker-compose.
+# Copy backend Python project manifest for dependency installation
+COPY backend/pyproject.toml ./
 
-# Copy source code needed for package installation
-COPY src/ ./src/
+# Copy backend source code needed for package installation
+COPY backend/src/ ./src/
+COPY backend/scripts/ ./scripts/
+COPY backend/tests/ ./tests/
 
 # Install system dependencies required for building packages (graphviz, build tools)
 RUN apt-get update && apt-get install -y --no-install-recommends \

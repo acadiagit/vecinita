@@ -1,0 +1,11 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/components.json",
+  "name": "vecinita-frontend",
+  "rsc": false,
+  "style": "default",
+  "tsx": false,
+  "aliases": {
+    "components": "src/components",
+    "utils": "src/lib/utils"
+  }
+}
