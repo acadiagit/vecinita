@@ -34,7 +34,8 @@ RUN pip install --no-cache-dir --retries 5 --default-timeout=1000 ".[embedding]"
 RUN rm -rf /var/lib/apt/lists/*
 
 # Pre-cache embedding model to speed up first run (optional)
-RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('sentence-transformers/all-mpnet-base-v2')" || true
+# Align with default used in app (all-MiniLM-L6-v2)
+RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')" || true
 
 # Ensure Playwright browsers are installed
 RUN playwright install --with-deps

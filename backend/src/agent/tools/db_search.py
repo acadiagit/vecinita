@@ -6,6 +6,7 @@ to retrieve relevant document chunks for answering user questions.
 
 import logging
 from typing import List, Dict, Any
+import json
 from langchain_core.tools import tool
 
 logger = logging.getLogger(__name__)
@@ -139,7 +140,7 @@ def create_db_search_tool(supabase_client, embedding_model, match_threshold: flo
         A configured tool function that can be used with LangGraph
     """
     @tool
-    def db_search(query: str) -> List[Dict[str, Any]]:
+    def db_search(query: str) -> str:
         """Search the internal knowledge base for relevant information.
 
         Use this tool to find information from the Vecinita document database.
@@ -150,8 +151,8 @@ def create_db_search_tool(supabase_client, embedding_model, match_threshold: flo
             query: The user's question or search query
 
         Returns:
-            A list of relevant documents with content and source URLs.
-            Returns an empty list if no relevant documents are found.
+            A JSON string of relevant documents with content and source URLs.
+            Returns "[]" (string) if no relevant documents are found.
         """
         try:
             logger.info(
@@ -175,15 +176,17 @@ def create_db_search_tool(supabase_client, embedding_model, match_threshold: flo
                 f"DB Search: Found {len(relevant_docs.data) if relevant_docs.data else 0} relevant documents")
 
             if not relevant_docs.data:
-                return []
+                # Return an empty JSON array as a string to satisfy chat API
+                return "[]"
 
             # Normalize document format using helper function
             results = [_normalize_document(doc) for doc in relevant_docs.data]
 
-            return results
+            # Return as JSON string for tool message content
+            return json.dumps(results, ensure_ascii=False)
 
         except Exception as e:
             logger.error(f"DB Search: {_format_db_error(e)}: {e}")
-            return []
+            return json.dumps({"error": _format_db_error(e)}, ensure_ascii=False)
 
     return db_search

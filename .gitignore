@@ -102,3 +102,11 @@ utils/old_vector_loader
 
 # Ignore other project-specific files
 .venv*
+
+# Frontend (Vite/Node)
+# Ignore Node.js dependencies and build outputs
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/
+frontend/.eslintcache

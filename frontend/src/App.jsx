@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Button } from './components/ui/button'
 import { Input } from './components/ui/input'
+import ChatWidget from './components/chat/ChatWidget'
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'
 
@@ -71,6 +72,9 @@ export default function App() {
           </div>
         )}
       </div>
+
+      {/* Floating chat widget */}
+      <ChatWidget backendUrl={backendUrl} />
     </div>
   )
 }

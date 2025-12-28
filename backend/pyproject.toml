@@ -52,6 +52,8 @@ dependencies = [
     "tokenizers>=0.15.0,<0.22.0rc",
     # Heavy ML libraries moved to optional extras to keep CI lean
     # Install these only when needed locally or in production builds
+    "sentence-transformers>=5.2.0",
+    "ddgs>=9.10.0",
 ]
 
 [project.optional-dependencies]

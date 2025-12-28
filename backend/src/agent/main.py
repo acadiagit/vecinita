@@ -4,12 +4,13 @@
 # Serves the index.html UI at the root "/" endpoint.
 
 import os
+import json
 import time
 import logging
 import traceback
 from pathlib import Path
 from fastapi.responses import FileResponse, JSONResponse
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from typing import Annotated, List, TypedDict
@@ -233,16 +234,26 @@ def _find_static_faq_answer(question: str, language: str) -> str | None:
 
 @app.get("/", response_class=FileResponse)
 async def get_ui():
-    """Serves the main chat UI (index.html)"""
-    # Get the directory of this file and construct the path to index.html
-    index_path = Path(__file__).parent / "static" / "index.html"
-    if not index_path.exists():
-        # Provide a helpful error if the UI file is missing
-        raise HTTPException(
-            status_code=404,
-            detail=f"UI not found. Expected file at: {index_path}. Ensure the static assets are built and available.",
-        )
-    return FileResponse(index_path)
+    """Serves the main chat UI (index.html). Falls back to alternate locations if needed."""
+    # Primary: alongside this module (backend/src/agent/static/index.html)
+    primary = Path(__file__).parent / "static" / "index.html"
+    # Fallback: legacy root layout (repo/src/agent/static/index.html)
+    legacy = Path(__file__).parents[3] / "src" / \
+        "agent" / "static" / "index.html"
+    for candidate in (primary, legacy):
+        if candidate.exists():
+            return FileResponse(candidate)
+    # Provide a helpful error if the UI file is missing
+    raise HTTPException(
+        status_code=404,
+        detail=(
+            "UI not found. Checked: "
+            f"{primary} and {legacy}. "
+            "If you are using the separate frontend, open http://localhost:3000. "
+            "For local backend dev after the repo restructure, run from the backend folder: "
+            "'cd backend && uv run -m uvicorn src.agent.main:app --reload'"
+        ),
+    )
 # --- OLD "/ui" ENDPOINT IS NOW THE ROOT ---
 
 
@@ -258,25 +269,42 @@ async def get_favicon():
     return FileResponse(favicon_path)
 
 
+@app.get("/health")
+async def health():
+    """Simple healthcheck endpoint used by Docker Compose."""
+    return {"status": "ok"}
+
+
 @app.get("/ask")
-async def ask_question(question: str, thread_id: str = "default"):
+async def ask_question(
+    question: str | None = Query(default=None),
+    query: str | None = Query(default=None),
+    thread_id: str = "default",
+    lang: str | None = Query(default=None),
+):
     """Handles Q&A requests from the UI or API using LangGraph agent"""
+    # Accept both 'question' and legacy 'query' parameter names
+    if question is None and query is not None:
+        question = query
     if not question:
         raise HTTPException(
-            status_code=400, detail="Question parameter cannot be empty.")
+            status_code=400,
+            detail="Question parameter cannot be empty. Use 'question' or 'query'.",
+        )
 
     try:
-        # Detect language
-        try:
-            lang = detect(question)
-        except LangDetectException:
-            lang = "en"
-            logger.warning(
-                "Language detection failed for question: '%s'. Defaulting to English.", question)
-        # Heuristic override: treat as Spanish if question contains Spanish punctuation or accents
-        if lang != 'es':
-            if any(ch in question for ch in ['¿', '¡', 'á', 'é', 'í', 'ó', 'ú', 'ñ']):
-                lang = 'es'
+        # Detect language unless explicitly provided
+        if not lang:
+            try:
+                lang = detect(question)
+            except LangDetectException:
+                lang = "en"
+                logger.warning(
+                    "Language detection failed for question: '%s'. Defaulting to English.", question)
+            # Heuristic override: treat as Spanish if question contains Spanish punctuation or accents
+            if lang != 'es':
+                if any(ch in question for ch in ['¿', '¡', 'á', 'é', 'í', 'ó', 'ú', 'ñ']):
+                    lang = 'es'
 
         logger.info(
             f"\n--- New request received: '{question}' (Detected Language: {lang}, Thread: {thread_id}) ---")
@@ -364,7 +392,50 @@ async def ask_question(question: str, thread_id: str = "default"):
 
         logger.info(f"Agent response: {answer[:200]}...")
 
-        return {"answer": answer, "thread_id": thread_id}
+        # Aggregate structured sources from tools (db + web)
+        sources: list[dict] = []
+        try:
+            # DB sources
+            db_json = db_search_tool.invoke({"query": question})
+            if isinstance(db_json, str) and db_json:
+                parsed = json.loads(db_json)
+                if isinstance(parsed, list):
+                    for d in parsed[:5]:
+                        url = d.get("source_url") or ""
+                        if url:
+                            entry = {
+                                "title": d.get("title") or "Internal Document",
+                                "url": url,
+                                "type": "document",
+                            }
+                            lower = url.lower()
+                            entry["isDownload"] = any(lower.endswith(ext) for ext in [
+                                ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".csv"
+                            ])
+                            sources.append(entry)
+        except Exception:
+            pass
+
+        try:
+            # Web sources
+            web_json = web_search_tool.invoke({"query": question})
+            if isinstance(web_json, str) and web_json:
+                parsed = json.loads(web_json)
+                if isinstance(parsed, list):
+                    for r in parsed[:5]:
+                        url = r.get("url") or ""
+                        if url:
+                            entry = {
+                                "title": r.get("title") or "Web Result",
+                                "url": url,
+                                "type": "link",
+                                "isDownload": url.lower().endswith(".pdf"),
+                            }
+                            sources.append(entry)
+        except Exception:
+            pass
+
+        return {"answer": answer, "sources": sources, "thread_id": thread_id}
 
     except Exception as e:
         logger.error("Error processing question '%s': %s", question, str(e))
