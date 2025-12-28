@@ -6466,6 +6466,7 @@ visualization = [
 [package.dev-dependencies]
 dev = [
     { name = "pytest" },
+    { name = "pytest-cov" },
 ]
 
 [package.metadata]
@@ -6522,7 +6523,10 @@ requires-dist = [
 provides-extras = ["embedding", "ml", "dev", "ci", "visualization", "all"]
 
 [package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=9.0.0" }]
+dev = [
+    { name = "pytest", specifier = ">=9.0.0" },
+    { name = "pytest-cov", specifier = ">=7.0.0" },
+]
 
 [[package]]
 name = "wcwidth"
