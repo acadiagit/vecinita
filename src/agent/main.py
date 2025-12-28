@@ -96,10 +96,10 @@ class AgentState(TypedDict):
 
 # --- Initialize Tools ---
 logger.info("Initializing agent tools...")
-db_search_tool_instance = create_db_search_tool(supabase, embedding_model)
-web_search_tool_instance = create_web_search_tool()
-tools = [db_search_tool_instance,
-         static_response_tool, web_search_tool_instance]
+db_search_tool = create_db_search_tool(supabase, embedding_model)
+web_search_tool = create_web_search_tool()
+tools = [db_search_tool,
+         static_response_tool, web_search_tool]
 logger.info(f"Initialized {len(tools)} tools: {[tool.name for tool in tools]}")
 
 # Bind tools to LLM

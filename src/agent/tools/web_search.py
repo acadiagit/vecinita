@@ -30,12 +30,16 @@ def web_search_tool(query: str) -> List[Dict[str, Any]]:
     )
 
 
-def create_web_search_tool() -> tool:
+def create_web_search_tool(search_depth: str = "advanced", max_results: int = 5) -> tool:
     """Create a configured web_search tool using Tavily or DuckDuckGo.
 
     Prefers Tavily when `TAVILY_API_KEY` (or `TVLY_API_KEY`) is set; otherwise
     falls back to DuckDuckGo. Results are normalized into a list of dicts with
     keys: 'title', 'content' (or 'snippet'), and 'url'.
+
+    Args:
+        search_depth: Tavily search depth, e.g., 'basic' or 'advanced'.
+        max_results: Maximum number of results to return (Tavily/DDG).
     """
     # Support multiple env var names to avoid setup friction
     tavily_key = (
@@ -52,8 +56,8 @@ def create_web_search_tool() -> tool:
         try:
             from langchain_community.tools.tavily_search import TavilySearchResults
             tavily = TavilySearchResults(
-                max_results=5,
-                search_depth="advanced",
+                max_results=max_results,
+                search_depth=search_depth,
                 include_answer=True,
                 include_raw_content=False,
                 api_key=tavily_key,
@@ -67,7 +71,7 @@ def create_web_search_tool() -> tool:
     if not use_tavily:
         try:
             from langchain_community.tools import DuckDuckGoSearchResults
-            ddg = DuckDuckGoSearchResults(num_results=5)
+            ddg = DuckDuckGoSearchResults(num_results=max_results)
             logger.info("Web search initialized with DuckDuckGo")
         except Exception as e:
             logger.error(f"Failed to initialize DuckDuckGo search: {e}")

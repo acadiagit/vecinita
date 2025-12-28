@@ -34,6 +34,14 @@ pytestmark = pytest.mark.skipif(
     reason="Integration tests require SUPABASE_URL, SUPABASE_KEY, and GROQ_API_KEY environment variables"
 )
 
+# Import app at module level with error handling
+try:
+    from src.agent.main import app
+    APP_IMPORT_ERROR = None
+except Exception as e:
+    app = None
+    APP_IMPORT_ERROR = str(e)
+
 
 @pytest.mark.integration
 def test_agent_basic_question(test_client):

@@ -5,12 +5,24 @@ FAQ answers in English and Spanish.
 """
 
 import pytest
+import copy
 from src.agent.tools.static_response import (
     static_response_tool,
     add_faq,
     list_faqs,
     FAQ_DATABASE
 )
+
+
+# Ensure tests don't pollute the global FAQ database state
+@pytest.fixture(autouse=True)
+def restore_faq_database():
+    original = copy.deepcopy(FAQ_DATABASE)
+    yield
+    # Restore original contents
+    FAQ_DATABASE.clear()
+    for lang, faqs in original.items():
+        FAQ_DATABASE[lang] = faqs
 
 
 class TestStaticResponseTool:

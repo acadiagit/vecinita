@@ -10,6 +10,9 @@ from langchain_core.tools import tool
 
 logger = logging.getLogger(__name__)
 
+# Minimum query length for partial matching to avoid false positives
+MIN_QUERY_LENGTH = 10
+
 # FAQ Database - can be expanded or moved to Supabase table
 FAQ_DATABASE = {
     "en": {
@@ -63,7 +66,6 @@ def static_response_tool(query: str, language: str = "en") -> Optional[str]:
 
         # Check for partial matches only if query is substantial (avoid false positives)
         # Minimum length threshold prevents matching short words like "what", "how", "the"
-        MIN_QUERY_LENGTH = 10
         if len(normalized_query) >= MIN_QUERY_LENGTH:
             for faq_key, faq_answer in faqs.items():
                 # Match if FAQ key is contained in query or vice versa

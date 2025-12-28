@@ -23,10 +23,18 @@ def _normalize_document(doc: Dict[str, Any]) -> Dict[str, Any]:
     Returns:
         Normalized document with 'content', 'source_url', and 'similarity' fields
     """
-    source = doc.get('source_url') or doc.get(
-        'source') or doc.get('url') or 'Unknown source'
-    content = doc.get('content') or doc.get(
-        'text') or doc.get('chunk_text') or ''
+    source = (
+        doc.get('source_url')
+        or doc.get('source')
+        or doc.get('url')
+        or 'Unknown source'
+    )
+    content = (
+        doc.get('content')
+        or doc.get('text')
+        or doc.get('chunk_text')
+        or ''
+    )
     similarity = doc.get('similarity', 0.0)
 
     return {
@@ -34,6 +42,58 @@ def _normalize_document(doc: Dict[str, Any]) -> Dict[str, Any]:
         'source_url': source,
         'similarity': similarity
     }
+
+
+def _format_db_error(e: Exception) -> str:
+    """Return a human-friendly message describing common DB search failures.
+
+    Tries to distinguish typical issues to aid debugging: missing RPC,
+    connectivity problems, auth failures, and embedding dimension mismatches.
+    """
+    msg = str(e).lower()
+
+    # RPC function missing
+    if (
+        "search_similar_documents" in msg and
+        ("not found" in msg or "does not exist" in msg)
+    ):
+        return (
+            "RPC function not found: 'search_similar_documents'. "
+            "Ensure schema is installed (see scripts/schema_install.sql)."
+        )
+
+    # Connectivity / timeout
+    if (
+        "connection" in msg or
+        "timeout" in msg or
+        "failed to establish" in msg or
+        "network" in msg
+    ):
+        return (
+            "Database connection error. Check network access and SUPABASE_URL."
+        )
+
+    # Authentication
+    if (
+        "unauthorized" in msg or
+        "invalid api key" in msg or
+        "401" in msg
+    ):
+        return (
+            "Supabase authentication failed. Verify SUPABASE_KEY and permissions."
+        )
+
+    # Embedding / pgvector dimension mismatch
+    if (
+        "dimension" in msg or
+        "array length" in msg or
+        "pgvector" in msg
+    ):
+        return (
+            "Embedding dimension mismatch. Ensure model and pgvector column match (e.g., 384)."
+        )
+
+    return "Unexpected database error"
 
 
 @tool
@@ -123,7 +183,7 @@ def create_db_search_tool(supabase_client, embedding_model, match_threshold: flo
             return results
 
         except Exception as e:
-            logger.error(f"DB Search: Error searching database: {e}")
+            logger.error(f"DB Search: {_format_db_error(e)}: {e}")
             return []
 
     return db_search

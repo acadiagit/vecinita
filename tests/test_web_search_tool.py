@@ -78,6 +78,23 @@ class TestWebSearchToolWithTavily:
         call_kwargs = mock_tavily_class.call_args[1]
         assert call_kwargs["api_key"] == "tvly-key"
 
+    @patch.dict(os.environ, {
+        "TAVILY_API_KEY": "primary-key",
+        "TAVILY_API_AI_KEY": "secondary-key",
+        "TVLY_API_KEY": "tertiary-key",
+    })
+    @patch("langchain_community.tools.tavily_search.TavilySearchResults")
+    def test_tavily_env_var_precedence(self, mock_tavily_class):
+        """When multiple Tavily env vars are set, primary has precedence."""
+        mock_tavily = Mock()
+        mock_tavily_class.return_value = mock_tavily
+
+        tool = create_web_search_tool()
+
+        # Ensure Tavily was constructed with the primary key first
+        call_kwargs = mock_tavily_class.call_args[1]
+        assert call_kwargs["api_key"] == "primary-key"
+
 
 class TestWebSearchToolWithDuckDuckGo:
     """Test suite for web search tool when DuckDuckGo fallback is used."""
