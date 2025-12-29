@@ -5,6 +5,7 @@ and retrieve relevant documents.
 """
 
 import pytest
+import json
 from unittest.mock import Mock, patch, MagicMock
 from src.agent.tools.db_search import create_db_search_tool
 
@@ -34,7 +35,7 @@ class TestDbSearchTool:
     """Test suite for database search tool."""
 
     def test_db_search_returns_empty_when_no_results(self, db_search_tool, mock_supabase):
-        """Test that tool returns empty list when no documents found."""
+        """Test that tool returns empty JSON array when no documents found."""
         # Mock Supabase RPC response with no data
         mock_rpc = Mock()
         mock_rpc.execute.return_value = Mock(data=[])
@@ -42,11 +43,11 @@ class TestDbSearchTool:
 
         results = db_search_tool.invoke("nonexistent topic")
 
-        assert results == []
-        assert isinstance(results, list)
+        assert results == "[]"
+        assert isinstance(results, str)
 
     def test_db_search_returns_normalized_documents(self, db_search_tool, mock_supabase):
-        """Test that tool normalizes and returns document results."""
+        """Test that tool normalizes and returns document results as JSON string."""
         # Mock Supabase RPC response with documents
         mock_docs = [
             {
@@ -64,7 +65,8 @@ class TestDbSearchTool:
         mock_rpc.execute.return_value = Mock(data=mock_docs)
         mock_supabase.rpc.return_value = mock_rpc
 
-        results = db_search_tool.invoke("health services")
+        results_json = db_search_tool.invoke("health services")
+        results = json.loads(results_json)
 
         assert len(results) == 2
         assert results[0]["content"] == "Community health services"
@@ -90,7 +92,8 @@ class TestDbSearchTool:
         mock_rpc.execute.return_value = Mock(data=mock_docs)
         mock_supabase.rpc.return_value = mock_rpc
 
-        results = db_search_tool.invoke("test")
+        results_json = db_search_tool.invoke("test")
+        results = json.loads(results_json)
 
         assert len(results) == 2
         assert results[0]["source_url"] == "Unknown source"
@@ -149,8 +152,8 @@ class TestDbSearchTool:
 
         results = db_search_tool.invoke("test")
 
-        # Should return empty list on error, not raise
-        assert results == []
+        # Should return empty JSON array string on error, not raise
+        assert results == "[]"
 
     def test_db_search_tool_has_correct_name_and_description(self, db_search_tool):
         """Test that tool has proper name and docstring."""

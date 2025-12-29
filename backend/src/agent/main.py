@@ -20,7 +20,7 @@ from langchain_groq import ChatGroq
 from langchain_openai import ChatOpenAI
 from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
 from langdetect import detect, LangDetectException
@@ -65,6 +65,7 @@ supabase_key = os.environ.get("SUPABASE_KEY")
 groq_api_key = os.environ.get("GROQ_API_KEY")
 openai_api_key = os.environ.get(
     "OPENAI_API_KEY") or os.environ.get("OPEN_API_KEY")
+deepseek_api_key = os.environ.get("DEEPSEEK_API_KEY")
 ollama_base_url = os.environ.get("OLLAMA_BASE_URL")
 ollama_model = os.environ.get("OLLAMA_MODEL") or "llama3.2"
 if not supabase_url or not supabase_key:
@@ -139,9 +140,9 @@ logger.info(f"Initialized {len(tools)} tools: {[tool.name for tool in tools]}")
 def _get_llm_with_tools(provider: str | None, model: str | None):
     """Create an LLM bound with tools based on requested provider/model.
 
-    Supported providers: 'llama' (Ollama preferred, Groq fallback), 'openai'.
+    Supported providers: 'llama' (Ollama preferred, Groq fallback), 'openai', 'deepseek'.
     Defaults: provider='llama', model from OLLAMA_MODEL or 'llama3.2';
-    for OpenAI, default model='gpt-4o-mini'.
+    for OpenAI, default model='gpt-4o-mini'. For DeepSeek, default model='deepseek-chat'.
     """
     selected_provider = (provider or "llama").lower()
     if selected_provider == "llama":
@@ -168,9 +169,60 @@ def _get_llm_with_tools(provider: str | None, model: str | None):
         openai_llm = ChatOpenAI(
             temperature=0, api_key=openai_api_key, model=use_model)
         return openai_llm.bind_tools(tools)
+    elif selected_provider == "deepseek":
+        if not deepseek_api_key:
+            raise RuntimeError(
+                "DeepSeek provider requested but DEEPSEEK_API_KEY is not set.")
+        # DeepSeek offers OpenAI-compatible API; use ChatOpenAI with base_url
+        use_model = model or "deepseek-chat"
+        deepseek_llm = ChatOpenAI(
+            temperature=0,
+            api_key=deepseek_api_key,
+            model=use_model,
+            base_url=os.environ.get(
+                "DEEPSEEK_BASE_URL", "https://api.deepseek.com")
+        )
+        return deepseek_llm.bind_tools(tools)
     else:
         raise RuntimeError(
             f"Unsupported provider: {selected_provider}. Use 'llama' or 'openai'.")
+
+
+def _sanitize_messages(messages: List[BaseMessage]) -> List[BaseMessage]:
+    """Sanitize messages to ensure all content fields are strings.
+
+    Some LLM APIs (like DeepSeek) require message content to be strings,
+    but LangChain's ToolNode can produce messages with list content.
+    This function converts any non-string content to a string.
+    """
+    sanitized = []
+    for msg in messages:
+        # Make a copy of the message to avoid modifying the original
+        if isinstance(msg, ToolMessage):
+            # ToolMessage content can be a list; convert to string
+            content = msg.content
+            if isinstance(content, list):
+                # Convert list to JSON string
+                content = json.dumps(content, ensure_ascii=False)
+            # Create new ToolMessage with string content
+            sanitized.append(ToolMessage(
+                content=content,
+                tool_call_id=msg.tool_call_id,
+                name=msg.name if hasattr(msg, 'name') else None
+            ))
+        else:
+            # For other message types, ensure content is string
+            content = msg.content
+            if not isinstance(content, str):
+                if isinstance(content, list):
+                    content = json.dumps(content, ensure_ascii=False)
+                else:
+                    content = str(content)
+            # Create a new message with the same type but sanitized content
+            msg_dict = msg.dict()
+            msg_dict['content'] = content
+            sanitized.append(msg.__class__(**msg_dict))
+    return sanitized
 
 # --- Define Agent Node ---
 
@@ -181,6 +233,10 @@ def agent_node(state: AgentState) -> AgentState:
     # Select LLM per request
     llm_with_tools = _get_llm_with_tools(
         state.get("provider"), state.get("model"))
+
+    # Sanitize messages to ensure all content is strings (required by some APIs like DeepSeek)
+    sanitized_messages = _sanitize_messages(state["messages"])
+
     # Rate-limit handling: retry on Groq 429 errors with suggested wait
     # Import groq lazily to avoid hard dependency in environments where it's unavailable
     try:
@@ -195,7 +251,7 @@ def agent_node(state: AgentState) -> AgentState:
     last_exc = None
     while attempts < max_attempts:
         try:
-            response = llm_with_tools.invoke(state["messages"])
+            response = llm_with_tools.invoke(sanitized_messages)
             return {"messages": [response]}
         except Exception as e:
             last_exc = e
@@ -562,6 +618,10 @@ def config():
     if openai_api_key:
         providers.append({"key": "openai", "label": "OpenAI"})
         models["openai"] = ["gpt-4o-mini"]
+    # DeepSeek if key present
+    if deepseek_api_key:
+        providers.append({"key": "deepseek", "label": "DeepSeek"})
+        models["deepseek"] = ["deepseek-chat", "deepseek-reasoner"]
     return {"providers": providers, "models": models}
 
 # --end-of-file--

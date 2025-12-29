@@ -98,7 +98,7 @@ def _format_db_error(e: Exception) -> str:
 
 
 @tool
-def db_search_tool(query: str) -> List[Dict[str, Any]]:
+def db_search_tool(query: str) -> str:
     """Search the internal knowledge base for relevant information.
 
     Use this tool to find information from the Vecinita document database.
@@ -109,13 +109,15 @@ def db_search_tool(query: str) -> List[Dict[str, Any]]:
         query: The user's question or search query
 
     Returns:
-        A list of relevant documents with content and source URLs.
+        A JSON string containing a list of relevant documents with content and source URLs.
         Each document contains 'content', 'source_url', and 'similarity' fields.
-        Returns an empty list if no relevant documents are found.
+        Returns an empty list JSON string if no relevant documents are found.
 
     Example:
         >>> results = db_search_tool("What community services are available?")
-        >>> for doc in results:
+        >>> import json
+        >>> docs = json.loads(results)
+        >>> for doc in docs:
         ...     print(f"Source: {doc['source_url']}")
         ...     print(f"Content: {doc['content']}")
     """
@@ -140,7 +142,7 @@ def create_db_search_tool(supabase_client, embedding_model, match_threshold: flo
         A configured tool function that can be used with LangGraph
     """
     @tool
-    def db_search(query: str) -> List[Dict[str, Any]]:
+    def db_search(query: str) -> str:
         """Search the internal knowledge base for relevant information.
 
         Use this tool to find information from the Vecinita document database.
@@ -151,8 +153,8 @@ def create_db_search_tool(supabase_client, embedding_model, match_threshold: flo
             query: The user's question or search query
 
         Returns:
-            A list of relevant documents with content and source URLs.
-            Returns [] if no relevant documents are found.
+            A JSON string containing a list of relevant documents with content and source URLs.
+            Returns "[]" if no relevant documents are found.
         """
         try:
             logger.info(
@@ -176,18 +178,18 @@ def create_db_search_tool(supabase_client, embedding_model, match_threshold: flo
                 f"DB Search: Found {len(relevant_docs.data) if relevant_docs.data else 0} relevant documents")
 
             if not relevant_docs.data:
-                # Return an empty list when no relevant documents are found
-                return []
+                # Return empty JSON array string when no relevant documents are found
+                return "[]"
 
             # Normalize document format using helper function
             results = [_normalize_document(doc) for doc in relevant_docs.data]
 
-            # Return normalized Python list for tests and agent consumption
-            return results
+            # Return JSON string for proper LLM serialization
+            return json.dumps(results, ensure_ascii=False)
 
         except Exception as e:
             logger.error(f"DB Search: {_format_db_error(e)}: {e}")
-            # Return empty list on error to keep agent robust and satisfy tests
-            return []
+            # Return empty JSON array string on error to keep agent robust and satisfy tests
+            return "[]"
 
     return db_search

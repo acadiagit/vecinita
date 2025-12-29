@@ -15,6 +15,11 @@ const STRINGS = {
     welcome:
       'Hi! I can help you find environmental and community resources nearby. Ask me anything.',
     languageLabel: 'Language',
+    languageAuto: 'Auto',
+    modeLabel: 'Mode',
+    modeChat: 'Chat',
+    modeQna: 'Q&A',
+    answerLabel: 'Answer',
     minimizedLabel: 'English'
   },
   es: {
@@ -24,22 +29,46 @@ const STRINGS = {
     welcome:
       '¡Hola! Puedo ayudarte a encontrar recursos ambientales y comunitarios cercanos. Pregúntame lo que quieras.',
     languageLabel: 'Idioma',
+    languageAuto: 'Automático',
+    modeLabel: 'Modo',
+    modeChat: 'Chat',
+    modeQna: 'Preguntas y respuestas',
+    answerLabel: 'Respuesta',
     minimizedLabel: 'Español'
   }
 }
 
-export default function ChatWidget({ backendUrl, embedded = false, initialOpen = false, hideMinimizedBar = false, className = '' }) {
+export default function ChatWidget({ backendUrl, embedded = false, initialOpen = false, hideMinimizedBar = false, className = '', fontScale = 1.1, setFontScale = null }) {
   const [open, setOpen] = useState(initialOpen || embedded)
-  const [lang, setLang] = useState('es')
+  const [lang, setLang] = useState('auto')
   const [provider, setProvider] = useState('llama')
   const [model, setModel] = useState(MODELS['llama'][0])
-  const [fontScale, setFontScale] = useState(1)
+  const [mode, setMode] = useState('chat') // 'chat' | 'qna'
   const [messages, setMessages] = useState([
     { role: 'assistant', content: STRINGS.es.welcome, sources: [] }
   ])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const listRef = useRef(null)
+  const threadIdRef = useRef(null)
+  const [providersOptions, setProvidersOptions] = useState(PROVIDERS)
+  const [modelOptionsMap, setModelOptionsMap] = useState(MODELS)
+
+  // Generate a stable thread ID per widget session to enable backend memory
+  if (!threadIdRef.current) {
+    try {
+      const stored = typeof localStorage !== 'undefined' ? localStorage.getItem('vecinita_thread_id') : null
+      const newId = stored || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `thread-${Date.now()}-${Math.floor(Math.random()*1e6)}`)
+      threadIdRef.current = newId
+      if (typeof localStorage !== 'undefined' && !stored) {
+        localStorage.setItem('vecinita_thread_id', newId)
+      }
+    } catch (_) {
+      const newId = `thread-${Date.now()}-${Math.floor(Math.random()*1e6)}`
+      threadIdRef.current = newId
+      try { if (typeof localStorage !== 'undefined') localStorage.setItem('vecinita_thread_id', newId) } catch (_) {}
+    }
+  }
 
   const t = useMemo(() => STRINGS[lang] || STRINGS.en, [lang])
 
@@ -70,9 +99,52 @@ export default function ChatWidget({ backendUrl, embedded = false, initialOpen =
 
   useEffect(() => {
     // ensure model resets when provider changes
-    const first = MODELS[provider]?.[0]
+    const first = (modelOptionsMap[provider] || MODELS[provider])?.[0]
     if (first) setModel(first)
-  }, [provider])
+  }, [provider, modelOptionsMap])
+
+  // Try to load providers/models from backend /config for dynamic options and auto-select priority
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        const base = backendUrl || '/api'
+        if (typeof fetch !== 'function') return
+        const res = await fetch(`${base}/config`)
+        if (!res?.ok) return
+        const data = await res.json()
+        const providers = Array.isArray(data?.providers) ? data.providers : null
+        const models = typeof data?.models === 'object' && data.models ? data.models : null
+        if (providers && models) {
+          setProvidersOptions(providers)
+          setModelOptionsMap(models)
+          // Auto-select provider with fallback priority: deepseek > llama > openai
+          const priority = ['deepseek', 'llama', 'openai']
+          let selectedProvider = priority.find(p => providers.some(prov => prov.key === p))
+          if (!selectedProvider && providers.length) {
+            selectedProvider = providers[0].key
+          }
+          if (selectedProvider) {
+            setProvider(selectedProvider)
+            const firstModel = (models[selectedProvider] || [])?.[0]
+            if (firstModel) setModel(firstModel)
+          }
+        }
+      } catch (_) {
+        // ignore
+      }
+    }
+    loadConfig()
+  }, [backendUrl])
+
+  const startNewChat = () => {
+    // Reset messages to single welcome message and generate new thread
+    setMessages([{ role: 'assistant', content: (STRINGS[lang] || STRINGS.en).welcome, sources: [] }])
+    try {
+      const newId = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : `thread-${Date.now()}-${Math.floor(Math.random()*1e6)}`
+      threadIdRef.current = newId
+      if (typeof localStorage !== 'undefined') localStorage.setItem('vecinita_thread_id', newId)
+    } catch (_) {}
+  }
 
   const sendMessage = async () => {
     const q = input.trim()
@@ -82,7 +154,10 @@ export default function ChatWidget({ backendUrl, embedded = false, initialOpen =
     setLoading(true)
     try {
       const urlBase = backendUrl || '/api'
-      const url = `${urlBase}/ask?query=${encodeURIComponent(q)}&lang=${lang}&provider=${encodeURIComponent(provider)}&model=${encodeURIComponent(model)}`
+      // Chat-only: always use persistent thread id for conversational memory
+      const thread = threadIdRef.current
+      const langParam = lang === 'auto' ? '' : `&lang=${lang}`
+      const url = `${urlBase}/ask?query=${encodeURIComponent(q)}${langParam}&provider=${encodeURIComponent(provider)}&model=${encodeURIComponent(model)}&thread_id=${encodeURIComponent(thread)}`
       const res = await fetch(url)
       if (!res.ok) throw new Error(`Backend error: ${res.status}`)
       const data = await res.json()
@@ -114,7 +189,7 @@ export default function ChatWidget({ backendUrl, embedded = false, initialOpen =
   // Embedded mode: render only the chat content block, no floating/minimized bar
   if (embedded) {
     return (
-      <div style={{ fontSize: `${Math.round(14 * fontScale)}px` }} className={className || 'grid w-full max-w-lg gap-4 border bg-background shadow-lg sm:rounded-lg w-[360px] max-w-[90vw] p-0 flex flex-col max-h-[600px] overflow-hidden'}>
+      <div className={className || 'grid w-full max-w-lg gap-4 border bg-background shadow-lg sm:rounded-lg w-[360px] max-w-[90vw] p-0 flex flex-col max-h-[600px] overflow-hidden'}>
         <h2 className="sr-only">{t.title}</h2>
         <p className="sr-only">Chat with the Vecinita assistant to find local resources</p>
         <div className="px-4 pt-3 pb-2 border-b flex flex-row items-center justify-between space-y-0">
@@ -133,27 +208,16 @@ export default function ChatWidget({ backendUrl, embedded = false, initialOpen =
             >
               <option value="es">Español</option>
               <option value="en">English</option>
+              <option value="auto">{t.languageAuto}</option>
             </select>
-            <select
-              className="h-8 rounded-md border border-input bg-background px-2 text-sm"
-              value={provider}
-              onChange={(e) => setProvider(e.target.value)}
-              aria-label="Model Provider"
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={startNewChat}
+              className="text-xs px-2 h-8"
             >
-              {PROVIDERS.map((p) => (
-                <option key={p.key} value={p.key}>{p.label}</option>
-              ))}
-            </select>
-            <select
-              className="h-8 rounded-md border border-input bg-background px-2 text-sm"
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-              aria-label="Model"
-            >
-              {(MODELS[provider] || []).map((m) => (
-                <option key={m} value={m}>{m}</option>
-              ))}
-            </select>
+              New Chat
+            </Button>
           </div>
         </div>
 
@@ -164,14 +228,14 @@ export default function ChatWidget({ backendUrl, embedded = false, initialOpen =
             max={1.4}
             step={0.05}
             value={[fontScale]}
-            onValueChange={(val) => setFontScale(val[0])}
+            onValueChange={(val) => setFontScale && setFontScale(val[0])}
             className="flex-1"
           />
           <span className="text-xs">A</span>
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setFontScale(1)}
+            onClick={() => setFontScale && setFontScale(1.1)}
             className="text-xs px-2 h-8"
           >
             Reset
@@ -180,7 +244,12 @@ export default function ChatWidget({ backendUrl, embedded = false, initialOpen =
 
         <div ref={listRef} className="flex-1 chat-messages p-3 bg-muted/30 min-w-0">
           {messages.map((m, i) => (
-            <MessageBubble key={i} role={m.role} content={m.content} sources={m.sources} />
+            <MessageBubble
+              key={i}
+              role={m.role}
+              content={m.content}
+              sources={m.sources}
+            />
           ))}
         </div>
 
@@ -214,26 +283,7 @@ export default function ChatWidget({ backendUrl, embedded = false, initialOpen =
           >
             <option value="es">Español</option>
             <option value="en">English</option>
-          </select>
-          <select
-            className="h-9 rounded-md border border-input bg-background px-2 text-sm"
-            value={provider}
-            onChange={(e) => setProvider(e.target.value)}
-            aria-label="Model Provider"
-          >
-            {PROVIDERS.map((p) => (
-              <option key={p.key} value={p.key}>{p.label}</option>
-            ))}
-          </select>
-          <select
-            className="h-9 rounded-md border border-input bg-background px-2 text-sm"
-            value={model}
-            onChange={(e) => setModel(e.target.value)}
-            aria-label="Model"
-          >
-            {(MODELS[provider] || []).map((m) => (
-              <option key={m} value={m}>{m}</option>
-            ))}
+            <option value="auto">{t.languageAuto}</option>
           </select>
           <Button variant="default" onClick={() => setOpen(true)}>
             Chat
@@ -264,27 +314,16 @@ export default function ChatWidget({ backendUrl, embedded = false, initialOpen =
               >
                 <option value="es">Español</option>
                 <option value="en">English</option>
+                <option value="auto">{t.languageAuto}</option>
               </select>
-              <select
-                className="h-8 rounded-md border border-input bg-background px-2 text-sm"
-                value={provider}
-                onChange={(e) => setProvider(e.target.value)}
-                aria-label="Model Provider"
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={startNewChat}
+                className="text-xs px-2 h-8"
               >
-                {PROVIDERS.map((p) => (
-                  <option key={p.key} value={p.key}>{p.label}</option>
-                ))}
-              </select>
-              <select
-                className="h-8 rounded-md border border-input bg-background px-2 text-sm"
-                value={model}
-                onChange={(e) => setModel(e.target.value)}
-                aria-label="Model"
-              >
-                {(MODELS[provider] || []).map((m) => (
-                  <option key={m} value={m}>{m}</option>
-                ))}
-              </select>
+                New Chat
+              </Button>
             </div>
           </DialogHeader>
 
@@ -311,9 +350,14 @@ export default function ChatWidget({ backendUrl, embedded = false, initialOpen =
           </div>
 
           {/* Messages area with custom scrollbar */}
-          <div ref={listRef} className="flex-1 chat-messages p-3 bg-muted/30 min-w-0">
+          <div ref={listRef} className="flex-1 chat-messages p-3 bg-muted/30 min-w-0 flex flex-col overflow-y-auto">
             {messages.map((m, i) => (
-              <MessageBubble key={i} role={m.role} content={m.content} sources={m.sources} />
+              <MessageBubble
+                key={i}
+                role={m.role}
+                content={m.content}
+                sources={m.sources}
+              />
             ))}
           </div>
 

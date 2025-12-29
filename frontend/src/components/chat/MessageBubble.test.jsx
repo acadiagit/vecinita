@@ -20,8 +20,8 @@ describe('MessageBubble', () => {
     expect(screen.getByText('Resources')).toBeInTheDocument()
     expect(screen.getByText('Doc A')).toBeInTheDocument()
     expect(screen.getByText('Doc B')).toBeInTheDocument()
-    // Download link should exist
-    expect(screen.getAllByText('Download').length).toBeGreaterThanOrEqual(1)
+    // Download button should exist for Doc B
+    expect(screen.getByLabelText('Download file')).toBeInTheDocument()
   })
 
   test('does not render resources for user messages', () => {

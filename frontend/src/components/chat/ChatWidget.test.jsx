@@ -13,21 +13,14 @@ afterEach(() => {
 })
 
 describe('ChatWidget', () => {
-  test('renders embedded chat and sends provider/model in request', async () => {
+  test('renders embedded chat and auto-selects provider via config fallback', async () => {
     render(<ChatWidget embedded initialOpen hideMinimizedBar backendUrl="/api" />)
 
     // Switch language to English for stable placeholders/button text
     const langSelect = screen.getByLabelText(/Idioma|Language/i)
     fireEvent.change(langSelect, { target: { value: 'en' } })
 
-    // Select provider and model
-    const providerSelect = screen.getByLabelText('Model Provider')
-    fireEvent.change(providerSelect, { target: { value: 'openai' } })
-
-    const modelSelect = screen.getByLabelText('Model')
-    fireEvent.change(modelSelect, { target: { value: 'gpt-4o-mini' } })
-
-    // Type a message and send
+    // Type a message and send (provider/model auto-selected from config)
     const input = screen.getByPlaceholderText(/Ask/i)
     fireEvent.change(input, { target: { value: 'Hello' } })
     const sendButton = screen.getByText(/Send/i)
@@ -35,10 +28,12 @@ describe('ChatWidget', () => {
 
     await waitFor(() => expect(global.fetch).toHaveBeenCalled())
 
-    // Verify provider/model appear in URL
-    const calledUrl = global.fetch.mock.calls[0][0]
-    expect(calledUrl).toContain('provider=openai')
-    expect(calledUrl).toContain('model=gpt-4o-mini')
+    // Verify provider/model are still sent in the /ask URL (auto-selected, not user-controlled)
+    const askCall = [...global.fetch.mock.calls].reverse().find(c => String(c[0]).includes('/ask'))
+    const calledUrl = askCall ? askCall[0] : ''
+    expect(calledUrl).toMatch(/provider=[a-z]+/) // provider is auto-selected
+    expect(calledUrl).toMatch(/model=[a-z0-9.-]+/) // model is auto-selected
+    expect(calledUrl).toMatch(/thread_id=[A-Za-z0-9-]+/) // contains thread_id
   })
 
   test('applies chat-messages class for scrollable area', () => {

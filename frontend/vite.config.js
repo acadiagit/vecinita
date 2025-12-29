@@ -20,6 +20,8 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
-    setupFiles: ['./src/test/setup.js']
+    setupFiles: ['./src/test/setup.js'],
+    include: ['src/**/*.test.{js,jsx,ts,tsx}'],
+    exclude: ['node_modules/**', 'tests/e2e/**']
   }
 })

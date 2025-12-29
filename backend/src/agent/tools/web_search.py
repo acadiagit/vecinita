@@ -15,14 +15,14 @@ logger = logging.getLogger(__name__)
 
 
 @tool
-def web_search_tool(query: str) -> List[Dict[str, Any]]:
+def web_search_tool(query: str) -> str:
     """Search the web for information using Tavily or DuckDuckGo.
 
     Args:
         query: The search query to find information on the web.
 
     Returns:
-        A list of result dicts with 'title', 'content'/'snippet', and 'url'.
+        A JSON string of result dicts with 'title', 'content'/'snippet', and 'url'.
     """
     # Placeholder; real implementation provided by create_web_search_tool
     raise NotImplementedError(
@@ -72,20 +72,25 @@ def create_web_search_tool(search_depth: str = "advanced", max_results: int = 5)
     if not use_tavily:
         try:
             from langchain_community.tools import DuckDuckGoSearchResults
+            # Suppress noisy internal ddgs engine error logs (e.g., grokipedia DNS errors)
+            try:
+                logging.getLogger("ddgs.ddgs").setLevel(logging.ERROR)
+            except Exception:
+                pass
             ddg = DuckDuckGoSearchResults(num_results=max_results)
             logger.info("Web search initialized with DuckDuckGo")
         except Exception as e:
             logger.error(f"Failed to initialize DuckDuckGo search: {e}")
 
     @tool
-    def web_search(query: str) -> List[Dict[str, Any]]:
+    def web_search(query: str) -> str:
         """Search the web for information.
 
         Args:
             query: The search query
 
         Returns:
-            List of normalized results with 'title', 'content'/'snippet', 'url'.
+            JSON string of normalized results with 'title', 'content'/'snippet', 'url'.
         """
         normalized: List[Dict[str, Any]] = []
 
@@ -99,7 +104,7 @@ def create_web_search_tool(search_depth: str = "advanced", max_results: int = 5)
                         "content": r.get("content") or r.get("answer") or "",
                         "url": r.get("url") or r.get("source") or "",
                     })
-                return normalized
+                return json.dumps(normalized, ensure_ascii=False)
 
             # DuckDuckGo fallback
             if ddg is not None:
@@ -118,12 +123,12 @@ def create_web_search_tool(search_depth: str = "advanced", max_results: int = 5)
                         "content": results,
                         "url": "",
                     })
-                return normalized
+                return json.dumps(normalized, ensure_ascii=False)
 
             logger.error("No web search provider available")
-            return []
+            return "[]"
         except Exception as e:
             logger.error(f"Web search error: {e}")
-            return []
+            return "[]"
 
     return web_search

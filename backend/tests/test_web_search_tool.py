@@ -1,10 +1,11 @@
 """Unit tests for the web search tool.
 
 Tests the web_search tool's ability to search the web via Tavily or
-DuckDuckGo and return normalized results.
+DuckDuckGo and return normalized results as JSON.
 """
 
 import pytest
+import json
 import os
 from unittest.mock import Mock, patch, MagicMock
 from src.agent.tools.web_search import create_web_search_tool
@@ -43,7 +44,8 @@ class TestWebSearchToolWithTavily:
         mock_tavily_class.return_value = mock_tavily
 
         tool = create_web_search_tool()
-        results = tool.invoke("health services")
+        results_json = tool.invoke("health services")
+        results = json.loads(results_json)
 
         # Verify Tavily was called with correct query
         mock_tavily.invoke.assert_called_once_with(
@@ -130,11 +132,12 @@ class TestWebSearchToolWithDuckDuckGo:
         mock_ddg_class.return_value = mock_ddg
 
         tool = create_web_search_tool()
-        results = tool.invoke("test query")
+        results_json = tool.invoke("test query")
 
         # Verify DuckDuckGo was called with correct query
         mock_ddg.invoke.assert_called_once_with("test query")
 
+        results = json.loads(results_json)
         assert len(results) == 2
         assert results[0]["title"] == "Result 1"
         assert results[0]["content"] == "First result snippet"
@@ -149,11 +152,12 @@ class TestWebSearchToolWithDuckDuckGo:
         mock_ddg_class.return_value = mock_ddg
 
         tool = create_web_search_tool()
-        results = tool.invoke("test query")
+        results_json = tool.invoke("test query")
 
         # Verify DuckDuckGo was called with correct query
         mock_ddg.invoke.assert_called_once_with("test query")
 
+        results = json.loads(results_json)
         assert len(results) == 1
         assert results[0]["title"] == "DuckDuckGo Result"
         assert results[0]["content"] == "Some search result text"
@@ -167,12 +171,12 @@ class TestWebSearchToolWithDuckDuckGo:
         mock_ddg_class.return_value = mock_ddg
 
         tool = create_web_search_tool()
-        results = tool.invoke("test query")
+        results_json = tool.invoke("test query")
 
         # Verify DuckDuckGo was called with correct query
         mock_ddg.invoke.assert_called_once_with("test query")
 
-        assert results == []
+        assert results_json == "[]"
 
 
 class TestWebSearchToolErrorHandling:
@@ -196,8 +200,9 @@ class TestWebSearchToolErrorHandling:
             mock_ddg.invoke.assert_called_once_with("test")
 
             # Should use DuckDuckGo
-            assert len(results) == 1
-            assert results[0]["title"] == "DDG Result"
+            results_parsed = json.loads(results)
+            assert len(results_parsed) == 1
+            assert results_parsed[0]["title"] == "DDG Result"
 
     @patch.dict(os.environ, {}, clear=True)
     def test_no_providers_available(self):
@@ -208,7 +213,7 @@ class TestWebSearchToolErrorHandling:
             tool = create_web_search_tool()
             results = tool.invoke("test")
 
-            assert results == []
+            assert results == "[]"
 
     @patch.dict(os.environ, {"TAVILY_API_KEY": "test-key"})
     @patch("langchain_community.tools.tavily_search.TavilySearchResults")
@@ -221,7 +226,7 @@ class TestWebSearchToolErrorHandling:
         tool = create_web_search_tool()
         results = tool.invoke("test")
 
-        assert results == []
+        assert results == "[]"
 
 
 class TestWebSearchToolProperties:
