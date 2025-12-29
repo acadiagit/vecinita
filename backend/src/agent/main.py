@@ -17,6 +17,8 @@ from typing import Annotated, List, TypedDict
 from dotenv import load_dotenv
 from supabase import create_client, Client
 from langchain_groq import ChatGroq
+from langchain_openai import ChatOpenAI
+from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langchain_huggingface import HuggingFaceEmbeddings
@@ -61,8 +63,11 @@ if static_dir.exists():
 supabase_url = os.environ.get("SUPABASE_URL")
 supabase_key = os.environ.get("SUPABASE_KEY")
 groq_api_key = os.environ.get("GROQ_API_KEY")
-if not supabase_url or not supabase_key or not groq_api_key:
-    raise ValueError("Supabase, Groq keys, and URL must be set.")
+openai_api_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("OPEN_API_KEY")
+ollama_base_url = os.environ.get("OLLAMA_BASE_URL")
+ollama_model = os.environ.get("OLLAMA_MODEL") or "llama3.2"
+if not supabase_url or not supabase_key:
+    raise ValueError("Supabase URL and key must be set.")
 
 # --- Initialize Clients ---
 try:
@@ -70,10 +75,22 @@ try:
     supabase: Client = create_client(supabase_url, supabase_key)
     logger.info("Supabase client initialized successfully")
 
-    logger.info("Initializing ChatGroq LLM...")
-    llm = ChatGroq(temperature=0, groq_api_key=groq_api_key,
-                   model_name="llama-3.1-8b-instant")
-    logger.info("ChatGroq LLM initialized successfully")
+    # Initialize default LLM: prefer local Llama (Ollama), fallback to Groq Llama, then OpenAI
+    if ollama_base_url:
+        logger.info("Initializing ChatOllama (Llama) LLM...")
+        llm = ChatOllama(temperature=0, model=ollama_model, base_url=ollama_base_url)
+        logger.info(f"ChatOllama initialized successfully (model={ollama_model})")
+    elif groq_api_key:
+        logger.info("Initializing ChatGroq LLM (Llama default)...")
+        llm = ChatGroq(temperature=0, groq_api_key=groq_api_key,
+                       model_name="llama-3.1-8b-instant")
+        logger.info("ChatGroq LLM initialized successfully")
+    elif openai_api_key:
+        logger.info("Initializing ChatOpenAI LLM...")
+        llm = ChatOpenAI(temperature=0, api_key=openai_api_key, model="gpt-4o-mini")
+        logger.info("ChatOpenAI LLM initialized successfully")
+    else:
+        raise RuntimeError("No LLM provider configured. Set OLLAMA_BASE_URL or GROQ_API_KEY or OPENAI_API_KEY/OPEN_API_KEY.")
 
     # Use all-MiniLM-L6-v2 with 384 dimensions by default.
     # If sentence-transformers is unavailable (CI minimal deps), fall back to FastEmbed.
@@ -101,6 +118,8 @@ class AgentState(TypedDict):
     messages: Annotated[List[BaseMessage], add_messages]
     question: str
     language: str
+    provider: str | None
+    model: str | None
 
 
 # --- Initialize Tools ---
@@ -111,8 +130,35 @@ tools = [db_search_tool,
          static_response_tool, web_search_tool]
 logger.info(f"Initialized {len(tools)} tools: {[tool.name for tool in tools]}")
 
-# Bind tools to LLM
-llm_with_tools = llm.bind_tools(tools)
+def _get_llm_with_tools(provider: str | None, model: str | None):
+    """Create an LLM bound with tools based on requested provider/model.
+
+    Supported providers: 'llama' (Ollama preferred, Groq fallback), 'openai'.
+    Defaults: provider='llama', model from OLLAMA_MODEL or 'llama3.2';
+    for OpenAI, default model='gpt-4o-mini'.
+    """
+    selected_provider = (provider or "llama").lower()
+    if selected_provider == "llama":
+        # Prefer local Ollama
+        if ollama_base_url:
+            use_model = model or ollama_model or "llama3.2"
+            local_llm = ChatOllama(temperature=0, model=use_model, base_url=ollama_base_url)
+            return local_llm.bind_tools(tools)
+        # Fallback to Groq-hosted Llama if available
+        if groq_api_key:
+            use_model = model or "llama-3.1-8b-instant"
+            groq_llm = ChatGroq(temperature=0, groq_api_key=groq_api_key, model_name=use_model)
+            return groq_llm.bind_tools(tools)
+        # Last resort: if nothing available, raise
+        raise RuntimeError("Llama provider requested but neither Ollama nor Groq are configured.")
+    elif selected_provider == "openai":
+        if not openai_api_key:
+            raise RuntimeError("OpenAI provider requested but OPENAI_API_KEY/OPEN_API_KEY is not set.")
+        use_model = model or "gpt-4o-mini"
+        openai_llm = ChatOpenAI(temperature=0, api_key=openai_api_key, model=use_model)
+        return openai_llm.bind_tools(tools)
+    else:
+        raise RuntimeError(f"Unsupported provider: {selected_provider}. Use 'llama' or 'openai'.")
 
 # --- Define Agent Node ---
 
@@ -120,6 +166,8 @@ llm_with_tools = llm.bind_tools(tools)
 def agent_node(state: AgentState) -> AgentState:
     """Agent node that calls the LLM with tool binding."""
     logger.info("Agent node: Processing messages...")
+    # Select LLM per request
+    llm_with_tools = _get_llm_with_tools(state.get("provider"), state.get("model"))
     # Rate-limit handling: retry on Groq 429 errors with suggested wait
     # Import groq lazily to avoid hard dependency in environments where it's unavailable
     try:
@@ -281,6 +329,8 @@ async def ask_question(
     query: str | None = Query(default=None),
     thread_id: str = "default",
     lang: str | None = Query(default=None),
+    provider: str | None = Query(default=None),
+    model: str | None = Query(default=None),
 ):
     """Handles Q&A requests from the UI or API using LangGraph agent"""
     # Accept both 'question' and legacy 'query' parameter names
@@ -375,7 +425,9 @@ async def ask_question(
         initial_state = {
             "messages": messages,
             "question": question,
-            "language": lang
+            "language": lang,
+            "provider": provider,
+            "model": model,
         }
 
         # Configure graph execution with thread_id for conversation history
@@ -396,42 +448,42 @@ async def ask_question(
         sources: list[dict] = []
         try:
             # DB sources
-            db_json = db_search_tool.invoke({"query": question})
-            if isinstance(db_json, str) and db_json:
-                parsed = json.loads(db_json)
-                if isinstance(parsed, list):
-                    for d in parsed[:5]:
-                        url = d.get("source_url") or ""
-                        if url:
-                            entry = {
-                                "title": d.get("title") or "Internal Document",
-                                "url": url,
-                                "type": "document",
-                            }
-                            lower = url.lower()
-                            entry["isDownload"] = any(lower.endswith(ext) for ext in [
-                                ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".csv"
-                            ])
-                            sources.append(entry)
+            db_results = db_search_tool.invoke({"query": question})
+            if isinstance(db_results, str) and db_results:
+                db_results = json.loads(db_results)
+            if isinstance(db_results, list):
+                for d in db_results[:5]:
+                    url = d.get("source_url") or ""
+                    if url:
+                        entry = {
+                            "title": d.get("title") or "Internal Document",
+                            "url": url,
+                            "type": "document",
+                        }
+                        lower = url.lower()
+                        entry["isDownload"] = any(lower.endswith(ext) for ext in [
+                            ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".csv"
+                        ])
+                        sources.append(entry)
         except Exception:
             pass
 
         try:
             # Web sources
-            web_json = web_search_tool.invoke({"query": question})
-            if isinstance(web_json, str) and web_json:
-                parsed = json.loads(web_json)
-                if isinstance(parsed, list):
-                    for r in parsed[:5]:
-                        url = r.get("url") or ""
-                        if url:
-                            entry = {
-                                "title": r.get("title") or "Web Result",
-                                "url": url,
-                                "type": "link",
-                                "isDownload": url.lower().endswith(".pdf"),
-                            }
-                            sources.append(entry)
+            web_results = web_search_tool.invoke({"query": question})
+            if isinstance(web_results, str) and web_results:
+                web_results = json.loads(web_results)
+            if isinstance(web_results, list):
+                for r in web_results[:5]:
+                    url = r.get("url") or ""
+                    if url:
+                        entry = {
+                            "title": r.get("title") or "Web Result",
+                            "url": url,
+                            "type": "link",
+                            "isDownload": url.lower().endswith(".pdf"),
+                        }
+                        sources.append(entry)
         except Exception:
             pass
 
@@ -480,5 +532,22 @@ async def ask_question(
 @app.get("/health")
 def health():
     return JSONResponse({"status": "ok"})
+
+@app.get("/config")
+def config():
+    """Expose available providers/models based on environment for frontend discovery."""
+    providers = []
+    models = {}
+    # Llama via Ollama/Groq
+    try:
+        providers.append({"key": "llama", "label": "Llama"})
+        models["llama"] = [ollama_model or "llama3.2"]
+    except Exception:
+        pass
+    # OpenAI if key present
+    if openai_api_key:
+        providers.append({"key": "openai", "label": "OpenAI"})
+        models["openai"] = ["gpt-4o-mini"]
+    return {"providers": providers, "models": models}
 
 # --end-of-file--

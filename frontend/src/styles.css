@@ -44,3 +44,27 @@
   * { @apply border-border; }
   body { @apply bg-background text-foreground; }
 }
+
+/* Chat messages scrollbar styling */
+.chat-messages {
+  overflow-y: auto;
+  scrollbar-gutter: stable both-edges;
+}
+
+/* WebKit (Chrome, Edge) */
+.chat-messages::-webkit-scrollbar {
+  width: 8px;
+}
+.chat-messages::-webkit-scrollbar-thumb {
+  background-color: rgba(100, 100, 100, 0.4);
+  border-radius: 6px;
+}
+.chat-messages::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Firefox */
+.chat-messages {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100, 100, 100, 0.5) transparent;
+}

@@ -42,7 +42,7 @@ def static_response_tool(query: str, language: str = "en") -> Optional[str]:
         language: The detected language code ('en' or 'es')
 
     Returns:
-        A predefined answer if the query matches an FAQ, otherwise an empty string.
+        A predefined answer if the query matches an FAQ; otherwise None.
 
     Example:
         >>> answer = static_response_tool("what is vecinita", "en")
@@ -86,13 +86,11 @@ def static_response_tool(query: str, language: str = "en") -> Optional[str]:
                     return faq_answer
 
         logger.info("Static Response: No FAQ match found")
-        # Important: tool outputs must be strings for the chat API.
-        # Return empty string when no match to avoid invalid 'role:tool' content.
-        return ""
+        return None
 
     except Exception as e:
         logger.error(f"Static Response: Error checking FAQs: {e}")
-        return ""
+        return None
 
 
 def add_faq(question: str, answer: str, language: str = "en") -> None:

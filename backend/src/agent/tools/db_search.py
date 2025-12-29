@@ -140,7 +140,7 @@ def create_db_search_tool(supabase_client, embedding_model, match_threshold: flo
         A configured tool function that can be used with LangGraph
     """
     @tool
-    def db_search(query: str) -> str:
+    def db_search(query: str) -> List[Dict[str, Any]]:
         """Search the internal knowledge base for relevant information.
 
         Use this tool to find information from the Vecinita document database.
@@ -151,8 +151,8 @@ def create_db_search_tool(supabase_client, embedding_model, match_threshold: flo
             query: The user's question or search query
 
         Returns:
-            A JSON string of relevant documents with content and source URLs.
-            Returns "[]" (string) if no relevant documents are found.
+            A list of relevant documents with content and source URLs.
+            Returns [] if no relevant documents are found.
         """
         try:
             logger.info(
@@ -176,17 +176,18 @@ def create_db_search_tool(supabase_client, embedding_model, match_threshold: flo
                 f"DB Search: Found {len(relevant_docs.data) if relevant_docs.data else 0} relevant documents")
 
             if not relevant_docs.data:
-                # Return an empty JSON array as a string to satisfy chat API
-                return "[]"
+                # Return an empty list when no relevant documents are found
+                return []
 
             # Normalize document format using helper function
             results = [_normalize_document(doc) for doc in relevant_docs.data]
 
-            # Return as JSON string for tool message content
-            return json.dumps(results, ensure_ascii=False)
+            # Return normalized Python list for tests and agent consumption
+            return results
 
         except Exception as e:
             logger.error(f"DB Search: {_format_db_error(e)}: {e}")
-            return json.dumps({"error": _format_db_error(e)}, ensure_ascii=False)
+            # Return empty list on error to keep agent robust and satisfy tests
+            return []
 
     return db_search

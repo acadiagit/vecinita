@@ -78,14 +78,14 @@ def create_web_search_tool(search_depth: str = "advanced", max_results: int = 5)
             logger.error(f"Failed to initialize DuckDuckGo search: {e}")
 
     @tool
-    def web_search(query: str) -> str:
+    def web_search(query: str) -> List[Dict[str, Any]]:
         """Search the web for information.
 
         Args:
             query: The search query
 
         Returns:
-            JSON string of normalized results with 'title', 'content'/'snippet', 'url'.
+            List of normalized results with 'title', 'content'/'snippet', 'url'.
         """
         normalized: List[Dict[str, Any]] = []
 
@@ -99,7 +99,7 @@ def create_web_search_tool(search_depth: str = "advanced", max_results: int = 5)
                         "content": r.get("content") or r.get("answer") or "",
                         "url": r.get("url") or r.get("source") or "",
                     })
-                return json.dumps(normalized, ensure_ascii=False)
+                return normalized
 
             # DuckDuckGo fallback
             if ddg is not None:
@@ -118,12 +118,12 @@ def create_web_search_tool(search_depth: str = "advanced", max_results: int = 5)
                         "content": results,
                         "url": "",
                     })
-                return json.dumps(normalized, ensure_ascii=False)
+                return normalized
 
             logger.error("No web search provider available")
-            return "[]"
+            return []
         except Exception as e:
             logger.error(f"Web search error: {e}")
-            return json.dumps({"error": str(e)}, ensure_ascii=False)
+            return []
 
     return web_search

@@ -59,13 +59,22 @@ export default function App() {
               <div className="mt-6">
                 <h3 className="text-lg font-medium mb-2">Sources</h3>
                 <ul className="list-disc pl-6 space-y-1">
-                  {sources.map((src, i) => (
-                    <li key={i}>
-                      <a href={src} target="_blank" rel="noreferrer" className="text-primary underline">
-                        {src}
-                      </a>
-                    </li>
-                  ))}
+                  {sources.map((src, i) => {
+                    const item = typeof src === 'string' ? { title: src, url: src } : src
+                    const label = item.title || item.url
+                    return (
+                      <li key={i} className="flex items-center gap-2">
+                        <a href={item.url} target="_blank" rel="noreferrer" className="text-primary underline">
+                          {label}
+                        </a>
+                        {item?.isDownload && (
+                          <a href={item.url} download target="_blank" rel="noreferrer" className="text-xs underline text-primary hover:text-primary/80">
+                            Download
+                          </a>
+                        )}
+                      </li>
+                    )
+                  })}
                 </ul>
               </div>
             )}
