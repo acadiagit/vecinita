@@ -63,7 +63,8 @@ if static_dir.exists():
 supabase_url = os.environ.get("SUPABASE_URL")
 supabase_key = os.environ.get("SUPABASE_KEY")
 groq_api_key = os.environ.get("GROQ_API_KEY")
-openai_api_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("OPEN_API_KEY")
+openai_api_key = os.environ.get(
+    "OPENAI_API_KEY") or os.environ.get("OPEN_API_KEY")
 ollama_base_url = os.environ.get("OLLAMA_BASE_URL")
 ollama_model = os.environ.get("OLLAMA_MODEL") or "llama3.2"
 if not supabase_url or not supabase_key:
@@ -78,8 +79,10 @@ try:
     # Initialize default LLM: prefer local Llama (Ollama), fallback to Groq Llama, then OpenAI
     if ollama_base_url:
         logger.info("Initializing ChatOllama (Llama) LLM...")
-        llm = ChatOllama(temperature=0, model=ollama_model, base_url=ollama_base_url)
-        logger.info(f"ChatOllama initialized successfully (model={ollama_model})")
+        llm = ChatOllama(temperature=0, model=ollama_model,
+                         base_url=ollama_base_url)
+        logger.info(
+            f"ChatOllama initialized successfully (model={ollama_model})")
     elif groq_api_key:
         logger.info("Initializing ChatGroq LLM (Llama default)...")
         llm = ChatGroq(temperature=0, groq_api_key=groq_api_key,
@@ -87,10 +90,12 @@ try:
         logger.info("ChatGroq LLM initialized successfully")
     elif openai_api_key:
         logger.info("Initializing ChatOpenAI LLM...")
-        llm = ChatOpenAI(temperature=0, api_key=openai_api_key, model="gpt-4o-mini")
+        llm = ChatOpenAI(temperature=0, api_key=openai_api_key,
+                         model="gpt-4o-mini")
         logger.info("ChatOpenAI LLM initialized successfully")
     else:
-        raise RuntimeError("No LLM provider configured. Set OLLAMA_BASE_URL or GROQ_API_KEY or OPENAI_API_KEY/OPEN_API_KEY.")
+        raise RuntimeError(
+            "No LLM provider configured. Set OLLAMA_BASE_URL or GROQ_API_KEY or OPENAI_API_KEY/OPEN_API_KEY.")
 
     # Use all-MiniLM-L6-v2 with 384 dimensions by default.
     # If sentence-transformers is unavailable (CI minimal deps), fall back to FastEmbed.
@@ -130,6 +135,7 @@ tools = [db_search_tool,
          static_response_tool, web_search_tool]
 logger.info(f"Initialized {len(tools)} tools: {[tool.name for tool in tools]}")
 
+
 def _get_llm_with_tools(provider: str | None, model: str | None):
     """Create an LLM bound with tools based on requested provider/model.
 
@@ -142,23 +148,29 @@ def _get_llm_with_tools(provider: str | None, model: str | None):
         # Prefer local Ollama
         if ollama_base_url:
             use_model = model or ollama_model or "llama3.2"
-            local_llm = ChatOllama(temperature=0, model=use_model, base_url=ollama_base_url)
+            local_llm = ChatOllama(
+                temperature=0, model=use_model, base_url=ollama_base_url)
             return local_llm.bind_tools(tools)
         # Fallback to Groq-hosted Llama if available
         if groq_api_key:
             use_model = model or "llama-3.1-8b-instant"
-            groq_llm = ChatGroq(temperature=0, groq_api_key=groq_api_key, model_name=use_model)
+            groq_llm = ChatGroq(
+                temperature=0, groq_api_key=groq_api_key, model_name=use_model)
             return groq_llm.bind_tools(tools)
         # Last resort: if nothing available, raise
-        raise RuntimeError("Llama provider requested but neither Ollama nor Groq are configured.")
+        raise RuntimeError(
+            "Llama provider requested but neither Ollama nor Groq are configured.")
     elif selected_provider == "openai":
         if not openai_api_key:
-            raise RuntimeError("OpenAI provider requested but OPENAI_API_KEY/OPEN_API_KEY is not set.")
+            raise RuntimeError(
+                "OpenAI provider requested but OPENAI_API_KEY/OPEN_API_KEY is not set.")
         use_model = model or "gpt-4o-mini"
-        openai_llm = ChatOpenAI(temperature=0, api_key=openai_api_key, model=use_model)
+        openai_llm = ChatOpenAI(
+            temperature=0, api_key=openai_api_key, model=use_model)
         return openai_llm.bind_tools(tools)
     else:
-        raise RuntimeError(f"Unsupported provider: {selected_provider}. Use 'llama' or 'openai'.")
+        raise RuntimeError(
+            f"Unsupported provider: {selected_provider}. Use 'llama' or 'openai'.")
 
 # --- Define Agent Node ---
 
@@ -167,7 +179,8 @@ def agent_node(state: AgentState) -> AgentState:
     """Agent node that calls the LLM with tool binding."""
     logger.info("Agent node: Processing messages...")
     # Select LLM per request
-    llm_with_tools = _get_llm_with_tools(state.get("provider"), state.get("model"))
+    llm_with_tools = _get_llm_with_tools(
+        state.get("provider"), state.get("model"))
     # Rate-limit handling: retry on Groq 429 errors with suggested wait
     # Import groq lazily to avoid hard dependency in environments where it's unavailable
     try:
@@ -532,6 +545,7 @@ async def ask_question(
 @app.get("/health")
 def health():
     return JSONResponse({"status": "ok"})
+
 
 @app.get("/config")
 def config():
