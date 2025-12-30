@@ -41,7 +41,18 @@ export default function MessageBubble({ role = 'assistant', content, sources = [
             <div className="grid grid-cols-1 gap-2 min-w-0">
               {sources.map((s, i) => {
                 const item = typeof s === 'string' ? { title: s, url: s } : s
-                return <LinkCard key={i} title={item.title} url={item.url} isDownload={item.isDownload} />
+                return (
+                  <LinkCard 
+                    key={i} 
+                    title={item.title} 
+                    url={item.url} 
+                    isDownload={item.isDownload}
+                    chunkIndex={item.chunkIndex}
+                    charStart={item.charStart}
+                    charEnd={item.charEnd}
+                    docIndex={item.docIndex}
+                  />
+                )
               })}
             </div>
           </div>

@@ -12,6 +12,11 @@ export default defineConfig({
         target: 'http://localhost:8000',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '')
+      },
+      // Backend config endpoint for language and provider settings
+      '/config': {
+        target: 'http://localhost:8000',
+        changeOrigin: true
       }
     }
   },

@@ -1,0 +1,867 @@
+======================================================================
+SOURCE: https://math-data-justice-collaborative.github.io/
+LOADER: Playwright (JavaScript rendering)
+DOCUMENTS_LOADED: 1 | DOCUMENTS_PROCESSED: 1 | CHUNKS: 1
+======================================================================
+
+--- CHUNK 1/1 ---
+404
+
+There isn't a GitHub Pages site here.
+
+If you're trying to publish one, read the full documentation to learn how to set up GitHub Pages for your repository, organization, or user account.
+
+GitHub Status — @githubstatus
+
+======================================================================
+SOURCE: https://dhs.ri.gov/
+LOADER: Playwright (JavaScript rendering)
+DOCUMENTS_LOADED: 1 | DOCUMENTS_PROCESSED: 1 | CHUNKS: 2
+======================================================================
+
+--- CHUNK 1/2 ---
+An Organization of Opportunity
+
+Through the compassionate delivery of critical safety net and other supportive services, the Rhode Island Department of Human Services (DHS) is committed to ensuring that individuals and families in Rhode Island have access to the supports they need to achieve their goals.
+
+Learn More About DHS
+
+Fraud Prevention and Reporting
+
+These steps can help you protect your benefits:
+
+Change your PIN frequently
+
+Don't use a common PIN number
+
+Change your PIN before your benefits are deposited into your account
+
+Never share your PIN with anyone
+
+Find all our fraud prevention resources at: https://dhs.ri.gov/resources
+
+Resources
+
+Applications and Forms
+
+One Pagers
+
+FAQs
+
+Office Locator
+
+Appeals Process
+
+Other Programs
+
+Supplemental Nutrition Assistance Program (SNAP)
+
+Child Care and CCAP
+
+RI Works (Cash Assistance)
+
+Energy Assistance Programs
+
+Long Term Services & Supports
+
+General Public Assistance (GPA)
+
+All Programs
+
+Press Releases All press releases
+
+--- CHUNK 2/2 ---
+Child Care and CCAP
+
+RI Works (Cash Assistance)
+
+Energy Assistance Programs
+
+Long Term Services & Supports
+
+General Public Assistance (GPA)
+
+All Programs
+
+Press Releases All press releases
+
+RI DHS and Commission on Deaf and Hard of Hearing to Offer Walk-In Appointments with American Sign Language Services
+
+Thursday, July 17, 2025
+
+DHS Pawtucket office to host a series of appointments to support community ...
+
+Read article
+
+Families are encouraged to apply for the 2025-2026 school year ...
+
+Read article
+
+RI DHS To Open Downtown Providence Appointment-Only Office in Shepard Building
+
+Tuesday, May 20, 2025
+
+CRANSTON, RI – Rhode Island Department of Human Services Director Kimberly Merolla-Brito today announced the agency will be opening a new appointment-only regional ...
+
+Read article
+
+All press releases
+
+SNAP: Nutrition Assistance
+
+Program Information
+
+Program Eligibility
+
+EBT Card
+
+Apply Now
+
+Learn About P-EBT
+
+======================================================================
+SOURCE: https://dmv.ri.gov/
+LOADER: Playwright (JavaScript rendering)
+DOCUMENTS_LOADED: 1 | DOCUMENTS_PROCESSED: 1 | CHUNKS: 2
+======================================================================
+
+--- CHUNK 1/2 ---
+Welcome
+
+Schedule Reservations and / or Road Tests
+
+RESERVATIONS - RI Division of Motor Vehicles is currently open by reservation only.
+
+Online DMV Customer Portal
+
+License Renewal
+
+You Will Need:
+
+current license
+
+a credit card
+
+a printer or email address
+
+Let's Get Started! »
+
+Registration Renewal
+
+You Will Need:
+
+current registration
+
+current car insurance
+
+a credit card
+
+a printer
+
+Let's Get Started! »
+
+Driving Records
+
+You Will Need:
+
+current license
+
+a credit card
+
+Let's Get Started! »
+
+Drivers with Disabilities
+
+Any person who is temporarily or permanently disabled may apply for a disability parking placard. To do so, you and your physician must jointly complete the application. Submit the form by fax at (401) 462-0829 or mail to the DMV headquarters in Cranston, Attn: Parking Permits Office. If your application is approved, you will be notified by mail.
+
+Application For New And Renewal Disability Parking Placards
+
+View All Disability Forms
+
+RI Plate Reissuance
+
+--- CHUNK 2/2 ---
+Application For New And Renewal Disability Parking Placards
+
+View All Disability Forms
+
+RI Plate Reissuance
+
+Now that RI Plate Reissuance is live, please click here for more information about obtaining your new Ocean design plate.
+
+To view all the design submissions from the Plate Design Contest, please click here.
+
+Dealers License and Hearing Board
+
+The board regulates both new and used car dealers. Handles car dealer complaints from the general public. Investigates misuse of dealer regulations. Meetings and minutes are filed with the Office of the Secretary of State.
+
+Consumer Complaint Form
+
+Board Meetings and Minutes
+
+(Enter: 'Motor Vehicle Dealers License and Hearing Board' in the Public Bodies search box)
+
+American flag
+
+Support Our Troops
+
+Click Here to Learn How
+
+Donate Life logo
+
+At Donate Life Rhode Island, individuals are able to register to be an organ and tissue donor at anytime — 24 hours a day — 7 days a week
+
+questions and feedback
+
+======================================================================
+SOURCE: https://dioceseofprovidence.org/
+LOADER: Playwright (JavaScript rendering)
+DOCUMENTS_LOADED: 1 | DOCUMENTS_PROCESSED: 1 | CHUNKS: 1
+======================================================================
+
+--- CHUNK 1/1 ---
+Please enable cookies.
+
+Sorry, you have been blocked
+
+You are unable to access sites.ecatholic.com
+
+Why have I been blocked?
+
+This website is using a security service to protect itself from online attacks. The action you just performed triggered the security solution. There are several actions that could trigger this block including submitting a certain word or phrase, a SQL command or malformed data.
+
+What can I do to resolve this?
+
+You can email the site owner to let them know you were blocked. Please include what you were doing when this page came up and the Cloudflare Ray ID found at the bottom of this page.
+
+Cloudflare Ray ID: 9b6403a3189dfdda • Your IP: 156.39.10.100 • Performance & security by Cloudflare
+
+======================================================================
+SOURCE: https://www.diiri.org/
+LOADER: Playwright (JavaScript rendering)
+DOCUMENTS_LOADED: 1 | DOCUMENTS_PROCESSED: 1 | CHUNKS: 6
+======================================================================
+
+--- CHUNK 1/6 ---
+Skip to main content
+
+A year in review: explore our Annual Report and the progress behind it
+
+View the 2025 Annual report
+
+Rooted in Respect.
+
+Rising in Resilience.
+
+There are many different ways to help us welcome all seeking to call Rhode Island home.
+
+How to Help
+
+We cultivate an inclusive community for immigrants and those seeking refuge by providing integrated services, fostering cross-cultural understanding, and nurturing strong partnerships.
+
+Learn More
+
+How We Help
+
+Services helping immigrants, refugees, and all Rhode Islanders
+
+See All Services
+
+Translation & Interpretation
+
+Education & Training
+
+Employment Services
+
+Unaccompanied Youth
+
+Refugee Resettlement
+
+Citizenship & Immigration
+
+Get Involved! How to Help
+
+--- CHUNK 2/6 ---
+See All Services
+
+Translation & Interpretation
+
+Education & Training
+
+Employment Services
+
+Unaccompanied Youth
+
+Refugee Resettlement
+
+Citizenship & Immigration
+
+Get Involved! How to Help
+
+There are many ways to help us help refugees, immigrants and vulnerable Rhode Islanders get what they need to live the life they deserve. We provide services to thousands of people each year, and truly need the support of our community to ensure that all of our programs and services are readily available and accessible to those who need it most.
+
+Please consider contributing to our mission today. We are grateful for your help!
+
+money icon
+
+Funds
+
+Please consider helping us help those who need it most by giving today.
+
+shirt icon
+
+Goods
+
+Sometimes, it’s the smallest comforts that have the greatest impact.
+
+clock icon
+
+Volunteer
+
+It takes a diverse community to build and develop the strengths of individuals.
+
+Discover All Ways To Give
+
+Latest News & Events
+
+View All News & Events
+
+--- CHUNK 3/6 ---
+clock icon
+
+Volunteer
+
+It takes a diverse community to build and develop the strengths of individuals.
+
+Discover All Ways To Give
+
+Latest News & Events
+
+View All News & Events
+
+Five Questions With: Milagro Sique
+
+Five Questions With: Milagro Sique
+
+How has federal funding affected Dorcas International Institute of Rhode Island? The federal funding cuts that went into effect in January led to one of our most challenging years in our more than 100-year history.
+
+Five Questions With: Milagro Sique
+
+How has federal funding affected Dorcas International Institute of Rhode Island? The federal funding cuts that went into effect in January led to one of our most challenging years in our more than 100-year history.
+
+Read More about Five Questions With: Milagro Sique
+
+R.I.’s largest immigration nonprofit faces layoffs amid Trump funding freeze
+
+--- CHUNK 4/6 ---
+Read More about Five Questions With: Milagro Sique
+
+R.I.’s largest immigration nonprofit faces layoffs amid Trump funding freeze
+
+Dorcas International, which serves thousands of refugees and immigrants in Rhode Island each year, relies on federal funding for about half its annual budget
+
+Read More about R.I.’s largest immigration nonprofit faces layoffs amid Trump funding freeze
+
+Community Conversation: What We Know Right Now
+
+Information on the latest updates (as of 2-6-25) regarding policy and funding changes impacting the immigration landscape around the country and right here in Rhode Island. Dorcas International's Executive Director, Kathy Cloutier shares how Washington is changing the way we work and provide critical support to those in need.
+
+Watch Video
+
+Watch Video
+
+Dorcas International presents Insights Into Immigration
+
+--- CHUNK 5/6 ---
+Watch Video
+
+Watch Video
+
+Dorcas International presents Insights Into Immigration
+
+Dorcas International legal experts within our Citizenship and Immigration service area delve into immigration issues in Rhode Island, at the border and overall.
+
+Watch Video
+
+Watch Video
+
+Refuge in RI - Helping Rebuild Lives
+
+An informative and compelling look into the experience of those who've fled their homeland seeking refuge in Rhode Island, USA.
+
+Watch video
+
+Read More about Refuge in RI - Helping Rebuild Lives
+
+Story Spotlight
+
+“It’s very rare people recognize you for just being a human being.”
+
+For Ada Uzia Boaz and Chance Boas living in Tanzania’s refugee camps meant surviving in very difficult conditions. A great deal of their time was spent waiting for food rations, clean drinking water – and especially – waiting decades for a permanent home. Despite the struggles, life went on amid the suffering.
+
+Read Our Stories
+
+--- CHUNK 6/6 ---
+Read Our Stories
+
+Dorcas International Institute of Rhode Island cultivates an inclusive community for immigrants and those seeking refuge by providing integrated services, fostering cross-cultural understanding, and nurturing strong partnerships for more than 100 years.
+
+Donate
+
+Close menu
+
+======================================================================
+SOURCE: https://www.immigrantcoalitionri.org/
+LOADER: Playwright (JavaScript rendering)
+DOCUMENTS_LOADED: 1 | DOCUMENTS_PROCESSED: 1 | CHUNKS: 1
+======================================================================
+
+--- CHUNK 1/1 ---
+thumbnail_Image (1).jpg
+
+IMG-9172 (1).jpg
+
+20220325_131338 (1) (2).jpg
+
+thumbnail_Image (5).jpg
+
+thumbnail_Image (4).jpg
+
+thumbnail_Image (3).jpg
+
+The Immigrant Coalition of Rhode Island
+
+Thank you for looking at the Immigrant Coalition of Rhode Island webpage. If you need to urgently report ICE activity, please call the Deportation Defense Line at 401‑675‑1414 for immediate assistance.
+
+Know Your Rights
+
+======================================================================
+SOURCE: https://ricadv.org/
+LOADER: Playwright (JavaScript rendering)
+DOCUMENTS_LOADED: 1 | DOCUMENTS_PROCESSED: 1 | CHUNKS: 5
+======================================================================
+
+--- CHUNK 1/5 ---
+Our Future Depends on Preventing Domestic Violence
+
+Learn what domestic violence looks like and how you can help.
+
+How to help
+
+Our Mission
+
+Our mission is to end domestic violence through supporting our member agencies that provide direct services to survivors and community members, advocating for survivor-centered policy and systemic change, and providing statewide leadership, resources, and education to create safe and healthy communities.
+
+Communication
+
+Fosters communication, resource sharing, networking and collaboration
+
+Awareness
+
+Raises awareness, responds to community needs, and educates the public about domestic violence
+
+Promoting
+
+Promotes community organizing around the prevention of domestic violence
+
+Advocates
+
+Advocates locally and nationally to impact social and systemic change on the issue of domestic violence
+
+Partners
+
+Partners with survivors to strengthen and empower the voices of abused women
+
+Resources
+
+Accesses resources to maximize community impact
+
+--- CHUNK 2/5 ---
+Partners
+
+Partners with survivors to strengthen and empower the voices of abused women
+
+Resources
+
+Accesses resources to maximize community impact
+
+Visit the RI Data Dashboard on Domestic Violence for more data!​
+
+Data Dashboard
+
+100
+
+individual victims of domestic violence received help in 2023 alone
+
+helpline/hotline calls were answered in 2023
+
+1 K+
+
+individual services were provided by advocates in 2023
+
+Our Vision
+
+The Rhode Island Coalition Against Domestic Violence envisions a Rhode Island free from domestic violence. We collectively work to build safe and thriving communities for survivors and all Rhode Islanders.
+
+Our Core Principles
+
+Empowerment
+
+Every person has a right to have control over their mind, body and spirit.
+
+Safety
+
+Every person has the right to privacy and a life free from violence.
+
+Justice
+
+--- CHUNK 3/5 ---
+Our Core Principles
+
+Empowerment
+
+Every person has a right to have control over their mind, body and spirit.
+
+Safety
+
+Every person has the right to privacy and a life free from violence.
+
+Justice
+
+Every person and community affected by domestic violence deserves justice. We strive to reshape and create systems and policies to eliminate systemic oppression and violence of all kinds.
+
+Authentic Partnership
+
+We cannot end domestic violence on our own, and we intentionally invest in partnerships to accomplish our goal of eliminating violence.
+
+Equity
+
+Social inequalities and discriminatory systems put some communities at greater risk for domestic violence. We strive to ensure all people have access to the resources and opportunities they need to be safe and thrive.
+
+Our Member Agencies
+
+The RICADV’s network of member agencies provides comprehensive emergency and support services to victims of domestic violence, dating violence, sexual violence, and stalking.
+
+--- CHUNK 4/5 ---
+Our Member Agencies
+
+The RICADV’s network of member agencies provides comprehensive emergency and support services to victims of domestic violence, dating violence, sexual violence, and stalking.
+
+Blackstone Valley Advocacy Center
+
+Domestic Violence Resource Center of South County
+
+Elizabeth Buffum Chace Center
+
+Women’s Resource Center
+
+Center for Southeast Asians
+
+Crossroads Rhode Island
+
+Family Service of Rhode Island
+
+McAuley Ministries
+
+Progreso Latino
+
+YWCA RI
+
+Supporting victims and survivors to have their stories heard
+
+"Staying silent in the face of behaviors that normalize violence against women damages so much. We need to speak out—around our children, in our churches, in our workplaces. Let’s heal ourselves and our communities."
+
+SOAR Member
+
+VISIT SOAR WEBSITE
+
+By modeling respectful relationships and being a voice for equality, men can help change the culture that allows domestic abuse and other forms of violence.
+
+--- CHUNK 5/5 ---
+SOAR Member
+
+VISIT SOAR WEBSITE
+
+By modeling respectful relationships and being a voice for equality, men can help change the culture that allows domestic abuse and other forms of violence.
+
+Ten Men is made up of local men from diverse walks of life who share a common vision—a world without domestic violence.
+
+Did You Know? In Just One Day
+
+Victims made 63 requests for services—including emergency shelter, housing, transportation, childcare, legal representation, and other support needs—that programs could not provide because they lacked the resources. Approximately 98% of these unmet requests were for housing and emergency shelter.
+
+Learn More
+
+Recent Annual Reports
+
+Helpline Available 24/7
+
+The confidential statewide Helpline can be reached by calling 1-800-494-8100 or using the online chat here. The Helpline is for all victims of violent crime, including domestic and dating abuse, and those looking for more information to help a victim of violence.
+
+24-hr Helpline
+
+======================================================================
+SOURCE: https://www.rihispanicchamber.org/
+LOADER: Playwright (JavaScript rendering)
+DOCUMENTS_LOADED: 1 | DOCUMENTS_PROCESSED: 1 | CHUNKS: 6
+======================================================================
+
+--- CHUNK 1/6 ---
+Skip to content
+
+grow your business
+
+grow your business
+
+Join us
+
+Join us
+
+grow your business
+
+grow your business
+
+Join us
+
+Join us
+
+EVENTS
+
+BECOME A MEMBER
+
+BUSINESS DIRECTORY
+
+DONATE
+
+Upcoming Events
+
+Gala de la Hispanidad
+
+Gala de la Hispanidad
+
+Business Owner Connection
+
+Business Owner Connection
+
+Latina Women in Business
+
+Latina Women in Business
+
+Latino Financial Summit
+
+Latino Financial Summit
+
+Latino Supplier Summit
+
+Latino Supplier Summit
+
+Café con Leche
+
+Café con Leche
+
+1000+
+
+Members, Small Business and Partners
+
+During COVID Pandemic we reached out to
+
+2,500+
+
+Small Business
+
+Helped to allocate
+
+75M+
+
+in Small Business Assistance Among Hispanic Business
+
+Testimonials
+
+Testimonials
+
+” Thank you, all the training was very good, I will continue practicing it to be a better person, learn more and above all continue to treat my clients well. “ Julieta Orozco, La Mexicana Minimart.
+
+--- CHUNK 2/6 ---
+” Thank you, all the training was very good, I will continue practicing it to be a better person, learn more and above all continue to treat my clients well. “ Julieta Orozco, La Mexicana Minimart.
+
+“I learned about the Rhode Island Hispanic Chamber of Commerce through Carol Aguavivas during COVID-19, a before and after has been marked. The Hispanic Chamber of Commerce has been support, direction, has given me necessary information, guidance and help as a company and has helped me grow. The staff is very friendly and efficient, especially I feel the support when requested. I am Hispanic and I am more than proud to be a member of this organization.!” With appreciation Yaudy Diaz
+
+--- CHUNK 3/6 ---
+“I feel very grateful for participating in this cafecito on Tuesdays and Thursdays. The learning that I have since the beginning now is incredible and this class today is phenomenal. Marisol with you understands everything perfectly, explains everything very clearly and precisely. Thank you for including me in these talks. Blessings!” Any Beras
+
+” Thank you for your great effort to help us and guide us to obtain better performance and wisdom to work with my business. Thank you infinitely for his time, may the Lord continue to fill you with many blessings.“ Iluminada Santiago, Lulu Home daycare.
+
+” Thank you very much everyone, this workshop has been very helpful for me, thank you. ” Ana Bencosme
+
+--- CHUNK 4/6 ---
+” Thank you very much everyone, this workshop has been very helpful for me, thank you. ” Ana Bencosme
+
+” Thank you very much for caring about the Hispanic community, so that we are more and better informed and trained, so that in the future we can continue advancing in our businesses and thus be able to offer a better service to our community. Thank you very much and blessings. “ Leonora Rodriguez
+
+” Thank you very much these classes were excellent!!! “ Alicia Nunez
+
+” Thank you very much for such an excellent workshop, I learned a lot and reinforced some knowledge that I have. “ Leonora M
+
+” Thank you, all the training was very good, I will continue practicing it to be a better person, learn more and above all continue to treat my clients well. “ Julieta Orozco, La Mexicana Minimart.
+
+--- CHUNK 5/6 ---
+” Thank you, all the training was very good, I will continue practicing it to be a better person, learn more and above all continue to treat my clients well. “ Julieta Orozco, La Mexicana Minimart.
+
+“I learned about the Rhode Island Hispanic Chamber of Commerce through Carol Aguavivas during COVID-19, a before and after has been marked. The Hispanic Chamber of Commerce has been support, direction, has given me necessary information, guidance and help as a company and has helped me grow. The staff is very friendly and efficient, especially I feel the support when requested. I am Hispanic and I am more than proud to be a member of this organization.!” With appreciation Yaudy Diaz
+
+Click here to meet all of our allies
+
+Slide #1
+
+Read More
+
+Slide #1
+
+Read More
+
+Slide #1
+
+Read More
+
+Slide #1
+
+Read More
+
+Slide #1
+
+Read More
+
+Slide #1
+
+Read More
+
+Slide #1
+
+Read More
+
+Slide #1
+
+Read More
+
+Slide #1
+
+Read More
+
+Slide #1
+
+Read More
+
+Slide #1
+
+Read More
+
+Slide #1
+
+Read More
+
+Slide #1
+
+Read More
+
+--- CHUNK 6/6 ---
+Read More
+
+Slide #1
+
+Read More
+
+Slide #1
+
+Read More
+
+Slide #1
+
+Read More
+
+Slide #1
+
+Read More
+
+Slide #1
+
+Read More
+
+Slide #1
+
+Read More
+
+Slide #1
+
+Read More
+
+Slide #1
+
+Read More
+
+Slide #1
+
+Read More
+
+Slide #1
+
+Read More
+
+SIGN UP
+
+To our newsletter and receive the latest news & information
+
+en_US
+
+English
+
+en_US
+
+English
+
+es_ES
+
+Spanish
+
+Chat !
+
+======================================================================
+SOURCE: https://rihca.org/
+LOADER: Playwright (JavaScript rendering)
+DOCUMENTS_LOADED: 1 | DOCUMENTS_PROCESSED: 1 | CHUNKS: 1
+======================================================================
+
+--- CHUNK 1/1 ---
+Trainings and Events See All
+
+Click HERE for upcoming events, trainings, and other learning opportunities
+
+Latest News & Updates
+
+December 22, 2025
+
+Attorney General Neronha Warns Rhode Islanders about Junk Health
+
+November 25, 2025
+
+Wood River Health Receives Hope Award
+
+November 17, 2025
+
+Blackstone Valley Community Health Care Reopens Park Place Location Following Extensive Renovations
+
+In the Spotlight
+
+Highlighting RIHCA's Member Community Health Centers and Partner Organizations
+
+RIHCA presents Brenda Seagrave-Whittle Scholarship Award to EBCAP's Janine Petracca-Fonseca, Assistant Program Manager/Hospital Liaison
+
+Click HERE to view more
+
+Statewide Assister Network Services
+
+Get more information on how your organization can get certified to provide application assistance
+
+Your agency has the opportunity to become part of a volunteer program providing unpaid, in-person application assistance to consumers who want to enroll in health insurance.
+
+More about the SANS Program
+

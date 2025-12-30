@@ -236,7 +236,9 @@ class SmartLoader:
             return docs, loader_type, len(docs) > 0
         except Exception as e:
             log.error(f"--> Playwright loading failed: {e}")
-            return [], loader_type, False
+            # Fallback to standard loader if Playwright fails
+            log.warning(f"--> Falling back to standard loader for {url}")
+            return self._load_standard(url)
 
     def _load_standard(self, url: str) -> Tuple[List, str, bool]:
         """Load with standard Unstructured loader."""

@@ -533,6 +533,15 @@ async def ask_question(
                         entry["isDownload"] = any(lower.endswith(ext) for ext in [
                             ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".csv"
                         ])
+                        # Add position information if available
+                        if 'chunk_index' in d:
+                            entry['chunkIndex'] = d['chunk_index']
+                        if 'char_start' in d:
+                            entry['charStart'] = d['char_start']
+                        if 'char_end' in d:
+                            entry['charEnd'] = d['char_end']
+                        if 'doc_index' in d:
+                            entry['docIndex'] = d['doc_index']
                         sources.append(entry)
         except Exception:
             pass

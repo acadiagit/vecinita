@@ -75,22 +75,37 @@ class DocumentProcessor:
             '\n', ' ') + '...'
         log.info(f"--> PREVIEW (after cleaning): {preview_text}")
 
-        # Split into chunks
+        # Split into chunks with position tracking
         log.info("--> Splitting text into chunks...")
         chunks_for_file = []
         extracted_links = []
         total_chunks = 0
 
-        for content, metadata in cleaned_docs_content:
+        for doc_index, (content, metadata) in enumerate(cleaned_docs_content):
             split_chunks = self.text_splitter.split_text(content)
             # Fallback: if no chunks produced, treat whole content as one chunk
             if not split_chunks and content:
                 split_chunks = [content]
             total_chunks += len(split_chunks)
 
-            for chunk_text in split_chunks:
+            # Track cumulative character position for each chunk
+            char_offset = 0
+            for chunk_idx, chunk_text in enumerate(split_chunks):
+                chunk_len = len(chunk_text)
+                chunk_metadata = metadata.copy()
+                # Add position tracking to metadata
+                chunk_metadata.update({
+                    'char_start': char_offset,
+                    'char_end': char_offset + chunk_len,
+                    'doc_index': doc_index,
+                    'chunk_in_doc': chunk_idx
+                })
                 chunks_for_file.append(
-                    {'text': chunk_text, 'metadata': metadata})
+                    {'text': chunk_text, 'metadata': chunk_metadata})
+                # Advance offset (account for overlap in next iteration)
+                char_offset += chunk_len - self.config.CHUNK_OVERLAP
+                if char_offset < 0:
+                    char_offset = 0
 
             # Extract links from metadata
             if 'source' in metadata:

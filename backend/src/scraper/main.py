@@ -117,12 +117,27 @@ def main():
 
     # Read URLs from input file
     try:
-        with open(args.input, 'r', encoding='utf-8') as f:
-            urls = [
-                line.strip()
-                for line in f
-                if line.strip() and not line.startswith('#')
-            ]
+        # Try UTF-8 first, then fall back to UTF-8 with BOM, then latin-1
+        encodings = ['utf-8', 'utf-8-sig', 'latin-1']
+        urls = []
+        for encoding in encodings:
+            try:
+                with open(args.input, 'r', encoding=encoding) as f:
+                    urls = [
+                        line.strip()
+                        for line in f
+                        if line.strip() and not line.startswith('#')
+                    ]
+                log.debug(
+                    f"Successfully read input file with {encoding} encoding")
+                break
+            except UnicodeDecodeError:
+                continue
+
+        if not urls:
+            raise Exception(
+                "Could not decode file with any supported encoding")
+
     except Exception as e:
         log.error(f"Failed to read input file {args.input}: {e}")
         sys.exit(1)

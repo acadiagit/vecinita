@@ -22,7 +22,7 @@ def _normalize_document(doc: Dict[str, Any]) -> Dict[str, Any]:
         doc: Raw document dictionary from Supabase
 
     Returns:
-        Normalized document with 'content', 'source_url', and 'similarity' fields
+        Normalized document with 'content', 'source_url', 'similarity', and position fields
     """
     source = (
         doc.get('source_url')
@@ -37,12 +37,28 @@ def _normalize_document(doc: Dict[str, Any]) -> Dict[str, Any]:
         or ''
     )
     similarity = doc.get('similarity', 0.0)
+    chunk_index = doc.get('chunk_index')
+    metadata = doc.get('metadata', {})
 
-    return {
+    # Extract position info from metadata if available
+    result = {
         'content': content,
         'source_url': source,
-        'similarity': similarity
+        'similarity': similarity,
     }
+    
+    if chunk_index is not None:
+        result['chunk_index'] = chunk_index
+    
+    if isinstance(metadata, dict):
+        if 'char_start' in metadata:
+            result['char_start'] = metadata['char_start']
+        if 'char_end' in metadata:
+            result['char_end'] = metadata['char_end']
+        if 'doc_index' in metadata:
+            result['doc_index'] = metadata['doc_index']
+    
+    return result
 
 
 def _format_db_error(e: Exception) -> str:

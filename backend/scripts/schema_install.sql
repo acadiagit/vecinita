@@ -179,7 +179,8 @@ RETURNS TABLE (
     content TEXT,
     source_url TEXT,
     chunk_index INTEGER,
-    similarity REAL
+    metadata JSONB,
+    similarity DOUBLE PRECISION
 )
 LANGUAGE plpgsql
 AS $$
@@ -190,6 +191,7 @@ BEGIN
         dc.content,
         dc.source_url,
         dc.chunk_index,
+        dc.metadata,
         1 - (dc.embedding <=> query_embedding) AS similarity
     FROM document_chunks dc
     WHERE dc.embedding IS NOT NULL

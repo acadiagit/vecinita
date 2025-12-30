@@ -6,6 +6,7 @@ Loads and manages site categorization and scraper settings.
 import os
 import logging
 from typing import Dict, List
+from pathlib import Path
 
 log = logging.getLogger(__name__)
 
@@ -13,7 +14,25 @@ log = logging.getLogger(__name__)
 class ScraperConfig:
     """Manages all scraper configuration."""
 
-    CONFIG_DIR = "data/config"
+    # Try to find config dir relative to repo root
+    # When running from backend/, look in ../data/config
+    # When running from repo root, look in data/config
+    _potential_config_dirs = [
+        Path("data/config"),  # From repo root
+        Path("../data/config"),  # From backend/
+        Path(__file__).parent.parent.parent.parent /
+        "data" / "config",  # Absolute from module
+    ]
+
+    CONFIG_DIR = None
+    for _dir in _potential_config_dirs:
+        if _dir.exists():
+            CONFIG_DIR = str(_dir)
+            break
+
+    if CONFIG_DIR is None:
+        CONFIG_DIR = "data/config"  # Fallback
+
     RECURSIVE_SITES_FILE = os.path.join(CONFIG_DIR, "recursive_sites.txt")
     PLAYWRIGHT_SITES_FILE = os.path.join(CONFIG_DIR, "playwright_sites.txt")
     SKIP_SITES_FILE = os.path.join(CONFIG_DIR, "skip_sites.txt")

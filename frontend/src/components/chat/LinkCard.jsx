@@ -3,7 +3,7 @@ import { Card, CardContent } from '../ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog'
 import { FileText, FileSpreadsheet, FileArchive, FileJson, FileCode, File, Globe, ExternalLink, Copy, Eye, Download } from 'lucide-react'
 
-export default function LinkCard({ title, url, isDownload }) {
+export default function LinkCard({ title, url, isDownload, chunkIndex, charStart, charEnd, docIndex }) {
   const hostname = (() => {
     try {
       return new URL(url).hostname
@@ -11,6 +11,24 @@ export default function LinkCard({ title, url, isDownload }) {
       return ''
     }
   })()
+
+  // Compute position display text
+  const positionText = useMemo(() => {
+    if (chunkIndex === undefined && charStart === undefined) return null
+    
+    const parts = []
+    if (chunkIndex !== undefined && chunkIndex !== null) {
+      parts.push(`Chunk ${chunkIndex + 1}`)
+    }
+    if (charStart !== undefined && charEnd !== undefined) {
+      parts.push(`chars ${charStart}-${charEnd}`)
+    }
+    if (docIndex !== undefined && docIndex !== null && docIndex > 0) {
+      parts.push(`doc ${docIndex + 1}`)
+    }
+    
+    return parts.length > 0 ? parts.join(', ') : null
+  }, [chunkIndex, charStart, charEnd, docIndex])
 
   const fileExt = (() => {
     try {
@@ -116,7 +134,12 @@ export default function LinkCard({ title, url, isDownload }) {
           </div>
           <div className="min-w-0 flex-1">
             <div className="text-sm font-medium mb-1 line-clamp-2">{title || url}</div>
-            {hostname && <div className="text-xs text-muted-foreground mb-2">{hostname}</div>}
+            {hostname && <div className="text-xs text-muted-foreground mb-1">{hostname}</div>}
+            {positionText && (
+              <div className="text-xs text-muted-foreground font-mono opacity-70">
+                {positionText}
+              </div>
+            )}
           </div>
         </div>
         <div className="flex gap-2 mt-1">
