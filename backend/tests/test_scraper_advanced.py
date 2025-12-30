@@ -132,7 +132,8 @@ class TestScraperWithMockedRequests:
         # Since both fail for invalid URLs, success should be False
         assert success is False
         # Loader type reflects which loader was used (may be fallback)
-        assert loader_type in ["Playwright (JavaScript rendering)", "Unstructured URL Loader"]
+        assert loader_type in [
+            "Playwright (JavaScript rendering)", "Unstructured URL Loader"]
 
     @patch('src.scraper.loaders.RecursiveUrlLoader')
     def test_recursive_loader_with_depth(self, mock_recursive):

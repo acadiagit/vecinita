@@ -242,15 +242,17 @@ export default function ChatWidget({ backendUrl, embedded = false, initialOpen =
           </Button>
         </div>
 
-        <div ref={listRef} className="flex-1 chat-messages p-3 bg-muted/30 min-w-0">
-          {messages.map((m, i) => (
-            <MessageBubble
-              key={i}
-              role={m.role}
-              content={m.content}
-              sources={m.sources}
-            />
-          ))}
+        <div ref={listRef} className="flex-1 chat-messages p-3 bg-muted/30 min-w-0 flex flex-col items-center">
+          <div className="w-full max-w-2xl">
+            {messages.map((m, i) => (
+              <MessageBubble
+                key={i}
+                role={m.role}
+                content={m.content}
+                sources={m.sources}
+              />
+            ))}
+          </div>
         </div>
 
         <div className="px-4 py-3 border-t">
@@ -328,17 +330,17 @@ export default function ChatWidget({ backendUrl, embedded = false, initialOpen =
           </DialogHeader>
 
           {/* Font size slider */}
-          <div className="px-4 py-2 border-b flex items-center gap-2">
-            <span className="text-xs">A</span>
+          <div className="px-4 py-2 border-b flex items-center justify-center gap-2">
+            <span style={{ '--font-scale': 1, fontSize: '0.75rem' }}>A</span>
             <Slider
               min={0.8}
               max={1.4}
               step={0.05}
               value={[fontScale]}
               onValueChange={(val) => setFontScale(val[0])}
-              className="flex-1"
+              className="flex-1 max-w-xs"
             />
-            <span className="text-xs">A</span>
+            <span style={{ '--font-scale': 1, fontSize: '1.5rem' }}>A</span>
             <Button
               variant="ghost"
               size="sm"
@@ -350,15 +352,17 @@ export default function ChatWidget({ backendUrl, embedded = false, initialOpen =
           </div>
 
           {/* Messages area with custom scrollbar */}
-          <div ref={listRef} className="flex-1 chat-messages p-3 bg-muted/30 min-w-0 flex flex-col overflow-y-auto">
-            {messages.map((m, i) => (
-              <MessageBubble
-                key={i}
-                role={m.role}
-                content={m.content}
-                sources={m.sources}
-              />
-            ))}
+          <div ref={listRef} className="flex-1 chat-messages p-3 bg-muted/30 min-w-0 flex flex-col items-center overflow-y-auto">
+            <div className="w-full max-w-2xl">
+              {messages.map((m, i) => (
+                <MessageBubble
+                  key={i}
+                  role={m.role}
+                  content={m.content}
+                  sources={m.sources}
+                />
+              ))}
+            </div>
           </div>
 
           {/* Input area */}
