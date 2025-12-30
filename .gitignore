@@ -110,3 +110,8 @@ frontend/node_modules/
 frontend/dist/
 frontend/coverage/
 frontend/.eslintcache
+frontend/test-results/
+
+# Testing artifacts
+test-results/
+.last-run.json

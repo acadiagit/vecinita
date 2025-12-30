@@ -1,5 +1,5 @@
 """
-Tests for the scraper CLI module - src/utils/scraper/main.py
+Tests for the scraper CLI module - src/scraper/main.py
 Tests for command-line interface and entry point.
 """
 import pytest
@@ -36,7 +36,7 @@ class TestScraperCLI:
                 '--output-file', output_file,
                 '--failed-log', failed_log
             ]):
-                with patch('src.utils.scraper.main.VecinaScraper') as mock_scraper:
+                with patch('src.scraper.scraper.VecinaScraper') as mock_scraper:
                     mock_instance = Mock()
                     mock_instance.scrape_urls.return_value = (1, 0, 1)
                     mock_scraper.return_value = mock_instance
@@ -92,7 +92,7 @@ class TestScraperCLI:
                 '--output-file', output_file,
                 '--failed-log', failed_log
             ]):
-                with patch('src.utils.scraper.main.VecinaScraper') as mock_scraper:
+                with patch('src.scraper.main.VecinaScraper') as mock_scraper:
                     mock_instance = Mock()
                     mock_instance.scrape_urls.return_value = (1, 1, 0)
                     mock_instance.print_summary = Mock()
@@ -125,7 +125,7 @@ class TestScraperCLI:
                 '--failed-log', failed_log,
                 '--links-file', links_file
             ]):
-                with patch('src.utils.scraper.main.VecinaScraper') as mock_scraper:
+                with patch('src.scraper.main.VecinaScraper') as mock_scraper:
                     mock_instance = Mock()
                     mock_instance.scrape_urls.return_value = (1, 1, 0)
                     mock_instance.print_summary = Mock()
@@ -158,7 +158,7 @@ class TestScraperCLI:
                 '--failed-log', failed_log,
                 '--loader', 'playwright'
             ]):
-                with patch('src.utils.scraper.main.VecinaScraper') as mock_scraper:
+                with patch('src.scraper.main.VecinaScraper') as mock_scraper:
                     mock_instance = Mock()
                     mock_instance.scrape_urls.return_value = (1, 1, 0)
                     mock_instance.print_summary = Mock()
@@ -195,7 +195,7 @@ class TestScraperCLIErrorHandling:
                 '--output-file', output_file,
                 '--failed-log', failed_log
             ]):
-                with patch('src.utils.scraper.main.VecinaScraper') as mock_scraper:
+                with patch('src.scraper.main.VecinaScraper') as mock_scraper:
                     mock_instance = Mock()
                     mock_instance.scrape_urls.side_effect = KeyboardInterrupt()
                     mock_instance.print_summary = Mock()
@@ -225,7 +225,7 @@ class TestScraperCLIErrorHandling:
                 '--output-file', output_file,
                 '--failed-log', failed_log
             ]):
-                with patch('src.utils.scraper.main.VecinaScraper') as mock_scraper:
+                with patch('src.scraper.main.VecinaScraper') as mock_scraper:
                     mock_instance = Mock()
                     mock_instance.scrape_urls.side_effect = Exception(
                         "Fatal error")
@@ -262,7 +262,7 @@ class TestScraperCLIURLParsing:
                 '--output-file', output_file,
                 '--failed-log', failed_log
             ]):
-                with patch('src.utils.scraper.main.VecinaScraper') as mock_scraper:
+                with patch('src.scraper.main.VecinaScraper') as mock_scraper:
                     mock_instance = Mock()
                     mock_instance.scrape_urls.return_value = (2, 2, 0)
                     mock_instance.print_summary = Mock()
@@ -286,7 +286,8 @@ class TestScraperCLIURLParsing:
             output_file = os.path.join(tmpdir, 'output.txt')
             failed_log = os.path.join(tmpdir, 'failed.txt')
 
-            with open(urls_file, 'w') as f:
+            # Write file with explicit UTF-8 encoding containing only comments
+            with open(urls_file, 'w', encoding='utf-8', newline='') as f:
                 f.write("# Only comments\n")
                 f.write("# No actual URLs\n")
 
@@ -299,5 +300,5 @@ class TestScraperCLIURLParsing:
                 with pytest.raises(SystemExit) as exc_info:
                     main()
 
-                # Should exit gracefully (code 0)
+                # Should exit gracefully (code 0 for empty URL list after filtering comments)
                 assert exc_info.value.code == 0

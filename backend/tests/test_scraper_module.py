@@ -1,5 +1,5 @@
 """
-Tests for the new modular scraper module - src/utils/scraper/
+Tests for the new modular scraper module - src/scraper/
 Comprehensive test suite for all scraper components.
 """
 import pytest
@@ -252,7 +252,7 @@ class TestSmartLoader:
         loader = SmartLoader(mock_config)
         assert loader.config is not None
 
-    @patch('src.utils.scraper.utils.should_skip_url', return_value=True)
+    @patch('src.scraper.utils.should_skip_url', return_value=True)
     def test_load_url_skips_matching(self, mock_skip, mock_config):
         """Test that matching URLs are skipped."""
         from src.scraper.loaders import SmartLoader
@@ -264,7 +264,7 @@ class TestSmartLoader:
         assert success is False
         assert loader_type == "Skipped"
 
-    @patch('src.utils.scraper.loaders.SmartLoader._load_standard')
+    @patch('src.scraper.loaders.SmartLoader._load_standard')
     def test_load_url_with_forced_unstructured_loader(self, mock_load, mock_config):
         """Test forcing unstructured loader."""
         from src.scraper.loaders import SmartLoader
@@ -436,7 +436,7 @@ class TestVecinaScraper:
             os.remove(output)
             os.remove(failed_log)
 
-    @patch('src.utils.scraper.scraper.SmartLoader.load_url')
+    @patch('src.scraper.scraper.SmartLoader.load_url')
     def test_scrape_urls_empty_list(self, mock_load_url):
         """Test scraping empty URL list."""
         from src.scraper.scraper import VecinaScraper
