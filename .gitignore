@@ -111,6 +111,7 @@ frontend/dist/
 frontend/coverage/
 frontend/.eslintcache
 frontend/test-results/
+frontend/playwright-report/
 
 # Testing artifacts
 test-results/
