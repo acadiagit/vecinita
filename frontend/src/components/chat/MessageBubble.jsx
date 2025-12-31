@@ -11,6 +11,7 @@ export default function MessageBubble({ role = 'assistant', content, sources = [
         className={`max-w-[85%] rounded-lg px-3 py-2 text-sm leading-relaxed shadow-sm overflow-hidden break-words ${
           isUser ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'
         }`}
+        data-testid={isUser ? 'user-message' : 'assistant-message'}
       >
         {headerLabel && !isUser && (
           <div className="text-xs font-semibold mb-1 opacity-80">{headerLabel}</div>

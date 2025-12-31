@@ -104,10 +104,8 @@ def create_web_search_tool(search_depth: str = "advanced", max_results: int = 5)
                         "content": r.get("content") or r.get("answer") or "",
                         "url": r.get("url") or r.get("source") or "",
                     })
-                return json.dumps(normalized, ensure_ascii=False)
-
             # DuckDuckGo fallback
-            if ddg is not None:
+            elif ddg is not None:
                 logger.info(f"Web search (DuckDuckGo): {query}")
                 results = ddg.invoke(query)
                 if isinstance(results, list):
@@ -123,10 +121,10 @@ def create_web_search_tool(search_depth: str = "advanced", max_results: int = 5)
                         "content": results,
                         "url": "",
                     })
-                return json.dumps(normalized, ensure_ascii=False)
+            else:
+                logger.error("No web search provider available")
 
-            logger.error("No web search provider available")
-            return "[]"
+            return json.dumps(normalized, ensure_ascii=False)
         except Exception as e:
             logger.error(f"Web search error: {e}")
             return "[]"

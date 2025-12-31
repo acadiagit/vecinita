@@ -125,14 +125,15 @@ def db_search_tool(query: str) -> str:
         query: The user's question or search query
 
     Returns:
-        A JSON string containing a list of relevant documents with content and source URLs.
-        Each document contains 'content', 'source_url', and 'similarity' fields.
-        Returns an empty list JSON string if no relevant documents are found.
+        A JSON string containing a list of relevant documents. Parse the result
+        with json.loads() to get Python objects. Each document contains 'content',
+        'source_url', 'similarity', and position fields. Returns "[]" (empty JSON array)
+        if no relevant documents are found.
 
     Example:
         >>> results = db_search_tool("What community services are available?")
         >>> import json
-        >>> docs = json.loads(results)
+        >>> docs = json.loads(results)  # Parse JSON string to Python list
         >>> for doc in docs:
         ...     print(f"Source: {doc['source_url']}")
         ...     print(f"Content: {doc['content']}")
@@ -169,8 +170,9 @@ def create_db_search_tool(supabase_client, embedding_model, match_threshold: flo
             query: The user's question or search query
 
         Returns:
-            A JSON string containing a list of relevant documents with content and source URLs.
-            Returns "[]" if no relevant documents are found.
+            A JSON string containing a list of relevant documents. Parse the result
+            with json.loads() to get Python objects. Returns "[]" (empty JSON array)
+            if no relevant documents are found or on error.
         """
         try:
             logger.info(

@@ -14,6 +14,16 @@ import logging
 import argparse
 from importlib import import_module
 
+# NOTE ON TESTABILITY:
+# We intentionally use a direct import of VecinaScraper here instead of a dynamic
+# import (e.g., via import_module) to keep the CLI entry point simple and avoid
+# runtime import resolution issues when packaging or invoking via `python -m`.
+#
+# If tests need to substitute or mock the scraper implementation, they should
+# patch this module-level name before calling `main()`, for example:
+#     from backend.src.scraper import main
+#     main.VecinaScraper = FakeScraper
+#     main.main()
 from .scraper import VecinaScraper
 
 
@@ -98,8 +108,8 @@ def main():
     try:
         scraper = VecinaScraper(
             output_file=args.output_file,
-            failed_log=args.failed_log,
-            links_file=args.links_file,
+            # Try UTF-8 first, then fall back to UTF-8 with BOM, then cp1252, then latin-1
+            encodings=['utf-8', 'utf-8-sig', 'cp1252', 'latin-1']
             stream_mode=args.stream
         )
     except Exception as e:

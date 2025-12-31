@@ -11,19 +11,46 @@ from pathlib import Path
 log = logging.getLogger(__name__)
 
 
+def _find_repo_root() -> Path:
+    """
+    Find repository root by searching upward for marker files.
+
+    Searches for: .git, docker-compose.yml, pyproject.toml (at repo level)
+    Falls back to hardcoded relative path if markers not found.
+
+    Returns:
+        Path to repository root
+    """
+    current = Path(__file__).resolve()
+    marker_files = ['.git', 'docker-compose.yml', 'pyproject.toml']
+
+    # Search upward from this file's location
+    while current != current.parent:  # Stop at filesystem root
+        for marker in marker_files:
+            if (current / marker).exists():
+                log.debug(f"Found repo root marker '{marker}' at {current}")
+                return current
+        current = current.parent
+
+    # Fallback: use relative path (backend/src/scraper/config.py -> backend)
+    fallback_root = Path(__file__).resolve().parents[2]
+    log.debug(
+        f"No repo root marker found; using fallback path: {fallback_root}")
+    return fallback_root
+
+
 class ScraperConfig:
     """Manages all scraper configuration."""
 
     # Resolve config directory:
     # 1. Use SCRAPER_CONFIG_DIR if set.
-    # 2. Otherwise, default to `<repo_root>/data/config`, where repo_root is
-    #    derived from this file's location (independent of current working dir).
+    # 2. Otherwise, search upward for repo root markers (.git, docker-compose.yml, pyproject.toml)
+    # 3. Fallback to relative path if markers not found
     _env_config_dir = os.getenv("SCRAPER_CONFIG_DIR")
     if _env_config_dir:
         _config_dir_path = Path(_env_config_dir).expanduser().resolve()
     else:
-        # backend/src/scraper/config.py -> backend (3 levels up)
-        _repo_root = Path(__file__).resolve().parents[2]
+        _repo_root = _find_repo_root() / "backend"
         _config_dir_path = _repo_root / "data" / "config"
 
     if not _config_dir_path.exists():

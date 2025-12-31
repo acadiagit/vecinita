@@ -214,7 +214,7 @@ export default function ChatWidget({ backendUrl, embedded = false, initialOpen =
               variant="ghost"
               size="sm"
               onClick={startNewChat}
-              className="text-xs px-2 h-8"
+              className="text-xs px-2 h-10"
             >
               New Chat
             </Button>
@@ -236,7 +236,7 @@ export default function ChatWidget({ backendUrl, embedded = false, initialOpen =
             variant="ghost"
             size="sm"
             onClick={() => setFontScale && setFontScale(1.1)}
-            className="text-xs px-2 h-8"
+            className="text-xs px-2 h-10"
           >
             Reset
           </Button>
@@ -322,7 +322,7 @@ export default function ChatWidget({ backendUrl, embedded = false, initialOpen =
                 variant="ghost"
                 size="sm"
                 onClick={startNewChat}
-                className="text-xs px-2 h-8"
+                className="text-xs px-2 h-10"
               >
                 New Chat
               </Button>
@@ -331,7 +331,7 @@ export default function ChatWidget({ backendUrl, embedded = false, initialOpen =
 
           {/* Font size slider */}
           <div className="px-4 py-2 border-b flex items-center justify-center gap-2">
-            <span style={{ '--font-scale': 1, fontSize: '0.75rem' }}>A</span>
+            <span className="text-xs">A</span>
             <Slider
               min={0.8}
               max={1.4}
@@ -340,12 +340,12 @@ export default function ChatWidget({ backendUrl, embedded = false, initialOpen =
               onValueChange={(val) => setFontScale(val[0])}
               className="flex-1 max-w-xs"
             />
-            <span style={{ '--font-scale': 1, fontSize: '1.5rem' }}>A</span>
+            <span className="text-lg">A</span>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setFontScale(1)}
-              className="text-xs px-2 h-8"
+              className="text-xs px-2 h-10"
             >
               Reset
             </Button>

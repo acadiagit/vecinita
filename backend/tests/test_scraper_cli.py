@@ -287,7 +287,7 @@ class TestScraperCLIURLParsing:
             failed_log = os.path.join(tmpdir, 'failed.txt')
 
             # Write file with explicit UTF-8 encoding containing only comments
-            with open(urls_file, 'w', encoding='utf-8', newline='') as f:
+            with open(urls_file, 'w', encoding='utf-8') as f:
                 f.write("# Only comments\n")
                 f.write("# No actual URLs\n")
 

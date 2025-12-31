@@ -54,8 +54,8 @@ test.describe('ChatWidget E2E', () => {
     await expect(page.getByText('Hi there!').first()).toBeVisible()
     
     // Check that multiple assistant messages exist (welcome + 2 answers)
-    // Use a more specific selector to target only message bubbles, not containers
-    const assistantMessages = page.locator('.rounded-lg.bg-muted')
+    // Use data-testid for stable, semantic selection independent of styling
+    const assistantMessages = page.getByTestId('assistant-message')
     await expect(assistantMessages).toHaveCount(3, { timeout: 5000 })
   })
 })

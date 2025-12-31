@@ -13,20 +13,6 @@ const DEVICE_CONFIGS = [
 test.describe('Responsive Design Tests', () => {
   DEVICE_CONFIGS.forEach((deviceConfig) => {
     test.describe(`${deviceConfig.name}`, () => {
-      test.beforeEach(async ({ browser }) => {
-        // Create context with specific viewport
-        if (!test.parallel) {
-          const context = await browser.newContext({
-            viewport: deviceConfig.viewport || { width: 1280, height: 720 },
-            userAgent: deviceConfig.userAgent,
-            isMobile: deviceConfig.isMobile || false,
-            hasTouch: deviceConfig.hasTouch || false,
-          })
-
-          // Note: This setup is for reference; actual usage will be in page context
-        }
-      })
-
       test(`should render header correctly on ${deviceConfig.name}`, async ({
         page,
       }) => {
