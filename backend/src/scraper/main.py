@@ -120,7 +120,7 @@ def main():
                         for line in f
                         if line.strip() and not line.startswith('#')
                     ]
-                log.debug(
+                log.info(
                     f"Successfully read input file with {encoding} encoding")
                 decode_successful = True
                 break

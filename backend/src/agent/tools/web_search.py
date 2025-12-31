@@ -72,9 +72,9 @@ def create_web_search_tool(search_depth: str = "advanced", max_results: int = 5)
     if not use_tavily:
         try:
             from langchain_community.tools import DuckDuckGoSearchResults
-            # Suppress noisy internal ddgs engine error logs (e.g., grokipedia DNS errors)
+            # Suppress noisy internal ddgs engine logs while preserving warnings and errors
             try:
-                logging.getLogger("ddgs.ddgs").setLevel(logging.ERROR)
+                logging.getLogger("ddgs.ddgs").setLevel(logging.WARNING)
             except Exception:
                 pass
             ddg = DuckDuckGoSearchResults(num_results=max_results)
