@@ -41,23 +41,23 @@ def _normalize_document(doc: Dict[str, Any]) -> Dict[str, Any]:
     metadata = doc.get('metadata', {})
 
     # Extract position info from metadata if available
+    # Always include these fields for consistent return type
     result = {
         'content': content,
         'source_url': source,
         'similarity': similarity,
+        'chunk_index': chunk_index,
+        'char_start': None,
+        'char_end': None,
+        'doc_index': None,
     }
-    
-    if chunk_index is not None:
-        result['chunk_index'] = chunk_index
-    
+
+    # Populate position fields from metadata if available
     if isinstance(metadata, dict):
-        if 'char_start' in metadata:
-            result['char_start'] = metadata['char_start']
-        if 'char_end' in metadata:
-            result['char_end'] = metadata['char_end']
-        if 'doc_index' in metadata:
-            result['doc_index'] = metadata['doc_index']
-    
+        result['char_start'] = metadata.get('char_start')
+        result['char_end'] = metadata.get('char_end')
+        result['doc_index'] = metadata.get('doc_index')
+
     return result
 
 

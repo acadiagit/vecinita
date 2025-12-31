@@ -88,25 +88,45 @@ class DocumentProcessor:
                 split_chunks = [content]
             total_chunks += len(split_chunks)
 
-            # Track cumulative character position for each chunk
-            char_offset = 0
+            # Track actual character positions of each chunk within the original content.
+            # We cannot assume a fixed sliding-window offset because
+            # RecursiveCharacterTextSplitter adjusts boundaries based on separators.
+            search_start = 0
             for chunk_idx, chunk_text in enumerate(split_chunks):
                 chunk_len = len(chunk_text)
+
+                # Find the actual location of this chunk in the original content,
+                # starting from our best-guess search offset.
+                found_at = content.find(chunk_text, search_start)
+                if found_at == -1:
+                    # Fallback: search from the beginning if not found in the expected
+                    # region (handles repeated text / unexpected splitter behavior).
+                    found_at = content.find(chunk_text)
+
+                if found_at == -1:
+                    # As a last resort, approximate using the current search_start.
+                    # This keeps processing robust even if the exact substring cannot be located.
+                    char_start = search_start
+                else:
+                    char_start = found_at
+
+                char_end = char_start + chunk_len
                 chunk_metadata = metadata.copy()
                 # Add position tracking to metadata
                 chunk_metadata.update({
-                    'char_start': char_offset,
-                    'char_end': char_offset + chunk_len,
+                    'char_start': char_start,
+                    'char_end': char_end,
                     'doc_index': doc_index,
                     'chunk_in_doc': chunk_idx
                 })
                 chunks_for_file.append(
                     {'text': chunk_text, 'metadata': chunk_metadata})
-                # Advance offset (account for overlap in next iteration)
-                char_offset += chunk_len - self.config.CHUNK_OVERLAP
-                if char_offset < 0:
-                    char_offset = 0
 
+                # Advance search_start for the next chunk. We allow some
+                # backward slack equal to CHUNK_OVERLAP so that overlapping
+                # chunks can still be matched correctly, without assuming
+                # the overlap is exactly CHUNK_OVERLAP characters.
+                search_start = max(0, char_end - self.config.CHUNK_OVERLAP)
             # Extract links from metadata
             if 'source' in metadata:
                 extracted_links.append(metadata['source'])

@@ -264,16 +264,22 @@ class SmartLoader:
                     log.error(f"--> Retry failed: {retry_e}")
 
             # If still nothing, try with Playwright as fallback (but avoid infinite recursion)
+            # Only attempt fallback if skip_playwright_fallback is False
             if len(docs) == 0 and not skip_playwright_fallback:
                 log.info(
                     "--> Standard loader returned empty. Trying Playwright fallback...")
                 try:
+                    # Important: Don't pass skip_playwright_fallback here to avoid recursion
+                    # If Playwright fails, it will call _load_standard with skip_playwright_fallback=True
                     pw_docs, _, pw_success = self._load_playwright(url)
                     if pw_success:
                         log.info("--> Playwright fallback succeeded!")
                         return pw_docs, "Unstructured (with Playwright fallback)", True
                 except Exception as fallback_e:
                     log.error(f"--> Playwright fallback failed: {fallback_e}")
+            elif len(docs) == 0 and skip_playwright_fallback:
+                log.debug(
+                    "--> Standard loader returned empty, but Playwright fallback is disabled to prevent recursion")
 
             return docs, loader_type, len(docs) > 0
         except Exception as e:
