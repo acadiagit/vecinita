@@ -42,7 +42,7 @@ def static_response_tool(query: str, language: str = "en") -> Optional[str]:
         language: The detected language code ('en' or 'es')
 
     Returns:
-        A predefined answer if the query matches an FAQ; otherwise None.
+        A predefined answer if the query matches an FAQ; otherwise, None.
 
     Example:
         >>> answer = static_response_tool("what is vecinita", "en")

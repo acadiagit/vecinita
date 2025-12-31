@@ -29,6 +29,44 @@ class DocumentProcessor:
             keep_separator=False
         )
 
+    def _find_chunk_position(self, content: str, chunk_text: str, current_offset: int) -> int:
+        """Find the starting character position of a chunk within the full content.
+
+        Uses a fast-path comparison at the expected offset, then falls back to
+        a bounded search window and, if necessary, an approximation.
+        """
+        chunk_len = len(chunk_text)
+
+        # Fast path: Check if chunk appears at expected position (handles 95%+ of cases)
+        # This avoids expensive string search for sequential chunks
+        expected_end = current_offset + chunk_len
+        if expected_end <= len(content) and content[current_offset:expected_end] == chunk_text:
+            return current_offset
+
+        # Fallback: Search in a limited window around expected position
+        # This handles cases where separators cause position shifts
+        search_window_start = max(
+            0, current_offset - self.config.CHUNK_OVERLAP)
+        search_window_end = min(
+            len(content),
+            current_offset + chunk_len + self.config.CHUNK_OVERLAP,
+        )
+
+        found_at = content.find(
+            chunk_text, search_window_start, search_window_end)
+        if found_at == -1:
+            # Edge case: search from current offset onward (limited scope)
+            found_at = content.find(chunk_text, search_window_start)
+
+        if found_at == -1:
+            # Last resort: approximate using current offset
+            log.debug(
+                f"--> Approximated position for chunk at offset {current_offset}"
+            )
+            return current_offset
+
+        return found_at
+
     def process_documents(
         self,
         docs: list,
@@ -92,44 +130,6 @@ class DocumentProcessor:
             # This optimization reduces the search complexity from O(n*m) to O(1) for most cases.
             # We validate position with direct comparison before falling back to search.
             current_offset = 0
-
-            def _find_chunk_position(content: str, chunk_text: str, current_offset: int) -> int:
-                """Find the starting character position of a chunk within the full content.
-
-                Uses a fast-path comparison at the expected offset, then falls back to
-                a bounded search window and, if necessary, an approximation.
-                """
-                chunk_len = len(chunk_text)
-
-                # Fast path: Check if chunk appears at expected position (handles 95%+ of cases)
-                # This avoids expensive string search for sequential chunks
-                expected_end = current_offset + chunk_len
-                if expected_end <= len(content) and content[current_offset:expected_end] == chunk_text:
-                    return current_offset
-
-                # Fallback: Search in a limited window around expected position
-                # This handles cases where separators cause position shifts
-                search_window_start = max(
-                    0, current_offset - self.config.CHUNK_OVERLAP)
-                search_window_end = min(
-                    len(content),
-                    current_offset + chunk_len + self.config.CHUNK_OVERLAP,
-                )
-
-                found_at = content.find(
-                    chunk_text, search_window_start, search_window_end)
-                if found_at == -1:
-                    # Edge case: search from current offset onward (limited scope)
-                    found_at = content.find(chunk_text, search_window_start)
-
-                if found_at == -1:
-                    # Last resort: approximate using current offset
-                    log.debug(
-                        f"--> Approximated position for chunk at offset {current_offset}"
-                    )
-                    return current_offset
-
-                return found_at
 
             for chunk_idx, chunk_text in enumerate(split_chunks):
                 chunk_len = len(chunk_text)

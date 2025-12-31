@@ -192,12 +192,13 @@ export default function ChatWidget({ backendUrl, embedded = false, initialOpen =
       <div className={className || 'grid w-full max-w-lg gap-4 border bg-background shadow-lg sm:rounded-lg w-[360px] max-w-[90vw] p-0 flex flex-col max-h-[600px] overflow-hidden'}>
         <h2 className="sr-only">{t.title}</h2>
         <p className="sr-only">Chat with the Vecinita assistant to find local resources</p>
+
         <div className="px-4 pt-3 pb-2 border-b flex flex-row items-center justify-between space-y-0">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded bg-primary flex items-center justify-center">
-              <span className="text-xs font-bold text-primary-foreground">V</span>
+            <div className="w-6 h-6 rounded bg-primary flex items-center justify-center" role="img" aria-label="Vecinita logo">
+              <span className="text-xs font-bold text-primary-foreground" aria-hidden="true">V</span>
             </div>
-            <div className="font-semibold">{t.title}</div>
+            <h2 className="font-semibold">{t.title}</h2>
           </div>
           <div className="flex items-center gap-1">
             <select
@@ -221,8 +222,8 @@ export default function ChatWidget({ backendUrl, embedded = false, initialOpen =
           </div>
         </div>
 
-        <div className="px-4 py-2 border-b flex items-center gap-2">
-          <span className="text-xs">A</span>
+        <div className="px-4 py-2 border-b flex items-center gap-2" aria-label="Font size adjustment">
+          <span className="text-xs" aria-hidden="true">A</span>
           <Slider
             min={0.8}
             max={1.4}
@@ -230,13 +231,15 @@ export default function ChatWidget({ backendUrl, embedded = false, initialOpen =
             value={[fontScale]}
             onValueChange={(val) => setFontScale && setFontScale(val[0])}
             className="flex-1"
+            aria-label="Adjust font size"
           />
-          <span className="text-xs">A</span>
+          <span className="text-xs" aria-hidden="true">A</span>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setFontScale && setFontScale(1.1)}
             className="text-xs px-2 h-10"
+            aria-label="Reset font size to default"
           >
             Reset
           </Button>

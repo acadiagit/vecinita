@@ -13,13 +13,33 @@ log = logging.getLogger(__name__)
 
 def _find_repo_root() -> Path:
     """
-    Find repository root by searching upward for marker files.
+    Find the top-level repository root by searching upward for marker files.
 
-    Searches for: .git, docker-compose.yml, pyproject.toml (at repo level)
-    Falls back to hardcoded relative path if markers not found.
+    This function is intended to locate the project repository directory that
+    contains the ``backend/`` folder, not the ``backend`` directory itself.
+    A typical layout is::
+
+        <repo_root>/
+            backend/
+                src/
+                    scraper/
+                        config.py
+            pyproject.toml
+            docker-compose.yml
+            .git/
+
+    The search walks upward from this file and stops at the first directory
+    that contains any of the following marker entries, which are expected to
+    live at the repository root:
+      - ``.git`` directory
+      - ``docker-compose.yml`` file
+      - ``pyproject.toml`` file
+
+    If no markers are found, the function falls back to a hardcoded relative
+    path based on this file's location.
 
     Returns:
-        Path to repository root
+        Path to the repository root directory (parent of ``backend/``).
     """
     current = Path(__file__).resolve()
     marker_files = ['.git', 'docker-compose.yml', 'pyproject.toml']

@@ -108,8 +108,8 @@ def main():
     try:
         scraper = VecinaScraper(
             output_file=args.output_file,
-            # Try UTF-8 first, then fall back to UTF-8 with BOM, then cp1252, then latin-1
-            encodings=['utf-8', 'utf-8-sig', 'cp1252', 'latin-1']
+            failed_log=args.failed_log,
+            links_file=args.links_file,
             stream_mode=args.stream
         )
     except Exception as e:

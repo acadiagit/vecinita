@@ -242,7 +242,7 @@ class SmartLoader:
             log.error(f"--> Playwright loading failed: {e}")
             # Do not fall back to standard loader here to avoid potential recursion
             log.warning(
-                f"--> Playwright loader failed for {url}; returning no documents.")
+                f"--> Playwright loader failed for {url}; not falling back to standard loader and returning no documents.")
             return [], loader_type, False
 
     def _load_standard(self, url: str) -> Tuple[List, str, bool]:
