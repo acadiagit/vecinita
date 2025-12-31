@@ -133,7 +133,7 @@ class DocumentProcessor:
 
             for chunk_idx, chunk_text in enumerate(split_chunks):
                 chunk_len = len(chunk_text)
-                char_start = _find_chunk_position(
+                char_start = self._find_chunk_position(
                     content, chunk_text, current_offset)
                 char_end = char_start + chunk_len
                 chunk_metadata = metadata.copy()

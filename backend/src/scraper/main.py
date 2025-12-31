@@ -126,7 +126,7 @@ def main():
             try:
                 with open(args.input, 'r', encoding=encoding) as f:
                     urls = [
-                        line.strip()
+                        line.strip().lstrip('\ufeff')
                         for line in f
                         if line.strip() and not line.startswith('#')
                     ]
