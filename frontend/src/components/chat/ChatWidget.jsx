@@ -49,6 +49,7 @@ export default function ChatWidget({ backendUrl, embedded = false, initialOpen =
   ])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [progress, setProgress] = useState(null) // Track progress stage and message
   const listRef = useRef(null)
   const threadIdRef = useRef(null)
   const [providersOptions, setProvidersOptions] = useState(PROVIDERS)
@@ -152,30 +153,89 @@ export default function ChatWidget({ backendUrl, embedded = false, initialOpen =
     setMessages((m) => [...m, { role: 'user', content: q }])
     setInput('')
     setLoading(true)
+    setProgress(null)
     try {
       const urlBase = backendUrl || '/api'
-      // Chat-only: always use persistent thread id for conversational memory
       const thread = threadIdRef.current
       const langParam = lang === 'auto' ? '' : `&lang=${lang}`
-      const url = `${urlBase}/ask?query=${encodeURIComponent(q)}${langParam}&provider=${encodeURIComponent(provider)}&model=${encodeURIComponent(model)}&thread_id=${encodeURIComponent(thread)}`
-      const res = await fetch(url)
+      const streamUrl = `${urlBase}/ask-stream?query=${encodeURIComponent(q)}${langParam}&provider=${encodeURIComponent(provider)}&model=${encodeURIComponent(model)}&thread_id=${encodeURIComponent(thread)}`
+      
+      const res = await fetch(streamUrl)
       if (!res.ok) throw new Error(`Backend error: ${res.status}`)
-      const data = await res.json()
-      setMessages((m) => [
-        ...m,
-        {
-          role: 'assistant',
-          content: data?.answer || 'No response provided.',
-          sources: data?.sources || []
+      
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let assistantMessage = null
+      let sources = []
+      let plan = ''
+      
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        
+        const chunk = decoder.decode(value, { stream: true })
+        const lines = chunk.split('\n')
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const jsonStr = line.slice(6) // Remove 'data: ' prefix
+              const update = JSON.parse(jsonStr)
+              
+              if (update.type === 'progress') {
+                // Update progress indicator with tool name and human-readable message
+                setProgress({
+                  stage: update.stage,
+                  tool: update.tool,
+                  message: update.message
+                })
+              } else if (update.type === 'complete') {
+                // Final answer received
+                assistantMessage = update.answer
+                sources = update.sources || []
+                plan = update.plan || ''
+                setProgress(null) // Clear progress
+              } else if (update.type === 'clarification') {
+                // User needs to answer clarifying questions
+                setMessages((m) => [
+                  ...m,
+                  {
+                    role: 'assistant',
+                    content: update.context || 'Please answer these questions to help me better assist you:',
+                    clarificationQuestions: update.questions || []
+                  }
+                ])
+                return // Wait for user to respond with clarifications
+              } else if (update.type === 'error') {
+                throw new Error(update.message)
+              }
+            } catch (e) {
+              if (e instanceof SyntaxError) continue // Skip malformed JSON
+              throw e
+            }
+          }
         }
-      ])
+      }
+      
+      if (assistantMessage) {
+        setMessages((m) => [
+          ...m,
+          {
+            role: 'assistant',
+            content: assistantMessage,
+            sources: sources
+          }
+        ])
+      }
     } catch (err) {
       setMessages((m) => [
         ...m,
         { role: 'assistant', content: `Error: ${err.message}` }
       ])
+      setProgress(null)
     } finally {
       setLoading(false)
+      setProgress(null)
     }
   }
 
@@ -245,7 +305,7 @@ export default function ChatWidget({ backendUrl, embedded = false, initialOpen =
           </Button>
         </div>
 
-        <div ref={listRef} className="flex-1 chat-messages p-3 bg-muted/30 min-w-0 flex flex-col items-center">
+        <div ref={listRef} className="flex-1 chat-messages p-3 bg-muted/30 min-w-0 flex flex-col items-center overflow-y-auto">
           <div className="w-full max-w-2xl">
             {messages.map((m, i) => (
               <MessageBubble
@@ -255,6 +315,24 @@ export default function ChatWidget({ backendUrl, embedded = false, initialOpen =
                 sources={m.sources}
               />
             ))}
+            
+            {/* Progress indicator during streaming */}
+            {progress && (
+              <div className="flex flex-col gap-2 p-3 text-sm text-muted-foreground animate-pulse">
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 bg-primary rounded-full animate-bounce" />
+                  <div className="flex flex-col gap-1 flex-1">
+                    <span className="font-semibold text-primary text-xs uppercase tracking-wide">
+                      {progress.tool ? `[${progress.tool.replace('_', ' ')}]` : 'Processing...'}
+                    </span>
+                    <span>{progress.message}</span>
+                  </div>
+                </div>
+                <div className="w-full bg-secondary rounded-full h-1 overflow-hidden">
+                  <div className="h-full bg-primary animate-pulse" style={{ width: '60%' }} />
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -365,6 +443,24 @@ export default function ChatWidget({ backendUrl, embedded = false, initialOpen =
                   sources={m.sources}
                 />
               ))}
+              
+              {/* Progress indicator during streaming */}
+              {progress && (
+                <div className="flex flex-col gap-2 p-3 text-sm text-muted-foreground animate-pulse">
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 bg-primary rounded-full animate-bounce" />
+                    <div className="flex flex-col gap-1 flex-1">
+                      <span className="font-semibold text-primary text-xs uppercase tracking-wide">
+                        {progress.tool ? `[${progress.tool.replace('_', ' ')}]` : 'Processing...'}
+                      </span>
+                      <span>{progress.message}</span>
+                    </div>
+                  </div>
+                  <div className="w-full bg-secondary rounded-full h-1 overflow-hidden">
+                    <div className="h-full bg-primary animate-pulse" style={{ width: '60%' }} />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

@@ -194,9 +194,11 @@ def create_db_search_tool(supabase_client, embedding_model, match_threshold: flo
             question_embedding = embedding_model.embed_query(query)
             logger.info(
                 f"DB Search: Embedding generated. Dimension: {len(question_embedding)}")
+            logger.info(
+                f"DB Search: Embedding first 5 values: {question_embedding[:5]}")
 
             logger.info(
-                "DB Search: Searching for similar documents in Supabase...")
+                f"DB Search: Searching Supabase with threshold={match_threshold}, match_count={match_count}...")
             relevant_docs = supabase_client.rpc(
                 "search_similar_documents",
                 {
@@ -207,16 +209,29 @@ def create_db_search_tool(supabase_client, embedding_model, match_threshold: flo
             ).execute()
 
             logger.info(
+                f"DB Search: RPC call completed. Result type: {type(relevant_docs)}")
+            logger.info(
                 f"DB Search: Found {len(relevant_docs.data) if relevant_docs.data else 0} relevant documents")
+
+            if relevant_docs.data:
+                # Log similarity scores for debugging
+                similarities = [doc.get('similarity', 0)
+                                for doc in relevant_docs.data]
+                logger.info(f"DB Search: Similarity scores: {similarities}")
+                logger.info(
+                    f"DB Search: Min={min(similarities):.3f}, Max={max(similarities):.3f}, Avg={sum(similarities)/len(similarities):.3f}")
 
             if not relevant_docs.data:
                 # Return empty JSON array string when no relevant documents are found
+                logger.warning(
+                    f"DB Search: No documents found with threshold {match_threshold}. Consider lowering threshold.")
                 return "[]"
 
             # Normalize document format using helper function
             results = [_normalize_document(doc) for doc in relevant_docs.data]
 
             # Return JSON string for proper LLM serialization
+            logger.info(f"DB Search: Returning {len(results)} results as JSON")
             return json.dumps(results, ensure_ascii=False)
 
         except Exception as e:
