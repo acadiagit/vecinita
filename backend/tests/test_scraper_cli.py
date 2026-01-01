@@ -36,7 +36,7 @@ class TestScraperCLI:
                 '--output-file', output_file,
                 '--failed-log', failed_log
             ]):
-                with patch('src.scraper.scraper.VecinaScraper') as mock_scraper:
+                with patch('src.scraper.main.VecinaScraper') as mock_scraper:
                     mock_instance = Mock()
                     mock_instance.scrape_urls.return_value = (1, 0, 1)
                     mock_scraper.return_value = mock_instance

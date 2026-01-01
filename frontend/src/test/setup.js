@@ -9,6 +9,7 @@ afterEach(() => {
 })
 
 // Mock ResizeObserver used by Radix UI components
+// Minimal mock is sufficient: ResizeObserver API methods return void
 class MockResizeObserver {
 	observe() {}
 	unobserve() {}

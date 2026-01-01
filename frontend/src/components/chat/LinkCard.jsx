@@ -236,7 +236,12 @@ export default function LinkCard({ title, url, isDownload, chunkIndex, totalChun
             </DialogHeader>
             <div className="w-full h-full">
               {/* Use iframe for simple same-origin preview */}
-              <iframe title={title || 'preview'} src={actualUrl} className="w-full h-full" />
+              <iframe
+                title={title || 'preview'}
+                src={actualUrl}
+                className="w-full h-full"
+                sandbox="allow-same-origin"
+              />
             </div>
           </DialogContent>
         </Dialog>

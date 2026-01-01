@@ -45,7 +45,7 @@ export default function ChatWidget({ backendUrl, embedded = false, initialOpen =
   const [model, setModel] = useState(MODELS['llama'][0])
   const [mode, setMode] = useState('chat') // 'chat' | 'qna'
   const [messages, setMessages] = useState([
-    { role: 'assistant', content: STRINGS.es.welcome, sources: [] }
+    { role: 'assistant', content: STRINGS.en.welcome, sources: [] }
   ])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -150,6 +150,17 @@ export default function ChatWidget({ backendUrl, embedded = false, initialOpen =
   const sendMessage = async () => {
     const q = input.trim()
     if (!q) return
+    
+    // Input validation
+    const MAX_QUERY_LENGTH = 2000
+    if (q.length > MAX_QUERY_LENGTH) {
+      setMessages((m) => [
+        ...m,
+        { role: 'assistant', content: `Error: Query is too long. Maximum ${MAX_QUERY_LENGTH} characters allowed.` }
+      ])
+      return
+    }
+    
     setMessages((m) => [...m, { role: 'user', content: q }])
     setInput('')
     setLoading(true)

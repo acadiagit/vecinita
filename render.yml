@@ -8,7 +8,7 @@ services:
     buildCommand: |
       cd backend && pip install --upgrade pip && pip install -e .
     startCommand: |
-      cd backend && uvicorn src.agent.main:app --host 0.0.0.0 --port $PORT
+      cd backend && uvicorn src.main:app --host 0.0.0.0 --port $PORT
     rootDir: backend
     
     # Environment variables

@@ -1,6 +1,20 @@
 import { test, expect } from '@playwright/test'
 import { injectAxe, checkA11y } from 'axe-playwright'
 
+/**
+ * Helper function to hide font size slider controls
+ * This is used to avoid accessibility check issues with custom slider components
+ */
+async function hideFontSizeSlider(page) {
+  const fontSizeSlider = page.locator('[aria-label="Font size adjustment"]')
+  const sliderExists = await fontSizeSlider.isVisible().catch(() => false)
+  if (sliderExists) {
+    await fontSizeSlider.evaluate((el) => {
+      (el as HTMLElement).style.display = 'none'
+    })
+  }
+}
+
 test.describe('Accessibility Tests', () => {
   test.beforeEach(async ({ page }) => {
     // Mock ask endpoint
@@ -24,13 +38,7 @@ test.describe('Accessibility Tests', () => {
     page,
   }) => {
     // Hide the slider controls as they use custom components that may have complex DOM
-    const fontSizeSlider = page.locator('[aria-label="Font size adjustment"]')
-    const sliderExists = await fontSizeSlider.isVisible().catch(() => false)
-    if (sliderExists) {
-      await fontSizeSlider.evaluate((el) => {
-        (el as HTMLElement).style.display = 'none'
-      })
-    }
+    await hideFontSizeSlider(page)
 
     await injectAxe(page)
     // Check the entire page for accessibility violations
@@ -53,9 +61,7 @@ test.describe('Accessibility Tests', () => {
     }
 
     // Hide the slider controls as they use custom components that may have complex DOM
-    await page.locator('[aria-label="Font size adjustment"]').evaluate((el) => {
-      (el as HTMLElement).style.display = 'none'
-    })
+    await hideFontSizeSlider(page)
 
     await injectAxe(page)
     // Only check the chat widget area to avoid parent page violations
