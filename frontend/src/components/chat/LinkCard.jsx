@@ -1,38 +1,37 @@
 import React, { useMemo, useState, useEffect } from 'react'
 import { Card, CardContent } from '../ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog'
-import { FileText, FileSpreadsheet, FileArchive, FileJson, FileCode, File, Globe, ExternalLink, Copy, Eye, Download } from 'lucide-react'
+import { FileText, FileSpreadsheet, FileArchive, FileJson, FileCode, File, Globe, ExternalLink, Copy, Eye, Download, Link as LinkIcon } from 'lucide-react'
 
-export default function LinkCard({ title, url, isDownload, chunkIndex, charStart, charEnd, docIndex }) {
+export default function LinkCard({ title, url, isDownload, chunkIndex, totalChunks, charStart, charEnd, docIndex, metadata }) {
+  // Check if this is an extracted link
+  const isExtractedLink = metadata?.type === 'extracted_link'
+  
+  // For extracted links, the actual target URL is in metadata.link_target
+  const actualUrl = isExtractedLink ? metadata?.link_target : url
+  
+  // For extracted links, show where it was found
+  const sourceDisplay = isExtractedLink ? metadata?.link_source : null
+
   const hostname = (() => {
     try {
-      return new URL(url).hostname
+      return new URL(actualUrl).hostname
     } catch {
       return ''
     }
   })()
 
-  // Compute position display text
+  // Compute position display text (simplified for customers)
   const positionText = useMemo(() => {
-    if (chunkIndex === undefined && charStart === undefined) return null
-    
-    const parts = []
-    if (chunkIndex !== undefined && chunkIndex !== null) {
-      parts.push(`Chunk ${chunkIndex + 1}`)
+    if (totalChunks !== undefined && totalChunks !== null && totalChunks > 1) {
+      return `Part ${chunkIndex + 1} of ${totalChunks}`
     }
-    if (charStart !== undefined && charEnd !== undefined) {
-      parts.push(`chars ${charStart}-${charEnd}`)
-    }
-    if (docIndex !== undefined && docIndex !== null && docIndex > 0) {
-      parts.push(`doc ${docIndex + 1}`)
-    }
-    
-    return parts.length > 0 ? parts.join(', ') : null
-  }, [chunkIndex, charStart, charEnd, docIndex])
+    return null
+  }, [chunkIndex, totalChunks])
 
   const fileExt = (() => {
     try {
-      const u = new URL(url)
+      const u = new URL(actualUrl)
       const path = u.pathname.toLowerCase()
       const m = path.match(/\.([a-z0-9]+)$/)
       return m ? m[1] : ''
@@ -46,6 +45,14 @@ export default function LinkCard({ title, url, isDownload, chunkIndex, charStart
     const lower = (ext || '').toLowerCase()
     let Icon = File
     let label = 'Document'
+    
+    // Extracted links have their own icon
+    if (isExtractedLink) {
+      Icon = LinkIcon
+      label = 'Extracted Link'
+      return { Icon, label }
+    }
+    
     switch (lower) {
       case 'pdf':
       case 'txt':
@@ -85,24 +92,24 @@ export default function LinkCard({ title, url, isDownload, chunkIndex, charStart
         }
     }
     return { Icon, label }
-  }, [fileExt, hostname])
+  }, [fileExt, hostname, isExtractedLink])
 
   const isInternal = useMemo(() => {
     try {
-      const u = new URL(url, typeof window !== 'undefined' ? window.location.origin : 'http://localhost')
+      const u = new URL(actualUrl, typeof window !== 'undefined' ? window.location.origin : 'http://localhost')
       return u.origin === (typeof window !== 'undefined' ? window.location.origin : 'http://localhost')
     } catch {
       return true
     }
-  }, [url])
+  }, [actualUrl])
 
   const [previewOpen, setPreviewOpen] = useState(false)
   const [copied, setCopied] = useState(false)
 
   const downloadUrl = useMemo(() => {
-    if (!isDownload) return url
+    if (!isDownload) return actualUrl
     try {
-      const u = new URL(url)
+      const u = new URL(actualUrl)
       if (u.hostname === 'github.com') {
         const parts = u.pathname.split('/') // ['', owner, repo, 'blob', commit, ...path]
         if (parts.length >= 5 && parts[3] === 'blob') {
@@ -114,8 +121,8 @@ export default function LinkCard({ title, url, isDownload, chunkIndex, charStart
         }
       }
     } catch {}
-    return url
-  }, [url, isDownload])
+    return actualUrl
+  }, [actualUrl, isDownload])
 
   useEffect(() => {
     let t
@@ -126,17 +133,30 @@ export default function LinkCard({ title, url, isDownload, chunkIndex, charStart
   }, [copied])
 
   return (
-    <Card className="shadow-sm">
+    <Card className={`shadow-sm ${isExtractedLink ? 'border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950' : ''}`}>
       <CardContent className="p-3">
         <div className="flex items-start gap-2">
-          <div className="w-7 h-7 rounded bg-secondary flex items-center justify-center shrink-0" aria-label={`Type: ${iconMeta.label}`} title={iconMeta.label}>
-            <iconMeta.Icon className="w-4 h-4 text-secondary-foreground" aria-hidden="true" />
+          <div className={`w-7 h-7 rounded flex items-center justify-center shrink-0 ${isExtractedLink ? 'bg-blue-200 dark:bg-blue-800' : 'bg-secondary'}`} aria-label={`Type: ${iconMeta.label}`} title={iconMeta.label}>
+            <iconMeta.Icon className={`w-4 h-4 ${isExtractedLink ? 'text-blue-700 dark:text-blue-200' : 'text-secondary-foreground'}`} aria-hidden="true" />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-sm font-medium mb-1 line-clamp-2">{title || url}</div>
-            {hostname && <div className="text-xs text-muted-foreground mb-1">{hostname}</div>}
+            <div className="flex items-center gap-2 mb-1">
+              <div className="text-sm font-medium line-clamp-2">{title || actualUrl}</div>
+              {isExtractedLink && (
+                <span className="text-xs font-semibold px-2 py-0.5 rounded bg-blue-200 text-blue-800 dark:bg-blue-800 dark:text-blue-200 whitespace-nowrap">
+                  Link
+                </span>
+              )}
+            </div>
+            {sourceDisplay && isExtractedLink ? (
+              <div className="text-xs text-muted-foreground mb-1">
+                Found in: <span className="font-mono text-xs">{new URL(sourceDisplay).hostname}</span>
+              </div>
+            ) : hostname && (
+              <div className="text-xs text-muted-foreground mb-1">{hostname}</div>
+            )}
             {positionText && (
-              <div className="text-xs text-muted-foreground font-mono opacity-70">
+              <div className="text-xs text-muted-foreground">
                 {positionText}
               </div>
             )}
@@ -144,7 +164,7 @@ export default function LinkCard({ title, url, isDownload, chunkIndex, charStart
         </div>
         <div className="flex gap-2 mt-1">
           <a
-            href={url}
+            href={actualUrl}
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center justify-center w-6 h-6 text-primary hover:text-primary/80 hover:bg-muted rounded transition-colors"
@@ -153,7 +173,7 @@ export default function LinkCard({ title, url, isDownload, chunkIndex, charStart
           >
             <ExternalLink className="w-4 h-4" />
           </a>
-          {isInternal && (
+          {isInternal && !isExtractedLink && (
             <button
               type="button"
               className="inline-flex items-center justify-center w-6 h-6 text-primary hover:text-primary/80 hover:bg-muted rounded transition-colors"
@@ -164,7 +184,7 @@ export default function LinkCard({ title, url, isDownload, chunkIndex, charStart
               <Eye className="w-4 h-4" />
             </button>
           )}
-          {isDownload && (
+          {isDownload && !isExtractedLink && (
             <a
               href={downloadUrl}
               download
@@ -183,7 +203,7 @@ export default function LinkCard({ title, url, isDownload, chunkIndex, charStart
             onClick={async () => {
               try {
                 if (navigator?.clipboard?.writeText) {
-                  await navigator.clipboard.writeText(url)
+                  await navigator.clipboard.writeText(actualUrl)
                   setCopied(true)
                 } else {
                   // Fallback
@@ -200,7 +220,7 @@ export default function LinkCard({ title, url, isDownload, chunkIndex, charStart
           </button>
         </div>
       </CardContent>
-      {isInternal && (
+      {isInternal && !isExtractedLink && (
         <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
           <DialogContent className="max-w-3xl w-[90vw] h-[80vh] p-0">
             <DialogHeader className="px-4 pt-3 pb-2 border-b">
@@ -208,7 +228,7 @@ export default function LinkCard({ title, url, isDownload, chunkIndex, charStart
             </DialogHeader>
             <div className="w-full h-full">
               {/* Use iframe for simple same-origin preview */}
-              <iframe title={title || 'preview'} src={url} className="w-full h-full" />
+              <iframe title={title || 'preview'} src={actualUrl} className="w-full h-full" />
             </div>
           </DialogContent>
         </Dialog>

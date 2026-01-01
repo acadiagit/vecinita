@@ -38,6 +38,7 @@ def _normalize_document(doc: Dict[str, Any]) -> Dict[str, Any]:
     )
     similarity = doc.get('similarity', 0.0)
     chunk_index = doc.get('chunk_index')
+    total_chunks = doc.get('total_chunks')
     metadata = doc.get('metadata', {})
 
     # Extract position info from metadata if available
@@ -47,9 +48,11 @@ def _normalize_document(doc: Dict[str, Any]) -> Dict[str, Any]:
         'source_url': source,
         'similarity': similarity,
         'chunk_index': chunk_index,
+        'total_chunks': total_chunks,
         'char_start': None,
         'char_end': None,
         'doc_index': None,
+        'metadata': metadata,  # Include full metadata for frontend use
     }
 
     # Populate position fields from metadata if available
@@ -68,6 +71,17 @@ def _format_db_error(e: Exception) -> str:
     connectivity problems, auth failures, and embedding dimension mismatches.
     """
     msg = str(e).lower()
+
+    # Function overloading conflict (PGRST203)
+    if (
+        "pgrst203" in msg or
+        "could not choose the best candidate function" in msg or
+        "function overloading" in msg
+    ):
+        return (
+            "RPC function overload conflict: Multiple versions of 'search_similar_documents' exist. "
+            "Run scripts/fix_rpc_overload.sql in Supabase SQL Editor to resolve."
+        )
 
     # RPC function missing
     if (

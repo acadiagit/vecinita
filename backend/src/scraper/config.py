@@ -52,8 +52,8 @@ def _find_repo_root() -> Path:
                 return current
         current = current.parent
 
-    # Fallback: use relative path (backend/src/scraper/config.py -> backend)
-    fallback_root = Path(__file__).resolve().parents[2]
+    # Fallback: use relative path (backend/src/scraper/config.py -> parent of backend)
+    fallback_root = Path(__file__).resolve().parents[3]
     log.debug(
         f"No repo root marker found; using fallback path: {fallback_root}")
     return fallback_root
@@ -64,14 +64,14 @@ class ScraperConfig:
 
     # Resolve config directory:
     # 1. Use SCRAPER_CONFIG_DIR if set.
-    # 2. Otherwise, search upward for repo root markers (.git, docker-compose.yml, pyproject.toml)
-    # 3. Fallback to relative path if markers not found
+    # 2. Otherwise, use relative path from current file location
     _env_config_dir = os.getenv("SCRAPER_CONFIG_DIR")
     if _env_config_dir:
         _config_dir_path = Path(_env_config_dir).expanduser().resolve()
     else:
-        _repo_root = _find_repo_root() / "backend"
-        _config_dir_path = _repo_root / "data" / "config"
+        # From backend/src/scraper/config.py, go up 3 levels to project root, then data/config
+        _config_dir_path = Path(
+            __file__).resolve().parents[3] / "data" / "config"
 
     if not _config_dir_path.exists():
         log.warning(

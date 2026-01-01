@@ -259,6 +259,92 @@ class DatabaseUploader:
 
         return successful, failed
 
+    def upload_links(
+        self,
+        links: List[str],
+        source_url: str,
+        loader_type: str = "Unknown"
+    ) -> Tuple[int, int]:
+        """
+        Upload extracted links as searchable chunks.
+
+        Links are stored in document_chunks with metadata marking them as extracted links.
+        This makes them discoverable through vector search.
+
+        Args:
+            links: List of URLs extracted from the source
+            source_url: The URL that was scraped
+            loader_type: Type of loader used to extract the links
+
+        Returns:
+            Tuple of (successful_uploads, failed_uploads)
+        """
+        if not links:
+            log.debug(f"No links to upload from {source_url}")
+            return 0, 0
+
+        if not self.supabase_client:
+            log.error("Supabase client not initialized")
+            return 0, len(links)
+
+        log.info(
+            f"--> Uploading {len(links)} extracted links from {source_url}...")
+
+        # Create link chunks - each link becomes a searchable chunk
+        records = []
+        for idx, link in enumerate(links, 1):
+            # Create content that's useful for search: "Link: <url>"
+            content = f"Link: {link}"
+
+            embedding = self._generate_local_embeddings([link])[0]
+
+            record = {
+                "content": content,
+                "source_url": source_url,  # Track where the link was found
+                "chunk_index": idx,
+                "total_chunks": len(links),
+                "embedding": embedding,
+                "metadata": {
+                    "link_target": link,
+                    "link_source": source_url,
+                    "loader_type": loader_type,
+                    "type": "extracted_link"  # Mark this as an extracted link
+                },
+                "scraped_at": datetime.utcnow().isoformat(),
+            }
+            records.append(record)
+
+        # Upload in batches
+        successful = 0
+        failed = 0
+        batch_size = 50
+
+        for i in range(0, len(records), batch_size):
+            batch = records[i:i + batch_size]
+
+            try:
+                response = self.supabase_client.table(
+                    "document_chunks").insert(batch).execute()
+                successful += len(batch)
+                log.debug(f"Batch of {len(batch)} links uploaded successfully")
+            except Exception as e:
+                log.warning(f"Batch upload of links failed: {e}")
+                # Try individual uploads
+                for record in batch:
+                    try:
+                        self.supabase_client.table(
+                            "document_chunks").insert([record]).execute()
+                        successful += 1
+                    except Exception as e2:
+                        log.warning(
+                            f"Failed to upload link {record['metadata']['link_target']}: {e2}"
+                        )
+                        failed += 1
+
+        log.info(
+            f"--> ✅ Links upload complete: {successful} successful, {failed} failed")
+        return successful, failed
+
     def close(self) -> None:
         """Clean up resources."""
         log.debug("DatabaseUploader closing...")

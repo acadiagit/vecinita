@@ -513,19 +513,42 @@ async def ask_question(
 
         logger.info(f"Agent response: {answer[:200]}...")
 
-        # Aggregate structured sources from tools (db + web)
+        # Extract sources from ToolMessage objects in the conversation history
         sources: list[dict] = []
-        try:
-            # DB sources
-            db_results = db_search_tool.invoke({"query": question})
-            if isinstance(db_results, str) and db_results:
-                db_results = json.loads(db_results)
-            if isinstance(db_results, list):
-                for d in db_results[:5]:
+        seen_urls = set()  # Deduplicate sources by URL
+
+        logger.info(
+            f"Extracting sources from {len(result['messages'])} messages in conversation history")
+
+        for msg in result["messages"]:
+            if not isinstance(msg, ToolMessage):
+                continue
+
+            tool_name = getattr(msg, 'name', None)
+            content = msg.content
+
+            logger.debug(
+                f"Processing ToolMessage from tool: {tool_name}, content type: {type(content)}")
+
+            # Parse JSON content if it's a string
+            if isinstance(content, str):
+                try:
+                    content = json.loads(content)
+                    logger.debug(
+                        f"Parsed JSON content, result type: {type(content)}, length: {len(content) if isinstance(content, list) else 'N/A'}")
+                except (json.JSONDecodeError, ValueError):
+                    logger.debug(
+                        f"Failed to parse JSON content: {content[:100]}")
+                    continue
+
+            # Extract DB search results
+            if tool_name == 'db_search' and isinstance(content, list):
+                for d in content[:5]:
                     url = d.get("source_url") or ""
-                    if url:
+                    if url and url not in seen_urls:
+                        seen_urls.add(url)
                         entry = {
-                            "title": d.get("title") or "Internal Document",
+                            "title": d.get("title") or url.split('/')[-1] or "Internal Document",
                             "url": url,
                             "type": "document",
                         }
@@ -542,28 +565,29 @@ async def ask_question(
                             entry['charEnd'] = d['char_end']
                         if 'doc_index' in d:
                             entry['docIndex'] = d['doc_index']
+                        # Add total_chunks for multi-chunk sources
+                        if 'total_chunks' in d:
+                            entry['totalChunks'] = d['total_chunks']
+                        # Add metadata (includes link type, link source, loader type, etc.)
+                        if 'metadata' in d and d['metadata']:
+                            entry['metadata'] = d['metadata']
                         sources.append(entry)
-        except Exception:
-            pass
 
-        try:
-            # Web sources
-            web_results = web_search_tool.invoke({"query": question})
-            if isinstance(web_results, str) and web_results:
-                web_results = json.loads(web_results)
-            if isinstance(web_results, list):
-                for r in web_results[:5]:
+            # Extract web search results
+            elif tool_name == 'web_search' and isinstance(content, list):
+                for r in content[:5]:
                     url = r.get("url") or ""
-                    if url:
+                    if url and url not in seen_urls:
+                        seen_urls.add(url)
                         entry = {
-                            "title": r.get("title") or "Web Result",
+                            "title": r.get("title") or url.split('/')[-1] or "Web Result",
                             "url": url,
                             "type": "link",
                             "isDownload": url.lower().endswith(".pdf"),
                         }
                         sources.append(entry)
-        except Exception:
-            pass
+
+        logger.info(f"Extracted {len(sources)} sources from tool calls")
 
         return {"answer": answer, "sources": sources, "thread_id": thread_id}
 

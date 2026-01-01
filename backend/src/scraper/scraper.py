@@ -54,9 +54,6 @@ class VecinaScraper:
         log.debug(
             f"DocumentProcessor initialized: chunk_size={self.config.CHUNK_SIZE}, overlap={self.config.CHUNK_OVERLAP}")
 
-        self.link_tracker = LinkTracker(links_file)
-        log.debug(f"LinkTracker initialized")
-
         self.output_file = output_file
         self.failed_log = failed_log
         self.links_file = links_file
@@ -75,20 +72,25 @@ class VecinaScraper:
             "failed_uploads": 0
         }
 
-        if self.stream_mode:
-            log.info(
-                "Streaming mode enabled: chunks will be uploaded immediately to database")
-            try:
-                self.uploader = DatabaseUploader(use_local_embeddings=True)
-                log.info("✓ Database uploader initialized")
-            except Exception as e:
-                log.error(f"Failed to initialize database uploader: {e}")
-                log.warning(
-                    "Streaming mode disabled. Falling back to file mode.")
-                self.stream_mode = False
-        else:
-            log.info(
-                f"Traditional mode: chunks will be written to {output_file}")
+        # Always try to initialize uploader (for both streaming and batch upload modes)
+        try:
+            self.uploader = DatabaseUploader(use_local_embeddings=True)
+            log.info("✓ Database uploader initialized")
+            if self.stream_mode:
+                log.info(
+                    "Streaming mode enabled: chunks will be uploaded immediately to database")
+            else:
+                log.info(
+                    f"Batch mode: chunks will be written to {output_file} and uploaded at the end")
+        except Exception as e:
+            log.error(f"Failed to initialize database uploader: {e}")
+            log.warning(
+                "Database upload disabled. Chunks will only be written to file.")
+            self.uploader = None
+
+        # Initialize LinkTracker with uploader (so extracted links are uploaded to database)
+        self.link_tracker = LinkTracker(links_file, uploader=self.uploader)
+        log.debug(f"LinkTracker initialized")
 
         log.info(f"VecinaScraper initialization complete")
 
@@ -312,9 +314,163 @@ class VecinaScraper:
         log.info("="*70)
 
     def finalize(self) -> None:
-        """Finalize scraping (save links, close connections, etc.)."""
+        """Finalize scraping (save links, upload chunks if not streaming, close connections, etc.)."""
+        # Save links (and upload to database if uploader available)
         if self.links_file:
             self.link_tracker.save_links()
+
+        # If not in streaming mode but uploader is available, upload chunks from file
+        if not self.stream_mode and self.uploader:
+            self._upload_chunks_from_file()
+
+    def _upload_chunks_from_file(self) -> None:
+        """Upload all chunks from output file to database (for non-streaming mode)."""
+        if not self.output_file or not self.uploader:
+            log.warning(
+                "Cannot upload chunks: output_file or uploader not set")
+            return
+
+        try:
+            log.info(
+                f"Reading chunks from {self.output_file} for database upload...")
+            chunks_data = []
+            current_chunk = {}
+            current_source = None
+            current_loader = None
+            line_count = 0
+            chunk_count = 0
+
+            with open(self.output_file, 'r', encoding='utf-8') as f:
+                for line in f:
+                    line_count += 1
+                    line = line.rstrip('\n')
+
+                    # Match SOURCE: https://...
+                    if line.startswith('SOURCE:'):
+                        # If we have accumulated a chunk, save it
+                        if current_chunk and current_chunk.get('text', '').strip():
+                            chunks_data.append(current_chunk)
+                            chunk_count += 1
+                            log.debug(
+                                f"Saved chunk {chunk_count} from {current_source} ({len(current_chunk.get('text', ''))} chars)")
+                        current_source = line.replace('SOURCE:', '').strip()
+                        current_loader = None
+                        current_chunk = {
+                            'source_url': current_source,
+                            'text': '',
+                            'loader_type': current_loader or 'Unknown'
+                        }
+                        log.debug(
+                            f"Started new chunk from SOURCE: {current_source}")
+
+                    elif line.startswith('LOADER:'):
+                        current_loader = line.replace('LOADER:', '').strip()
+                        if current_chunk:
+                            current_chunk['loader_type'] = current_loader
+                        log.debug(f"Set LOADER: {current_loader}")
+
+                    elif line.startswith('METADATA:'):
+                        import json
+                        try:
+                            metadata_str = line.replace(
+                                'METADATA:', '').strip()
+                            if current_chunk:
+                                current_chunk['metadata'] = json.loads(
+                                    metadata_str)
+                            log.debug(
+                                f"Parsed METADATA: {metadata_str[:50]}...")
+                        except Exception as e:
+                            log.warning(f"Failed to parse METADATA: {e}")
+                            if current_chunk:
+                                current_chunk['metadata'] = {}
+
+                    # Skip separator lines and chunk markers
+                    elif line.startswith('===') or line.startswith('---'):
+                        log.debug(f"Skipping separator: {line[:20]}...")
+                        continue
+
+                    # Accumulate content lines
+                    elif line.strip() and current_chunk:
+                        current_chunk['text'] += line + '\n'
+
+                # Don't forget the last chunk
+                if current_chunk and current_chunk.get('text', '').strip():
+                    chunks_data.append(current_chunk)
+                    chunk_count += 1
+                    log.debug(
+                        f"Saved final chunk {chunk_count} from {current_source} ({len(current_chunk.get('text', ''))} chars)")
+
+            log.info(
+                f"Parsed {line_count} lines and extracted {chunk_count} chunks from file")
+
+            if not chunks_data:
+                log.warning("No chunks found in output file")
+                return
+
+            log.info(
+                f"Found {len(chunks_data)} chunks in output file. Uploading to database...")
+
+            # Group chunks by source_url for batch upload
+            from collections import defaultdict
+            chunks_by_source = defaultdict(list)
+
+            for chunk in chunks_data:
+                source = chunk.get('source_url', 'Unknown')
+                chunks_by_source[source].append(chunk)
+                log.debug(f"Grouped chunk from {source}")
+
+            log.info(f"Grouped chunks by {len(chunks_by_source)} sources")
+
+            # Upload each source's chunks
+            total_uploaded = 0
+            total_failed = 0
+
+            for source_url, chunks in chunks_by_source.items():
+                loader_type = chunks[0].get('loader_type', 'Unknown')
+                log.info(
+                    f"Uploading {len(chunks)} chunks from {source_url} (loader: {loader_type})")
+
+                # Format chunks for upload
+                formatted_chunks = [
+                    {
+                        'text': chunk.get('text', '').strip(),
+                        'metadata': chunk.get('metadata', {})
+                    }
+                    for chunk in chunks
+                    if chunk.get('text', '').strip()
+                ]
+
+                log.debug(
+                    f"Formatted {len(formatted_chunks)} chunks for {source_url}")
+
+                if formatted_chunks:
+                    try:
+                        log.debug(
+                            f"Calling uploader.upload_chunks with {len(formatted_chunks)} chunks")
+                        uploaded, failed = self.uploader.upload_chunks(
+                            chunks=formatted_chunks,
+                            source_identifier=source_url,
+                            loader_type=loader_type
+                        )
+                        total_uploaded += uploaded
+                        total_failed += failed
+                        log.info(
+                            f"✅ Uploaded {uploaded} chunks from {source_url}, {failed} failed")
+                    except Exception as upload_err:
+                        log.error(
+                            f"Error uploading chunks from {source_url}: {upload_err}", exc_info=True)
+                        total_failed += len(formatted_chunks)
+                else:
+                    log.warning(f"No valid formatted chunks for {source_url}")
+
+            log.info(
+                f"✅ Batch upload complete: {total_uploaded} chunks uploaded, {total_failed} failed"
+            )
+            self.stats["total_uploads"] += total_uploaded
+            self.stats["failed_uploads"] += total_failed
+
+        except Exception as e:
+            log.error(f"Failed to upload chunks from file: {e}", exc_info=True)
         if self.uploader:
             self.uploader.close()
         log.info("\nScraping pipeline complete!")
