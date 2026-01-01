@@ -1,0 +1,59 @@
+services:
+  # Backend FastAPI Service
+  - type: web
+    name: vecinita-backend
+    env: python
+    region: oregon
+    plan: starter
+    buildCommand: |
+      cd backend && pip install --upgrade pip && pip install -e .
+    startCommand: |
+      cd backend && uvicorn src.agent.main:app --host 0.0.0.0 --port $PORT
+    rootDir: backend
+    
+    # Environment variables
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: GROQ_API_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+    
+    # Health check
+    healthCheckPath: /
+    
+    # Mount volumes if needed
+    # volumes:
+    #   - name: data
+    #     path: /app/data
+    #     ttl: "24h"
+
+  # Frontend Vite Service
+  - type: static-site
+    name: vecinita-frontend
+    staticPublishPath: dist
+    buildCommand: npm install && npm run build
+    rootDir: frontend
+    
+    # Environment variables if needed for build time
+    envVars:
+      - key: VITE_API_URL
+        value: https://vecinita-backend.onrender.com
+        sync: false
+    
+    # Routes (if using with internal API routing)
+    routes:
+      - path: /api/*
+        destination: https://vecinita-backend.onrender.com
+
+  # Optional: PostgreSQL Database (if not using external Supabase)
+  # Uncomment if you want to manage PostgreSQL on Render
+  # - type: pserv
+  #   name: vecinita-db
+  #   env: docker
+  #   plan: free
+  #   region: oregon
+  #   ipAllowList: []
