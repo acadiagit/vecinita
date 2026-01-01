@@ -2,8 +2,8 @@ import { test, expect } from '@playwright/test'
 
 test.describe('ChatWidget E2E', () => {
   test('sends messages and shows back-and-forth with thread_id', async ({ page }) => {
-    // Intercept backend ask endpoint
-    await page.route('**/api/ask**', async (route) => {
+    // Intercept backend streaming endpoint
+    await page.route('**/api/ask-stream**', async (route) => {
       const url = new URL(route.request().url())
       const query = url.searchParams
       
@@ -12,19 +12,25 @@ test.describe('ChatWidget E2E', () => {
       expect(query.get('lang')).toBeTruthy()
       expect(query.get('thread_id')).toBeTruthy()
       
-      // Respond with a simple answer
+      // Respond with SSE stream format matching backend
+      // Send thinking message then complete message
+      const sseBody = 
+        'data: {"type":"thinking","message":"Understanding your question..."}\n\n' +
+        'data: {"type":"complete","answer":"Hi there!","sources":[]}\n\n'
+      
       await route.fulfill({
         status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ answer: 'Hi there!', sources: [] }),
+        contentType: 'text/event-stream',
+        body: sseBody,
       })
     })
 
     // Go to app
     await page.goto('/')
 
-    // Wait for the page to load and chat to be ready
-    await page.waitForLoadState('networkidle')
+    // Wait for chat to be ready by checking for the input field
+    const messageInput = page.getByPlaceholder(/Ask about local resources|Pregunta sobre recursos locales/i)
+    await messageInput.waitFor({ state: 'visible', timeout: 10000 })
 
     // Switch to English for stable strings (if language selector exists)
     const languageSelector = page.getByLabel(/Idioma|Language/i)
@@ -33,11 +39,10 @@ test.describe('ChatWidget E2E', () => {
     }
 
     // First turn - send a message
-    const messageInput = page.getByPlaceholder(/Ask about local resources|Pregunta sobre recursos locales/i)
     await messageInput.fill('Hello')
     
     const sendButton = page.getByRole('button', { name: /Send|Enviar/i })
-    const requestPromise = page.waitForRequest('**/api/ask**')
+    const requestPromise = page.waitForRequest('**/api/ask-stream**')
     await sendButton.click()
     await requestPromise
 
@@ -46,7 +51,7 @@ test.describe('ChatWidget E2E', () => {
 
     // Second turn - send another message
     await messageInput.fill('How are you?')
-    const requestPromise2 = page.waitForRequest('**/api/ask**')
+    const requestPromise2 = page.waitForRequest('**/api/ask-stream**')
     await sendButton.click()
     await requestPromise2
 

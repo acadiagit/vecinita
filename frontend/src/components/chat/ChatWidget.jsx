@@ -49,7 +49,7 @@ export default function ChatWidget({ backendUrl, embedded = false, initialOpen =
   ])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const [progress, setProgress] = useState(null) // Track progress stage and message
+  const [thinkingMessages, setThinkingMessages] = useState([]) // Track agent's thinking process
   const listRef = useRef(null)
   const threadIdRef = useRef(null)
   const [providersOptions, setProvidersOptions] = useState(PROVIDERS)
@@ -153,7 +153,7 @@ export default function ChatWidget({ backendUrl, embedded = false, initialOpen =
     setMessages((m) => [...m, { role: 'user', content: q }])
     setInput('')
     setLoading(true)
-    setProgress(null)
+    setThinkingMessages([])
     try {
       const urlBase = backendUrl || '/api'
       const thread = threadIdRef.current
@@ -182,19 +182,18 @@ export default function ChatWidget({ backendUrl, embedded = false, initialOpen =
               const jsonStr = line.slice(6) // Remove 'data: ' prefix
               const update = JSON.parse(jsonStr)
               
-              if (update.type === 'progress') {
-                // Update progress indicator with tool name and human-readable message
-                setProgress({
-                  stage: update.stage,
-                  tool: update.tool,
-                  message: update.message
-                })
+              if (update.type === 'thinking') {
+                // Add thinking message to show agent's process
+                setThinkingMessages(prev => [
+                  ...prev, 
+                  { message: update.message, timestamp: Date.now() }
+                ])
               } else if (update.type === 'complete') {
                 // Final answer received
                 assistantMessage = update.answer
                 sources = update.sources || []
                 plan = update.plan || ''
-                setProgress(null) // Clear progress
+                setThinkingMessages([]) // Clear thinking messages
               } else if (update.type === 'clarification') {
                 // User needs to answer clarifying questions
                 setMessages((m) => [
@@ -232,10 +231,10 @@ export default function ChatWidget({ backendUrl, embedded = false, initialOpen =
         ...m,
         { role: 'assistant', content: `Error: ${err.message}` }
       ])
-      setProgress(null)
+      setThinkingMessages([])
     } finally {
       setLoading(false)
-      setProgress(null)
+      setThinkingMessages([])
     }
   }
 
@@ -316,20 +315,20 @@ export default function ChatWidget({ backendUrl, embedded = false, initialOpen =
               />
             ))}
             
-            {/* Progress indicator during streaming */}
-            {progress && (
-              <div className="flex flex-col gap-2 p-3 text-sm text-muted-foreground animate-pulse">
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 bg-primary rounded-full animate-bounce" />
-                  <div className="flex flex-col gap-1 flex-1">
-                    <span className="font-semibold text-primary text-xs uppercase tracking-wide">
-                      {progress.tool ? `[${progress.tool.replace('_', ' ')}]` : 'Processing...'}
-                    </span>
-                    <span>{progress.message}</span>
+            {/* Agent thinking snippets - show conversation happening */}
+            {thinkingMessages.length > 0 && (
+              <div className="mb-3 flex justify-center">
+                <div className="max-w-sm rounded-md px-4 py-2 bg-primary/5 border border-primary/20 text-xs space-y-1.5">
+                  <div className="flex items-center gap-2 text-primary/70 font-medium mb-1">
+                    <div className="w-1 h-1 bg-primary/50 rounded-full animate-pulse" />
+                    <span>Thinking</span>
                   </div>
-                </div>
-                <div className="w-full bg-secondary rounded-full h-1 overflow-hidden">
-                  <div className="h-full bg-primary animate-pulse" style={{ width: '60%' }} />
+                  {thinkingMessages.slice(-3).map((thought, i) => (
+                    <div key={i} className="flex items-start gap-2 text-muted-foreground animate-fadeIn">
+                      <span className="opacity-40 mt-0.5">·</span>
+                      <span className="italic text-xs leading-relaxed">{thought.message}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
@@ -444,20 +443,20 @@ export default function ChatWidget({ backendUrl, embedded = false, initialOpen =
                 />
               ))}
               
-              {/* Progress indicator during streaming */}
-              {progress && (
-                <div className="flex flex-col gap-2 p-3 text-sm text-muted-foreground animate-pulse">
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-primary rounded-full animate-bounce" />
-                    <div className="flex flex-col gap-1 flex-1">
-                      <span className="font-semibold text-primary text-xs uppercase tracking-wide">
-                        {progress.tool ? `[${progress.tool.replace('_', ' ')}]` : 'Processing...'}
-                      </span>
-                      <span>{progress.message}</span>
+              {/* Agent thinking snippets - show conversation happening */}
+              {thinkingMessages.length > 0 && (
+                <div className="mb-3 flex justify-center">
+                  <div className="max-w-sm rounded-md px-4 py-2 bg-primary/5 border border-primary/20 text-xs space-y-1.5">
+                    <div className="flex items-center gap-2 text-primary/70 font-medium mb-1">
+                      <div className="w-1 h-1 bg-primary/50 rounded-full animate-pulse" />
+                      <span>Thinking</span>
                     </div>
-                  </div>
-                  <div className="w-full bg-secondary rounded-full h-1 overflow-hidden">
-                    <div className="h-full bg-primary animate-pulse" style={{ width: '60%' }} />
+                    {thinkingMessages.slice(-3).map((thought, i) => (
+                      <div key={i} className="flex items-start gap-2 text-muted-foreground animate-fadeIn">
+                        <span className="opacity-40 mt-0.5">·</span>
+                        <span className="italic text-xs leading-relaxed">{thought.message}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}

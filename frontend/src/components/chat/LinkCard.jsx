@@ -40,6 +40,14 @@ export default function LinkCard({ title, url, isDownload, chunkIndex, totalChun
     }
   })()
 
+  // Clean title - if it starts with scraper metadata, use hostname instead
+  const displayTitle = useMemo(() => {
+    if (!title || title.startsWith('DOCUMENTS_LOADED:')) {
+      return hostname || actualUrl
+    }
+    return title
+  }, [title, hostname, actualUrl])
+
   const iconMeta = useMemo(() => {
     const ext = fileExt
     const lower = (ext || '').toLowerCase()
@@ -141,7 +149,7 @@ export default function LinkCard({ title, url, isDownload, chunkIndex, totalChun
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 mb-1">
-              <div className="text-sm font-medium line-clamp-2">{title || actualUrl}</div>
+              <div className="text-sm font-medium line-clamp-2">{displayTitle}</div>
               {isExtractedLink && (
                 <span className="text-xs font-semibold px-2 py-0.5 rounded bg-blue-200 text-blue-800 dark:bg-blue-800 dark:text-blue-200 whitespace-nowrap">
                   Link

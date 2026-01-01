@@ -146,29 +146,33 @@ class AgentState(TypedDict):
     plan: str | None  # Stores planning results
 
 
-# --- Tool-specific progress message map ---
-TOOL_PROGRESS_MESSAGES = {
+# --- Human-readable agent thinking messages ---
+AGENT_THINKING_MESSAGES = {
     'es': {
-        'static_response': 'Buscando en preguntas frecuentes...',
-        'db_search': 'Buscando en la base de datos...',
-        'clarify_question': 'Formulando preguntas de aclaración...',
-        'web_search': 'Buscando en internet...',
-        'plan': 'Analizando tu pregunta y planificando la búsqueda...'
+        'static_response': 'Verificando si ya conozco esto...',
+        'db_search': 'Revisando nuestros recursos locales...',
+        'clarify_question': 'Necesito un poco más de información...',
+        'web_search': 'Buscando información adicional...',
+        'plan': 'Déjame pensar en tu pregunta...',
+        'analyzing': 'Entendiendo tu pregunta...',
+        'searching': 'Encontrando información relevante...',
     },
     'en': {
-        'static_response': 'Searching FAQs...',
-        'db_search': 'Searching database...',
-        'clarify_question': 'Asking clarifying questions...',
-        'web_search': 'Searching the web...',
-        'plan': 'Analyzing your question and planning the search...'
+        'static_response': 'Checking if I already know this...',
+        'db_search': 'Looking through our local resources...',
+        'clarify_question': 'I need a bit more information...',
+        'web_search': 'Searching for additional information...',
+        'plan': 'Let me think about your question...',
+        'analyzing': 'Understanding your question...',
+        'searching': 'Finding relevant information...',
     }
 }
 
 
-def get_tool_progress_message(tool_name: str, language: str) -> str:
-    """Get human-readable progress message for a tool."""
-    msgs = TOOL_PROGRESS_MESSAGES.get(language, TOOL_PROGRESS_MESSAGES['en'])
-    return msgs.get(tool_name, f'Executing {tool_name}...')
+def get_agent_thinking_message(tool_name: str, language: str) -> str:
+    """Get human-readable conversational message for agent activity."""
+    msgs = AGENT_THINKING_MESSAGES.get(language, AGENT_THINKING_MESSAGES['en'])
+    return msgs.get(tool_name, 'Thinking...')
 
 
 # --- Initialize Tools ---
@@ -1198,13 +1202,13 @@ async def ask_question_stream(
     model: str | None = Query(default=None),
     clarification_response: str | None = Query(default=None),
 ):
-    """Enhanced streaming endpoint with tool-specific progress and interactive clarification.
+    """Enhanced streaming endpoint with conversational agent activity updates.
 
-    Sends JSON objects with updates about tool execution, planning, and clarification:
-    - {"type": "progress", "stage": "planning", "tool": "planning", "message": "Analyzing your question..."}
-    - {"type": "progress", "stage": "tool", "tool": "db_search", "message": "Searching database..."}
+    Sends JSON objects showing agent's thinking process:
+    - {"type": "thinking", "message": "Let me think about your question..."}
+    - {"type": "thinking", "message": "Looking through our local resources..."}
     - {"type": "clarification", "questions": [...], "context": "..."} ← User must respond  
-    - {"type": "complete", "answer": "...", "sources": [...], "plan": "..."}
+    - {"type": "complete", "answer": "...", "sources": [...]}
     """
     # Accept both 'question' and legacy 'query' parameter names
     if question is None and query is not None:
@@ -1235,9 +1239,9 @@ async def ask_question_stream(
             logger.info(
                 f"\n--- Streaming request received: '{question}' (Language: {lang_local}, Thread: {thread_id}) ---")
 
-            # Yield progress for static response check
-            msg = get_tool_progress_message('static_response', lang_local)
-            yield f'data: {json.dumps({"type": "progress", "stage": "static_response", "tool": "static_response", "message": msg})}\n\n'
+            # Yield thinking message for FAQ check
+            msg = get_agent_thinking_message('static_response', lang_local)
+            yield f'data: {json.dumps({"type": "thinking", "message": msg})}\n\n'
 
             # Try static response first
             local_static = _find_static_faq_answer(question, lang_local)
@@ -1246,12 +1250,9 @@ async def ask_question_stream(
                 yield f'data: {json.dumps({"type": "complete", "answer": local_static, "sources": [], "thread_id": thread_id, "plan": ""})}\n\n'
                 return
 
-            # Yield progress for planning
-            msg = get_tool_progress_message('plan', lang_local)
-            yield f'data: {json.dumps({"type": "progress", "stage": "planning", "tool": "planning", "message": msg})}\n\n'
-
-            # Yield progress for agent initialization
-            yield f'data: {json.dumps({"type": "progress", "stage": "agent_init", "tool": "agent", "message": "Initializing agent..."})}\n\n'
+            # Yield thinking message for analysis
+            msg = get_agent_thinking_message('analyzing', lang_local)
+            yield f'data: {json.dumps({"type": "thinking", "message": msg})}\n\n'
 
             # Build system prompt based on language
             if lang_local == 'es':
@@ -1331,14 +1332,14 @@ IMPORTANT: Do not describe what you will do. DO IT. Call the tools directly.
 
             # Execute graph with streaming and track tool execution
             try:
-                # Use streaming to track tool execution
+                # Use streaming to track tool execution with friendly messages
                 for tool_name in _execute_agent_with_tool_progress(initial_state, config):
                     if tool_name not in executed_tools:
                         executed_tools.add(tool_name)
-                        tool_msg = get_tool_progress_message(
+                        tool_msg = get_agent_thinking_message(
                             tool_name, lang_local)
-                        logger.info(f"Executing tool: {tool_name}")
-                        yield f'data: {json.dumps({"type": "progress", "stage": "tool", "tool": tool_name, "message": tool_msg})}\n\n'
+                        logger.info(f"Agent activity: {tool_name}")
+                        yield f'data: {json.dumps({"type": "thinking", "message": tool_msg})}\n\n'
 
                 # Get final result
                 result = graph.invoke(initial_state, config)
