@@ -19,6 +19,7 @@ from supabase import create_client, Client
 from langchain_groq import ChatGroq
 from langchain_openai import ChatOpenAI
 from langchain_ollama import ChatOllama
+from langchain_community.chat_models import ChatOpenAI as ChatDeepSeek
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_huggingface import HuggingFaceEmbeddings
@@ -75,26 +76,37 @@ try:
     supabase: Client = create_client(supabase_url, supabase_key)
     logger.info("Supabase client initialized successfully")
 
-    # Initialize default LLM: prefer local Llama (Ollama), fallback to Groq Llama, then OpenAI
-    if ollama_base_url:
-        logger.info("Initializing ChatOllama (Llama) LLM...")
-        llm = ChatOllama(temperature=0, model=ollama_model,
-                         base_url=ollama_base_url)
-        logger.info(
-            f"ChatOllama initialized successfully (model={ollama_model})")
+    # Initialize default LLM: prefer DeepSeek, then Groq, then OpenAI, finally Ollama Llama
+    if deepseek_api_key:
+        logger.info("Initializing ChatOpenAI with DeepSeek (default)...")
+        deepseek_base_url = os.environ.get(
+            "DEEPSEEK_BASE_URL") or "https://api.deepseek.com/v1"
+        llm = ChatOpenAI(
+            temperature=0,
+            api_key=deepseek_api_key,
+            model="deepseek-chat",
+            base_url=deepseek_base_url
+        )
+        logger.info("DeepSeek LLM initialized successfully")
     elif groq_api_key:
-        logger.info("Initializing ChatGroq LLM (Llama default)...")
+        logger.info("Initializing ChatGroq LLM (Llama fallback)...")
         llm = ChatGroq(temperature=0, groq_api_key=groq_api_key,
                        model_name="llama-3.1-8b-instant")
         logger.info("ChatGroq LLM initialized successfully")
     elif openai_api_key:
-        logger.info("Initializing ChatOpenAI LLM...")
+        logger.info("Initializing ChatOpenAI LLM (GPT fallback)...")
         llm = ChatOpenAI(temperature=0, api_key=openai_api_key,
                          model="gpt-4o-mini")
         logger.info("ChatOpenAI LLM initialized successfully")
+    elif ollama_base_url:
+        logger.info("Initializing ChatOllama (Llama fallback)...")
+        llm = ChatOllama(temperature=0, model=ollama_model,
+                         base_url=ollama_base_url)
+        logger.info(
+            f"ChatOllama initialized successfully (model={ollama_model})")
     else:
         raise RuntimeError(
-            "No LLM provider configured. Set OLLAMA_BASE_URL or GROQ_API_KEY or OPENAI_API_KEY/OPEN_API_KEY.")
+            "No LLM provider configured. Set DEEPSEEK_API_KEY or GROQ_API_KEY or OPENAI_API_KEY/OPEN_API_KEY or OLLAMA_BASE_URL.")
 
     # Use all-MiniLM-L6-v2 with 384 dimensions by default.
     # If sentence-transformers is unavailable (CI minimal deps), fall back to FastEmbed.
@@ -1432,20 +1444,22 @@ def config():
     """Expose available providers/models based on environment for frontend discovery."""
     providers = []
     models = {}
-    # Llama via Ollama/Groq
-    try:
-        providers.append({"key": "llama", "label": "Llama"})
-        models["llama"] = [ollama_model or "llama3.2"]
-    except Exception:
-        pass
+    # DeepSeek (default/primary)
+    if deepseek_api_key:
+        providers.append({"key": "deepseek", "label": "DeepSeek"})
+        models["deepseek"] = ["deepseek-chat", "deepseek-reasoner"]
+    # Groq (Llama)
+    if groq_api_key:
+        providers.append({"key": "groq", "label": "Groq (Llama)"})
+        models["groq"] = ["llama-3.1-8b-instant"]
     # OpenAI if key present
     if openai_api_key:
         providers.append({"key": "openai", "label": "OpenAI"})
         models["openai"] = ["gpt-4o-mini"]
-    # DeepSeek if key present
-    if deepseek_api_key:
-        providers.append({"key": "deepseek", "label": "DeepSeek"})
-        models["deepseek"] = ["deepseek-chat", "deepseek-reasoner"]
+    # Llama via Ollama
+    if ollama_base_url:
+        providers.append({"key": "llama", "label": "Llama (Local)"})
+        models["llama"] = [ollama_model or "llama3.2"]
     return {"providers": providers, "models": models}
 
 # --end-of-file--
