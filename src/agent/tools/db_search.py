@@ -104,4 +104,3 @@ def create_db_search_tool(supabase_client, embedding_model, match_threshold: flo
             return error_msg
 
     return db_search
-EOF
