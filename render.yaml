@@ -1,57 +1,58 @@
 services:
-  # Backend FastAPI Service
+  # Backend FastAPI Service (Docker)
   - type: web
     name: vecinita-backend
-    env: python
+    env: docker
     region: virginia
     plan: starter
-    buildCommand: |
-      pip install uv && uv sync --frozen
-    startCommand: |
-      uv run uvicorn src.agent.main:app --host 0.0.0.0 --port $PORT
-    rootDir: backend
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
     
     # Environment variables
     envVars:
+      - key: PORT
+        value: "8000"
       - key: PYTHONUNBUFFERED
         value: "1"
+      - key: TF_ENABLE_ONEDNN_OPTS
+        value: "0"
       - key: GROQ_API_KEY
         sync: false
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_KEY
         sync: false
+      - key: LANGSMITH_TRACING
+        sync: false
+      - key: LANGSMITH_API_KEY
+        sync: false
+      - key: LANGSMITH_PROJECT
+        sync: false
+      - key: OLLAMA_BASE_URL
+        sync: false
+      - key: OLLAMA_MODEL
+        sync: false
+      - key: EMBEDDING_MODEL
+        sync: false
+      - key: USE_LOCAL_EMBEDDINGS
+        sync: false
     
     # Health check
-    healthCheckPath: /
-    
-    # Mount volumes if needed
-    # volumes:
-    #   - name: data
-    #     path: /app/data
-    #     ttl: "24h"
+    healthCheckPath: /health
 
-  # Frontend Vite Service
+  # Frontend Vite Service (Docker)
   - type: web
     name: vecinita-frontend
-    env: node
+    env: docker
     region: virginia
     plan: starter
-    buildCommand: |
-      npm ci && npm run build
-    startCommand: |
-      npm run preview -- --host 0.0.0.0 --port $PORT
-    rootDir: frontend
+    dockerfilePath: ./frontend/Dockerfile
+    dockerContext: ./frontend
     
-    # Environment variables if needed for build time
+    # Environment variables (build-time for Vite)
     envVars:
-      - key: VITE_API_URL
+      - key: VITE_BACKEND_URL
         value: https://vecinita-backend.onrender.com
-    
-    # Routes (if using with internal API routing)
-    # routes:
-    #   - path: /api/*
-    #     destination: https://vecinita-backend.onrender.com
 
   # Optional: PostgreSQL Database (if not using external Supabase)
   # Uncomment if you want to manage PostgreSQL on Render
@@ -59,5 +60,5 @@ services:
   #   name: vecinita-db
   #   env: docker
   #   plan: free
-  #   region: oregon
+  #   region: virginia
   #   ipAllowList: []

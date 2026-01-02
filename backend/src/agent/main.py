@@ -55,10 +55,7 @@ app.add_middleware(
     allow_methods=["*"], allow_headers=["*"],
 )
 
-# --- Mount Static Files ---
-static_dir = Path(__file__).parent / "static"
-if static_dir.exists():
-    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+# --- Static files mount removed - using separate React frontend ---
 
 # --- Load Environment Variables & Validate ---
 supabase_url = os.environ.get("SUPABASE_URL")
@@ -526,41 +523,24 @@ def _find_static_faq_answer(question: str, language: str) -> str | None:
 # --- THIS IS THE NEW ROOT ENDPOINT ---
 
 
-@app.get("/", response_class=FileResponse)
-async def get_ui():
-    """Serves the main chat UI (index.html). Falls back to alternate locations if needed."""
-    # Primary: alongside this module (backend/src/agent/static/index.html)
-    primary = Path(__file__).parent / "static" / "index.html"
-    # Fallback: legacy root layout (repo/src/agent/static/index.html)
-    legacy = Path(__file__).parents[3] / "src" / \
-        "agent" / "static" / "index.html"
-    for candidate in (primary, legacy):
-        if candidate.exists():
-            return FileResponse(candidate)
-    # Provide a helpful error if the UI file is missing
-    raise HTTPException(
-        status_code=404,
-        detail=(
-            "UI not found. Checked: "
-            f"{primary} and {legacy}. "
-            "If you are using the separate frontend, open http://localhost:3000. "
-            "For local backend dev after the repo restructure, run from the backend folder: "
-            "'cd backend && uv run -m uvicorn src.agent.main:app --reload'"
-        ),
-    )
-# --- OLD "/ui" ENDPOINT IS NOW THE ROOT ---
+@app.get("/")
+async def get_root():
+    """Returns API information and available endpoints."""
+    return {
+        "service": "Vecinita Backend API",
+        "status": "running",
+        "version": "2.0",
+        "endpoints": {
+            "health": "/health",
+            "ask": "/ask?question=<your_question>",
+            "docs": "/docs",
+            "config": "/config"
+        },
+        "message": "Use the React frontend at http://localhost:3000 or call /ask endpoint directly"
+    }
 
 
-@app.get("/favicon.ico", response_class=FileResponse)
-async def get_favicon():
-    """Serves the favicon"""
-    favicon_path = Path(__file__).parent / "static" / "favicon.ico"
-    if not favicon_path.exists():
-        raise HTTPException(
-            status_code=404,
-            detail=f"Favicon not found. Expected file at: {favicon_path}. Ensure the static assets are available.",
-        )
-    return FileResponse(favicon_path)
+# --- Favicon endpoint removed - using separate React frontend ---
 
 
 @app.get("/health")

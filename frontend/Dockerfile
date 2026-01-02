@@ -16,6 +16,28 @@ RUN npm run build
 
 # Runtime stage using Nginx
 FROM nginx:alpine AS runtime
+
+# Copy nginx config for SPA routing
+COPY <<EOF /etc/nginx/conf.d/default.conf
+server {
+  listen 80;
+  server_name _;
+  root /usr/share/nginx/html;
+  index index.html;
+
+  # SPA routing: redirect all non-file requests to index.html
+  location / {
+    try_files \$uri \$uri/ /index.html;
+  }
+
+  # Cache busting for assets
+  location /assets/ {
+    expires 1y;
+    add_header Cache-Control "public, immutable";
+  }
+}
+EOF
+
 COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
