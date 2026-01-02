@@ -10,7 +10,13 @@ services:
     autoDeployTrigger: commit
     
     # Environment variables (non-secret only - secrets set via Dashboard)
-    # To apply secrets, link the "vecinita" environment group in the Render Dashboard
+    # IMPORTANT: Set these secrets in Render Dashboard under Environment tab:
+    # - SUPABASE_URL
+    # - SUPABASE_KEY
+    # - GROQ_API_KEY (or OPENAI_API_KEY for OpenAI)
+    # - DEEPSEEK_API_KEY (optional)
+    # - OLLAMA_BASE_URL (optional, for local Ollama)
+    # - LANGSMITH_API_KEY (optional, for tracing)
     envVars:
       - key: PORT
         value: "10000"
@@ -18,6 +24,8 @@ services:
         value: "1"
       - key: TF_ENABLE_ONEDNN_OPTS
         value: "0"
+      # Add these to Render Dashboard > Environment Variables:
+      # SUPABASE_URL, SUPABASE_KEY, GROQ_API_KEY
     
     # Health check
     healthCheckPath: /health
