@@ -133,7 +133,7 @@ Sources:
 
    ```bash
    cd backend
-   uv run uvicorn src.main:app --reload
+   uv run uvicorn src.agent.main:app --reload
    ```
 
 2. **Start frontend**:

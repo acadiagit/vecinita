@@ -190,7 +190,7 @@ The database search was returning no results due to `is_processed = false` flag.
 
 After deploying this change:
 
-1. **Restart backend:** `docker-compose restart backend` or `uv run uvicorn src.main:app --reload`
+1. **Restart backend:** `docker-compose restart backend` or `uv run uvicorn src.agent.main:app --reload`
 2. **Test query:** Ask any question that triggers database search
 3. **Verify:** Link cards should show clean titles instead of "DOCUMENTS_LOADED: ..."
 

@@ -48,7 +48,8 @@ docker compose up --build
 
 ```bash
 # Run backend (FastAPI) on 8000 separately
-uv run -m uvicorn src.main:app --reload --port 8000
+cd backend
+uv run -m uvicorn src.agent.main:app --reload --port 8000
 
 # Run frontend with proxy
 npm run dev

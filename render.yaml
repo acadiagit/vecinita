@@ -6,9 +6,9 @@ services:
     region: virginia
     plan: starter
     buildCommand: |
-      pip install uv && cd backend && uv sync --frozen
+      pip install uv && uv sync --frozen
     startCommand: |
-      cd backend && uv run uvicorn src.agent.main:app --host 0.0.0.0 --port $PORT
+      uv run uvicorn src.agent.main:app --host 0.0.0.0 --port $PORT
     rootDir: backend
     
     # Environment variables
@@ -37,8 +37,10 @@ services:
     env: node
     region: virginia
     plan: starter
-    buildCommand: npm install && npm run build
-    startCommand: npm run preview
+    buildCommand: |
+      npm ci && npm run build
+    startCommand: |
+      npm run preview -- --host 0.0.0.0 --port $PORT
     rootDir: frontend
     
     # Environment variables if needed for build time
