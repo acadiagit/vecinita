@@ -45,7 +45,6 @@ services:
     envVars:
       - key: VITE_API_URL
         value: https://vecinita-backend.onrender.com
-        sync: false
     
     # Routes (if using with internal API routing)
     # routes:
