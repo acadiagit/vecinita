@@ -27,9 +27,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 ENV PYTHONUNBUFFERED=1
 ENV TF_ENABLE_ONEDNN_OPTS=0
 
-# Upgrade pip and install package with embedding extra
+# Upgrade pip and install package with embedding and scraping extras
 RUN pip install --no-cache-dir --upgrade pip && \
-	pip install --no-cache-dir --retries 5 --default-timeout=1000 ".[embedding]"
+	pip install --no-cache-dir --retries 5 --default-timeout=1000 ".[embedding,scraping]"
 
 # Pre-cache embedding model to speed up first run (optional)
 # Align with default used in app (all-MiniLM-L6-v2)
