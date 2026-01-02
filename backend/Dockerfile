@@ -43,7 +43,8 @@ EXPOSE 8000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=5 \
-	CMD curl -f http://localhost:8000/health || exit 1
+	CMD curl -f http://localhost:${PORT:-8000}/health || exit 1
 
 # Start the FastAPI app via uvicorn (module path: src.agent.main:app)
-CMD ["uvicorn", "src.agent.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Use PORT env var (default 8000 for local dev, 10000 for Render)
+CMD ["sh", "-c", "uvicorn src.agent.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
