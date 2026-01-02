@@ -2,7 +2,7 @@ services:
   # Backend FastAPI Service (Docker)
   - type: web
     name: vecinita-backend
-    env: docker
+    runtime: docker
     region: virginia
     plan: starter
     dockerfilePath: ./backend/Dockerfile
@@ -11,7 +11,7 @@ services:
     # Environment variables
     envVars:
       - key: PORT
-        value: "8000"
+        value: "10000"
       - key: PYTHONUNBUFFERED
         value: "1"
       - key: TF_ENABLE_ONEDNN_OPTS
@@ -43,7 +43,7 @@ services:
   # Frontend Vite Service (Docker)
   - type: web
     name: vecinita-frontend
-    env: docker
+    runtime: docker
     region: virginia
     plan: starter
     dockerfilePath: ./frontend/Dockerfile
@@ -58,7 +58,7 @@ services:
   # Uncomment if you want to manage PostgreSQL on Render
   # - type: pserv
   #   name: vecinita-db
-  #   env: docker
+  #   runtime: docker
   #   plan: free
   #   region: virginia
   #   ipAllowList: []
