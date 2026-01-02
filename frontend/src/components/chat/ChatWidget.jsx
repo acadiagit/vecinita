@@ -4,7 +4,7 @@ import { Input } from '../ui/input'
 import { Slider } from '../ui/slider'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog'
 import MessageBubble from './MessageBubble'
-import { PROVIDERS, MODELS } from '@/lib/utils'
+import { PROVIDERS, MODELS } from '@/lib/utils.js'
 
 // Simple i18n strings
 const STRINGS = {
