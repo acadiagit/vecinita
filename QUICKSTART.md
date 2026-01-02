@@ -91,6 +91,7 @@ npm run test:e2e
 ## Test Results
 
 ### Backend Tests (108 passing)
+
 ```
 ✅ Agent Tests:         6/6 PASSED   (LangGraph integration)
 ✅ db_search_tool:      8/8 PASSED   (Vector search)
@@ -102,6 +103,7 @@ npm run test:e2e
 ```
 
 Run backend tests:
+
 ```bash
 cd backend
 uv run pytest                    # All tests
@@ -110,6 +112,7 @@ uv run pytest --cov              # With coverage
 ```
 
 ### Frontend Tests
+
 ```bash
 cd frontend
 npm run test                     # Unit tests (Vitest)
@@ -168,6 +171,7 @@ vecinita/
 ## Agent Tools
 
 ### db_search_tool
+
 - **Function**: Vector similarity search on Supabase documents
 - **Embeddings**: HuggingFace sentence-transformers/all-MiniLM-L6-v2
 - **Threshold**: 0.3 (configurable)
@@ -175,6 +179,7 @@ vecinita/
 - **Location**: `backend/src/agent/tools/db_search.py`
 
 ### static_response_tool
+
 - **Function**: Bilingual FAQ lookup (English/Spanish)
 - **Features**: Case-insensitive, partial matching, language fallback
 - **Database**: 10+ FAQs per language
@@ -182,6 +187,7 @@ vecinita/
 - **Performance**: ~5ms response time
 
 ### web_search_tool
+
 - **Primary**: Tavily API (advanced search with answer extraction)
 - **Fallback**: DuckDuckGo (free, no API key required)
 - **Features**: Auto provider switching, result normalization
@@ -195,6 +201,7 @@ vecinita/
 The backend includes a powerful web scraping pipeline:
 
 ### Features
+
 - **Multi-loader support**: Unstructured, Playwright, Recursive
 - **Smart fallback**: Tries standard loaders first, falls back to Playwright for JS-heavy sites
 - **Configurable chunking**: RecursiveCharacterTextSplitter (default: 1000 chars, 200 overlap)
@@ -234,6 +241,7 @@ bash scripts/data_scrape_load.sh --clean
 ### Scraper Configuration
 
 Files in `data/config/`:
+
 - **recursive_sites.txt**: Format `<url> <depth>` for crawling (e.g., `https://example.com 2`)
 - **playwright_sites.txt**: Domains requiring Playwright (JS-heavy content)
 - **skip_sites.txt**: Domains to skip entirely
@@ -245,6 +253,7 @@ Files in `data/config/`:
 The React frontend provides a modern chat interface:
 
 ### Key Features
+
 - **Responsive Design**: Mobile-first with Tailwind CSS
 - **Font Scaling**: User-adjustable text size (slider in settings)
 - **Language Support**: Auto-detection + manual toggle (EN/ES)
@@ -254,12 +263,14 @@ The React frontend provides a modern chat interface:
 - **Dark Mode Ready**: CSS variable-based theming
 
 ### Components
+
 - **ChatWidget**: Main chat interface with message history
 - **MessageBubble**: Renders user/assistant messages with markdown
 - **LinkCard**: Displays source links with hover effects
 - **UI Components**: shadcn/ui-style button, card, dialog, input, slider
 
 ### Running Frontend Tests
+
 ```bash
 cd frontend
 
@@ -290,21 +301,25 @@ npm run test -- --watch
 ### Example Requests
 
 #### Simple Question
+
 ```bash
 curl "http://localhost:8000/ask?question=What%20is%20Vecinita?"
 ```
 
 #### With Conversation History
+
 ```bash
 curl "http://localhost:8000/ask?question=How%20can%20I%20help%3F&thread_id=user-123"
 ```
 
 #### Force Language
+
 ```bash
 curl "http://localhost:8000/ask?question=Hola&language=es"
 ```
 
 #### Response Format
+
 ```json
 {
   "question": "What is Vecinita?",
@@ -382,6 +397,7 @@ docs/
 ## Configuration
 
 ### Required Environment Variables
+
 ```bash
 # Supabase (vector database)
 SUPABASE_URL=https://<project>.supabase.co
@@ -392,6 +408,7 @@ GROQ_API_KEY=<your-groq-key>
 ```
 
 ### Optional Environment Variables
+
 ```bash
 # Web search (Tavily - falls back to DuckDuckGo if not set)
 TAVILY_API_KEY=<your-tavily-key>
@@ -406,6 +423,7 @@ VITE_BACKEND_URL=http://localhost:8000
 ### Docker Compose Environment
 
 Create a `.env` file in the project root:
+
 ```bash
 SUPABASE_URL=https://xxxxx.supabase.co
 SUPABASE_KEY=your-key
@@ -417,18 +435,21 @@ VITE_BACKEND_URL=http://backend:8000
 ### Tool Configuration (Code Level)
 
 **db_search_tool** (`backend/src/agent/tools/db_search.py`):
+
 ```python
 match_threshold = 0.3    # Similarity threshold (0-1)
 match_count = 5          # Number of results to return
 ```
 
 **web_search_tool** (`backend/src/agent/tools/web_search.py`):
+
 ```python
 max_results = 5          # Results per search
 search_depth = "advanced"  # Tavily only
 ```
 
 **scraper** (`backend/src/scraper/config.py`):
+
 ```python
 CHUNK_SIZE = 1000        # Character chunk size
 CHUNK_OVERLAP = 200      # Overlap between chunks
@@ -440,7 +461,9 @@ RATE_LIMIT_DELAY = 2     # Seconds between requests
 ## Component Status at Startup
 
 ### Backend Startup
+
 When you start the backend server, you should see:
+
 ```
 ✅ Supabase client initialized successfully
 ✅ ChatGroq LLM initialized successfully
@@ -452,6 +475,7 @@ INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
 ```
 
 ### Frontend Startup
+
 ```
   VITE v5.0.0  ready in 423 ms
 
@@ -461,6 +485,7 @@ INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
 ```
 
 ### Docker Compose Startup
+
 ```
 ✅ backend-1   | Application startup complete
 ✅ frontend-1  | VITE ready in 423 ms
@@ -488,6 +513,7 @@ INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
 ### Backend Issues
 
 #### Server won't start
+
 ```bash
 # Check Python version
 python --version  # Should be 3.10+
@@ -502,6 +528,7 @@ echo $GROQ_API_KEY
 ```
 
 #### Tavily not working
+
 ```bash
 # Check API key
 echo $TAVILY_API_KEY
@@ -512,6 +539,7 @@ unset TAVILY_API_KEY
 ```
 
 #### Tests failing
+
 ```bash
 cd backend
 
@@ -526,6 +554,7 @@ uv sync
 ```
 
 #### Vector search returning nothing
+
 ```bash
 # Check Supabase connection
 # Check embedding model loaded correctly
@@ -537,6 +566,7 @@ match_threshold = 0.2  # More lenient (default: 0.3)
 ### Frontend Issues
 
 #### Frontend won't start
+
 ```bash
 cd frontend
 
@@ -549,6 +579,7 @@ node --version  # Should be 16+
 ```
 
 #### Frontend can't reach backend
+
 ```bash
 # Check backend is running
 curl http://localhost:8000/health
@@ -561,6 +592,7 @@ export VITE_BACKEND_URL=http://backend:8000
 ```
 
 #### E2E tests failing
+
 ```bash
 # Install Playwright browsers
 npx playwright install
@@ -575,6 +607,7 @@ curl http://localhost:8000/health
 ### Scraper Issues
 
 #### Scraper fails on all URLs
+
 ```bash
 # Check internet connection
 # Check rate limiting (reduce RATE_LIMIT_DELAY if needed)
@@ -583,6 +616,7 @@ uv run python -m src.scraper.main --input data/urls.txt --output-file data/chunk
 ```
 
 #### Out of memory during scraping
+
 ```bash
 # Use streaming mode
 uv run python -m src.scraper.main --input data/urls.txt --output-file data/chunks.txt --failed-log data/failed.txt --stream
@@ -596,6 +630,7 @@ CHUNK_SIZE = 500  # Smaller chunks
 ## Testing
 
 ### Backend Tests (108 passing)
+
 ```bash
 cd backend
 
@@ -621,11 +656,13 @@ uv run pytest tests/test_scraper*.py    # Scraper tests
 ```
 
 Test breakdown:
+
 - **Agent**: 6 tests (LangGraph integration, endpoints, conversation history)
 - **Tools**: 40 tests (db_search: 8, web_search: 12, static_response: 20)
 - **Scraper**: 62 tests (module: 17, advanced: 15, CLI: 13, enhancements: 17)
 
 ### Frontend Tests
+
 ```bash
 cd frontend
 
@@ -648,15 +685,18 @@ npm run test src/components/chat/ChatWidget.test.jsx
 ## Documentation
 
 ### Quick References
+
 - **[README.md](README.md)** - Project overview and setup
 - **This file (QUICKSTART.md)** - Fast getting started guide
 
 ### Detailed Documentation
+
 - **[docs/FINAL_STATUS_REPORT.md](docs/FINAL_STATUS_REPORT.md)** - Complete project status
 - **[docs/LANGGRAPH_REFACTOR_SUMMARY.md](docs/LANGGRAPH_REFACTOR_SUMMARY.md)** - Architecture deep dive
 - **[docs/TEST_COVERAGE_SUMMARY.md](docs/TEST_COVERAGE_SUMMARY.md)** - Testing strategy
 
 ### Component Documentation
+
 - **[backend/README.md](backend/README.md)** - Backend architecture and API
 - **[frontend/README.md](frontend/README.md)** - Frontend setup and components
 - **[backend/tests/README.md](backend/tests/README.md)** - Testing documentation
@@ -667,6 +707,7 @@ npm run test src/components/chat/ChatWidget.test.jsx
 ## Technology Stack
 
 ### Backend
+
 - **Framework**: FastAPI
 - **Agent**: LangGraph (LangChain ecosystem)
 - **LLM**: Groq (Llama 3.1 8B)
@@ -677,6 +718,7 @@ npm run test src/components/chat/ChatWidget.test.jsx
 - **Package Manager**: uv
 
 ### Frontend
+
 - **Framework**: React 18
 - **Build Tool**: Vite
 - **Styling**: Tailwind CSS + PostCSS
@@ -687,6 +729,7 @@ npm run test src/components/chat/ChatWidget.test.jsx
 - **Package Manager**: npm
 
 ### DevOps
+
 - **Containerization**: Docker + Docker Compose
 - **CI/CD**: GitHub Actions (test.yml)
 - **Code Coverage**: Codecov
@@ -715,18 +758,21 @@ npm run test src/components/chat/ChatWidget.test.jsx
 ## Next Steps
 
 ### For New Users
+
 1. ✅ Read [README.md](README.md) for project overview
 2. ✅ Run `docker-compose up` to start everything
-3. ✅ Access frontend at http://localhost:3000
-4. ✅ Test the API at http://localhost:8000/docs
+3. ✅ Access frontend at <http://localhost:3000>
+4. ✅ Test the API at <http://localhost:8000/docs>
 
 ### For Developers
+
 1. ✅ Review [docs/LANGGRAPH_REFACTOR_SUMMARY.md](docs/LANGGRAPH_REFACTOR_SUMMARY.md) for architecture
 2. ✅ Run backend tests: `cd backend && uv run pytest`
 3. ✅ Run frontend tests: `cd frontend && npm run test`
 4. ✅ Explore the codebase with inline comments and docstrings
 
 ### For Data Operations
+
 1. ✅ Add URLs to `data/urls.txt`
 2. ✅ Configure scraper in `data/config/`
 3. ✅ Run scraper: `cd backend && bash scripts/data_scrape_load.sh`

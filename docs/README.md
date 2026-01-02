@@ -1,33 +1,36 @@
 # Vecinita Documentation
 
-This directory contains comprehensive documentation for the Vecinita project, organized into logical categories.
+Comprehensive technical documentation for the Vecinita bilingual Q&A assistant.
 
-## 📁 Documentation Structure
+## 📚 Core Documentation
 
-### 🎯 Features
-Feature-specific documentation covering major capabilities and enhancements.
+### Project Status & Architecture
+- **[FINAL_STATUS_REPORT.md](FINAL_STATUS_REPORT.md)** - Complete project status (108 tests passing)
+- **[LANGGRAPH_REFACTOR_SUMMARY.md](LANGGRAPH_REFACTOR_SUMMARY.md)** - LangGraph agent architecture
+- **[TEST_COVERAGE_SUMMARY.md](TEST_COVERAGE_SUMMARY.md)** - Testing strategy and results
 
-- **Streaming Mode**: Memory-efficient data processing
-  - [STREAMING_MODE.md](features/STREAMING_MODE.md) - Overview and architecture
-  - [STREAMING_MODE_COMPLETE.md](features/STREAMING_MODE_COMPLETE.md) - Complete implementation details
-  - [STREAMING_MODE_QUICKSTART.md](features/STREAMING_MODE_QUICKSTART.md) - Quick start guide
-  - [BEFORE_AFTER_STREAMING.md](features/BEFORE_AFTER_STREAMING.md) - Performance comparison
-  - [IMPLEMENTATION_STREAMING_MODE.md](features/IMPLEMENTATION_STREAMING_MODE.md) - Implementation notes
+### Features & Capabilities
+- **[STREAMING_UX_SUMMARY.md](STREAMING_UX_SUMMARY.md)** - Enhanced streaming with planning agent
+- **[SOURCE_TITLE_CLEANUP.md](SOURCE_TITLE_CLEANUP.md)** - Source attribution improvements
+- **[DB_SEARCH_DIAGNOSTIC_GUIDE.md](DB_SEARCH_DIAGNOSTIC_GUIDE.md)** - Database search troubleshooting
 
-- **HTML Cleaner**: Boilerplate removal and content extraction
-  - [HTML_CLEANER_README.md](features/HTML_CLEANER_README.md) - Quick reference and results
-  - [HTML_CLEANER_IMPLEMENTATION.md](features/HTML_CLEANER_IMPLEMENTATION.md) - Technical details
-
-- **Data Pipeline**: 
-  - [CHUNKING_UPLOAD_PIPELINE.md](features/CHUNKING_UPLOAD_PIPELINE.md) - Data processing pipeline
+## 📁 Organized by Category
 
 ### 🏗️ Architecture
-System design and code organization documentation.
+- [architecture/NEW_CODE_STRUCTURE.md](architecture/NEW_CODE_STRUCTURE.md) - Overall project structure
+- [architecture/SCRAPER_ORGANIZATION.md](architecture/SCRAPER_ORGANIZATION.md) - Scraper backend design
 
-- [SCRAPER_ORGANIZATION.md](architecture/SCRAPER_ORGANIZATION.md) - Scraper backend structure
-- [SCRAPER_ORGANIZATION_SUMMARY.md](architecture/SCRAPER_ORGANIZATION_SUMMARY.md) - Quick overview
-- [SCRAPER_BACKEND_ORGANIZATION_VERIFIED.md](architecture/SCRAPER_BACKEND_ORGANIZATION_VERIFIED.md) - Verification details
-- [NEW_CODE_STRUCTURE.md](architecture/NEW_CODE_STRUCTURE.md) - Overall code organization
+### 🎯 Features
+- [features/STREAMING_MODE.md](features/STREAMING_MODE.md) - Memory-efficient data processing
+- [features/HTML_CLEANER_README.md](features/HTML_CLEANER_README.md) - Content extraction
+- [features/CHUNKING_UPLOAD_PIPELINE.md](features/CHUNKING_UPLOAD_PIPELINE.md) - Data pipeline
+
+### 📖 Guides
+- [guides/BEFORE_AFTER_GUIDE.md](guides/BEFORE_AFTER_GUIDE.md) - Comparison documentation
+- [guides/ENHANCED_LOGGING.md](guides/ENHANCED_LOGGING.md) - Logging configuration
+
+### 🛠️ Tools
+- [tools/DB_CLI_USAGE.md](tools/DB_CLI_USAGE.md) - Database CLI tool guide
 
 ### 🔨 Implementation
 Implementation notes, checklists, and verification documentation.

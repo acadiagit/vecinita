@@ -157,12 +157,17 @@ npm run test:e2e                 # E2E tests (Playwright)
 
 ## Documentation
 
-- **[QUICKSTART.md](QUICKSTART.md)** - Fast setup guide for the LangGraph agent
-- **[docs/FINAL_STATUS_REPORT.md](docs/FINAL_STATUS_REPORT.md)** - Complete project status
-- **[docs/LANGGRAPH_REFACTOR_SUMMARY.md](docs/LANGGRAPH_REFACTOR_SUMMARY.md)** - Architecture deep dive
-- **[docs/TEST_COVERAGE_SUMMARY.md](docs/TEST_COVERAGE_SUMMARY.md)** - Testing strategy
-- **[backend/README.md](backend/README.md)** - Backend details
-- **[frontend/README.md](frontend/README.md)** - Frontend details
+### Getting Started
+- **[QUICKSTART.md](QUICKSTART.md)** - Complete setup guide (Docker + Local development)
+- **[backend/README.md](backend/README.md)** - Backend API and tools documentation
+- **[frontend/README.md](frontend/README.md)** - Frontend components and testing
+
+### Technical Documentation
+- **[docs/](docs/)** - Comprehensive technical docs
+  - [FINAL_STATUS_REPORT.md](docs/FINAL_STATUS_REPORT.md) - Project status and achievements
+  - [LANGGRAPH_REFACTOR_SUMMARY.md](docs/LANGGRAPH_REFACTOR_SUMMARY.md) - Agent architecture
+  - [TEST_COVERAGE_SUMMARY.md](docs/TEST_COVERAGE_SUMMARY.md) - Testing strategy
+  - [STREAMING_UX_SUMMARY.md](docs/STREAMING_UX_SUMMARY.md) - Enhanced streaming features
 
 ## API Endpoints
 
