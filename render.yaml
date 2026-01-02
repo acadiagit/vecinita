@@ -48,9 +48,9 @@ services:
         sync: false
     
     # Routes (if using with internal API routing)
-    routes:
-      - path: /api/*
-        destination: https://vecinita-backend.onrender.com
+    # routes:
+    #   - path: /api/*
+    #     destination: https://vecinita-backend.onrender.com
 
   # Optional: PostgreSQL Database (if not using external Supabase)
   # Uncomment if you want to manage PostgreSQL on Render
