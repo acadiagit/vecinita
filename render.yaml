@@ -3,12 +3,12 @@ services:
   - type: web
     name: vecinita-backend
     env: python
-    region: oregon
+    region: virginia
     plan: starter
     buildCommand: |
-      cd backend && pip install --upgrade pip && pip install -e .
+      pip install uv && cd backend && uv sync --frozen
     startCommand: |
-      cd backend && uvicorn src.main:app --host 0.0.0.0 --port $PORT
+      cd backend && uv run uvicorn src.agent.main:app --host 0.0.0.0 --port $PORT
     rootDir: backend
     
     # Environment variables
@@ -35,7 +35,7 @@ services:
   - type: web
     name: vecinita-frontend
     env: node
-    region: oregon
+    region: virginia
     plan: starter
     buildCommand: npm install && npm run build
     startCommand: npm run preview
