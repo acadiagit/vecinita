@@ -7,6 +7,7 @@ services:
     plan: starter
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
+    autoDeployTrigger: commit
     
     # Environment variables
     envVars:
@@ -48,8 +49,11 @@ services:
     plan: starter
     dockerfilePath: ./frontend/Dockerfile
     dockerContext: ./frontend
+    autoDeployTrigger: commit
     
     # Environment variables (build-time for Vite)
+    # Note: Frontend uses PUBLIC URL because browser makes API calls
+    # For backend-to-backend calls, use internal: vecinita-backend:10000
     envVars:
       - key: VITE_BACKEND_URL
         value: https://vecinita-backend.onrender.com
