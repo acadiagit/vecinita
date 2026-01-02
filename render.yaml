@@ -9,7 +9,8 @@ services:
     dockerContext: ./backend
     autoDeployTrigger: commit
     
-    # Environment variables
+    # Environment variables (non-secret only - secrets set via Dashboard)
+    # To apply secrets, link the "vecinita" environment group in the Render Dashboard
     envVars:
       - key: PORT
         value: "10000"
@@ -17,26 +18,6 @@ services:
         value: "1"
       - key: TF_ENABLE_ONEDNN_OPTS
         value: "0"
-      - key: GROQ_API_KEY
-        sync: false
-      - key: SUPABASE_URL
-        sync: false
-      - key: SUPABASE_KEY
-        sync: false
-      - key: LANGSMITH_TRACING
-        sync: false
-      - key: LANGSMITH_API_KEY
-        sync: false
-      - key: LANGSMITH_PROJECT
-        sync: false
-      - key: OLLAMA_BASE_URL
-        sync: false
-      - key: OLLAMA_MODEL
-        sync: false
-      - key: EMBEDDING_MODEL
-        sync: false
-      - key: USE_LOCAL_EMBEDDINGS
-        sync: false
     
     # Health check
     healthCheckPath: /health
