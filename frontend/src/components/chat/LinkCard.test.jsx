@@ -148,7 +148,11 @@ describe('LinkCard', () => {
         isDownload={false}
       />
     )
-    expect(screen.getByText('https://example.com/document.pdf')).toBeInTheDocument()
+    // When title is missing, the card should still render with the URL accessible via the link
+    const link = screen.getByRole('link', { name: 'Open link' })
+    expect(link).toHaveAttribute('href', 'https://example.com/document.pdf')
+    // Hostname should be displayed as the fallback
+    expect(screen.getAllByText('example.com')).toHaveLength(2) // Title + hostname
   })
 
   test('opens link in new tab with correct attributes', () => {
