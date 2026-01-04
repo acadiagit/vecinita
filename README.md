@@ -8,6 +8,17 @@
 
 **Vecinita** is a bilingual (English/Spanish) community Q&A assistant powered by LangGraph, combining vector database search, FAQ lookup, and web search to provide accurate answers with source attribution.
 
+## Architecture
+
+Vecinita uses a **microservice architecture** with 3 independent services:
+
+- **Embedding Service** (FastAPI): Generates text embeddings using sentence-transformers
+- **Agent Service** (FastAPI + LangGraph): Intelligent Q&A with tool routing
+- **Scraper Service** (Background cron): Web content ingestion pipeline
+- **Frontend** (React + Vite): Modern responsive UI
+
+All services communicate via HTTP and can be deployed on Render's free tier ($0/month).
+
 ## Project Structure
 
 This is a monorepo with separate backend and frontend:
@@ -162,12 +173,18 @@ npm run test:e2e                 # E2E tests (Playwright)
 - **[backend/README.md](backend/README.md)** - Backend API and tools documentation
 - **[frontend/README.md](frontend/README.md)** - Frontend components and testing
 
+### Deployment
+- **[docs/RENDER_DEPLOYMENT_THREE_SERVICES.md](docs/RENDER_DEPLOYMENT_THREE_SERVICES.md)** - Step-by-step Render deployment (free tier)
+- **[docs/QUICK_REFERENCE_MICROSERVICE.md](docs/QUICK_REFERENCE_MICROSERVICE.md)** - Quick reference for microservice setup
+- **[docs/ARCHITECTURE_MICROSERVICE.md](docs/ARCHITECTURE_MICROSERVICE.md)** - Detailed architecture documentation
+
 ### Technical Documentation
 - **[docs/](docs/)** - Comprehensive technical docs
   - [FINAL_STATUS_REPORT.md](docs/FINAL_STATUS_REPORT.md) - Project status and achievements
-  - [LANGGRAPH_REFACTOR_SUMMARY.md](docs/LANGGRAPH_REFACTOR_SUMMARY.md) - Agent architecture
-  - [TEST_COVERAGE_SUMMARY.md](docs/TEST_COVERAGE_SUMMARY.md) - Testing strategy
+  - [LANGGRAPH_REFACTOR_SUMMARY.md](docs/LANGGRAPH_REFACTOR_SUMMARY.md) - Agent architecture details
+  - [TEST_COVERAGE_SUMMARY.md](docs/TEST_COVERAGE_SUMMARY.md) - Test suite overview
   - [STREAMING_UX_SUMMARY.md](docs/STREAMING_UX_SUMMARY.md) - Enhanced streaming features
+  - [IMPLEMENTATION_SUMMARY.md](docs/IMPLEMENTATION_SUMMARY.md) - Complete implementation overview
 
 ## API Endpoints
 
@@ -228,8 +245,10 @@ GROQ_API_KEY=<your-groq-api-key>
 ### Optional
 
 ```bash
-TAVILY_API_KEY=<your-tavily-key>        # For enhanced web search
-VITE_BACKEND_URL=http://localhost:8000  # Frontend backend URL
+TAVILY_API_KEY=<your-tavily-key>                          # For enhanced web search
+VITE_BACKEND_URL=http://localhost:8000                    # Frontend backend URL (local)
+EMBEDDING_SERVICE_URL=http://embedding-service:8001       # Embedding service URL (Docker)
+# For Render deployment: https://vecinita-embedding.onrender.com
 ```
 
 ## Technology Stack
@@ -238,12 +257,13 @@ VITE_BACKEND_URL=http://localhost:8000  # Frontend backend URL
 
 - **Framework**: FastAPI
 - **Agent**: LangGraph (LangChain)
-- **LLM**: Groq (Llama 3.1 8B)
-- **Embeddings**: HuggingFace (sentence-transformers/all-MiniLM-L6-v2)
+- **LLM**: Groq (Llama 3.1 8B) / DeepSeek / OpenAI / Ollama
+- **Embeddings**: Microservice (sentence-transformers/all-MiniLM-L6-v2) with fallback chain
 - **Database**: Supabase (PostgreSQL + pgvector)
 - **Scraping**: Playwright, Unstructured, RecursiveUrlLoader
 - **Testing**: pytest (108 tests)
 - **Package Manager**: uv
+- **Architecture**: Microservices (3 services: embedding, agent, scraper)
 
 ### Frontend
 

@@ -8,6 +8,15 @@ Comprehensive technical documentation for the Vecinita bilingual Q&A assistant.
 - **[FINAL_STATUS_REPORT.md](FINAL_STATUS_REPORT.md)** - Complete project status (108 tests passing)
 - **[LANGGRAPH_REFACTOR_SUMMARY.md](LANGGRAPH_REFACTOR_SUMMARY.md)** - LangGraph agent architecture
 - **[TEST_COVERAGE_SUMMARY.md](TEST_COVERAGE_SUMMARY.md)** - Testing strategy and results
+- **[ARCHITECTURE_MICROSERVICE.md](ARCHITECTURE_MICROSERVICE.md)** - Microservice architecture overview
+- **[STATUS_REPORT.md](STATUS_REPORT.md)** - Detailed project status
+
+### Deployment & Implementation
+- **[RENDER_DEPLOYMENT_THREE_SERVICES.md](RENDER_DEPLOYMENT_THREE_SERVICES.md)** - Render deployment guide (free tier)
+- **[QUICK_REFERENCE_MICROSERVICE.md](QUICK_REFERENCE_MICROSERVICE.md)** - Quick reference guide
+- **[IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)** - Implementation overview
+- **[DEPLOYMENT_READY.md](DEPLOYMENT_READY.md)** - Deployment checklist
+- **[EDGE_FUNCTION_ARCHITECTURE.md](EDGE_FUNCTION_ARCHITECTURE.md)** - Alternative edge function approach
 
 ### Features & Capabilities
 - **[STREAMING_UX_SUMMARY.md](STREAMING_UX_SUMMARY.md)** - Enhanced streaming with planning agent

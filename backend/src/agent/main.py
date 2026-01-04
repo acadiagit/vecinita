@@ -108,19 +108,33 @@ try:
         raise RuntimeError(
             "No LLM provider configured. Set DEEPSEEK_API_KEY or GROQ_API_KEY or OPENAI_API_KEY/OPEN_API_KEY or OLLAMA_BASE_URL.")
 
-    # Use FastEmbed for production (lighter and faster than sentence-transformers)
-    # FastEmbed auto-downloads small models on first use (~25MB vs 90MB+)
-    logger.info("Initializing embedding model (FastEmbed)...")
+    # Use dedicated Embedding Service for embeddings (lightweight agent!)
+    # Embedding service runs as a separate Render free-tier service
+    # Fallback to local FastEmbed if service unavailable
+    logger.info("Initializing embedding model (Embedding Service)...")
+    embedding_service_url = os.environ.get(
+        "EMBEDDING_SERVICE_URL", "http://embedding-service:8001")
+
     try:
-        embedding_model = FastEmbedEmbeddings(model_name="fast-bge-small-en-v1.5")
-        logger.info("Embedding model initialized successfully (FastEmbed)")
-    except Exception as emb_exc:
+        from src.embedding_service.client import create_embedding_client
+        embedding_model = create_embedding_client(embedding_service_url)
+        logger.info(
+            f"✅ Embedding model initialized via Embedding Service ({embedding_service_url})")
+    except Exception as service_exc:
         logger.warning(
-            f"FastEmbedEmbeddings failed ({emb_exc}); falling back to HuggingFace."
-        )
-        model_name = "sentence-transformers/all-MiniLM-L6-v2"
-        embedding_model = HuggingFaceEmbeddings(model_name=model_name)
-        logger.info("Embedding model initialized successfully (HuggingFace fallback)")
+            f"Embedding service failed ({service_exc}); falling back to FastEmbed")
+        try:
+            embedding_model = FastEmbedEmbeddings(
+                model_name="fast-bge-small-en-v1.5")
+            logger.info(
+                "Embedding model initialized successfully (FastEmbed fallback)")
+        except Exception as emb_exc:
+            logger.warning(
+                f"FastEmbedEmbeddings failed ({emb_exc}); falling back to HuggingFace.")
+            model_name = "sentence-transformers/all-MiniLM-L6-v2"
+            embedding_model = HuggingFaceEmbeddings(model_name=model_name)
+            logger.info(
+                "Embedding model initialized successfully (HuggingFace fallback)")
 except Exception as e:
     logger.error(f"Failed to initialize clients: {e}")
     logger.error(traceback.format_exc())

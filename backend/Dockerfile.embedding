@@ -1,0 +1,57 @@
+# Embedding Service Dockerfile - Lightweight, optimized for Render free tier (512MB)
+# Uses multi-stage build to minimize final image size
+
+FROM python:3.11-slim as builder
+
+WORKDIR /build
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy only requirements
+COPY pyproject.toml .
+
+# Install dependencies to /install prefix
+RUN pip install --upgrade pip uv && \
+    uv pip install --python 3.11 --target /install \
+    "fastapi" \
+    "uvicorn[standard]" \
+    "pydantic" \
+    "sentence-transformers>=5.1.2" \
+    "scikit-learn" \
+    "numpy" \
+    "httpx"
+
+# Final lightweight runtime image
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Copy installed packages from builder
+COPY --from=builder /install /usr/local/lib/python3.11/site-packages
+
+# Copy only the embedding service code
+COPY src/embedding_service ./src/embedding_service
+COPY .env* ./
+
+# Create non-root user for security
+RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+USER appuser
+
+# Environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PORT=8001 \
+    HF_HOME=/tmp/huggingface_cache
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+    CMD python -c "import httpx; httpx.get('http://localhost:8001/health').raise_for_status()" || exit 1
+
+# Expose port
+EXPOSE 8001
+
+# Run embedding service
+CMD ["python", "-m", "uvicorn", "src.embedding_service.main:app", "--host", "0.0.0.0", "--port", "8001"]

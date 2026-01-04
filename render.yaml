@@ -1,22 +1,32 @@
 services:
-  # Backend FastAPI Agent Service (Docker) - Lightweight, FastEmbed only
+  # Embedding Service - Lightweight, sentence-transformers only (Free tier)
+  - type: web
+    name: vecinita-embedding
+    runtime: docker
+    region: virginia
+    plan: free
+    dockerfilePath: ./backend/Dockerfile.embedding
+    dockerContext: ./backend
+    autoDeployTrigger: commit
+    
+    envVars:
+      - key: PORT
+        value: "8001"
+      - key: PYTHONUNBUFFERED
+        value: "1"
+    
+    healthCheckPath: /health
+
+  # Backend FastAPI Agent Service (Free tier) - Lightweight, calls embedding service
   - type: web
     name: vecinita-agent
     runtime: docker
     region: virginia
-    plan: starter
+    plan: free
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
     autoDeployTrigger: commit
     
-    # Environment variables (non-secret only - secrets set via Dashboard)
-    # IMPORTANT: Set these secrets in Render Dashboard under Environment tab:
-    # - SUPABASE_URL
-    # - SUPABASE_KEY
-    # - GROQ_API_KEY (or OPENAI_API_KEY for OpenAI)
-    # - DEEPSEEK_API_KEY (optional)
-    # - OLLAMA_BASE_URL (optional, for local Ollama)
-    # - LANGSMITH_API_KEY (optional, for tracing)
     envVars:
       - key: PORT
         value: "10000"
@@ -24,54 +34,37 @@ services:
         value: "1"
       - key: TF_ENABLE_ONEDNN_OPTS
         value: "0"
+      - key: EMBEDDING_SERVICE_URL
+        value: "https://vecinita-embedding.onrender.com"  # Call embedding service
       # Add these to Render Dashboard > Environment Variables:
       # SUPABASE_URL, SUPABASE_KEY, GROQ_API_KEY
     
-    # Health check
     healthCheckPath: /health
 
-  # Background Scraper Service (Cron Job) - Heavy dependencies with Playwright
-  # Uncomment to enable scheduled scraping runs
-  # - type: cron
-  #   name: vecinita-scraper
-  #   runtime: docker
-  #   region: virginia
-  #   plan: starter
-  #   dockerfilePath: ./backend/Dockerfile.scraper
-  #   dockerContext: ./backend
-  #   schedule: "0 2 * * *"  # Daily at 2 AM UTC
-  #   envVars:
-  #     - key: SUPABASE_URL
-  #       sync: false  # Set in Dashboard
-  #     - key: SUPABASE_KEY
-  #       sync: false  # Set in Dashboard
-  #     - key: DATABASE_URL
-  #       sync: false  # Set in Dashboard
-  #   # Scraper command (customize as needed)
-  #   # For example: python -m src.scraper.cli scrape data/urls.txt
+  # Background Scraper Service (Free tier cron job)
+  - type: cron
+    name: vecinita-scraper
+    runtime: docker
+    region: virginia
+    plan: free
+    dockerfilePath: ./backend/Dockerfile.scraper
+    dockerContext: ./backend
+    schedule: "0 2 * * *"  # Daily at 2 AM UTC
+    envVars:
+      - key: EMBEDDING_SERVICE_URL
+        value: "https://vecinita-embedding.onrender.com"
+      # Add to Dashboard: SUPABASE_URL, SUPABASE_KEY, DATABASE_URL
 
-  # Frontend Vite Service (Docker)
+  # Frontend Vite Service (Free tier)
   - type: web
     name: vecinita-frontend
     runtime: docker
     region: virginia
-    plan: starter
+    plan: free
     dockerfilePath: ./frontend/Dockerfile
     dockerContext: ./frontend
     autoDeployTrigger: commit
     
-    # Environment variables (build-time for Vite)
-    # Note: Frontend uses PUBLIC URL because browser makes API calls
-    # Update this URL to match your actual agent service URL
     envVars:
       - key: VITE_BACKEND_URL
-        value: https://vecinita-backend-5qrt.onrender.com
-
-  # Optional: PostgreSQL Database (if not using external Supabase)
-  # Uncomment if you want to manage PostgreSQL on Render
-  # - type: pserv
-  #   name: vecinita-db
-  #   runtime: docker
-  #   plan: free
-  #   region: virginia
-  #   ipAllowList: []
+        value: https://vecinita-agent.onrender.com

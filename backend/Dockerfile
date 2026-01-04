@@ -1,5 +1,5 @@
-# Backend Dockerfile (Vecinita FastAPI Agent - Memory Optimized for Render)
-# This builds the Q&A agent without Playwright or heavy embeddings
+# Backend Dockerfile (Vecinita FastAPI Agent - ULTRA Memory Optimized for Render)
+# Calls separate embedding service for embeddings - ZERO local embedding models!
 # For scraping with Playwright, see Dockerfile.scraper
 
 # Build stage - install dependencies
@@ -16,8 +16,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy only what's needed for dependency installation
 COPY pyproject.toml ./
 
-# Install dependencies to /install (without sentence-transformers)
-# FastEmbed is lighter and faster than sentence-transformers
+# Install dependencies to /install (NO EMBEDDING MODELS!)
+# Embeddings handled by separate embedding service - saves ~50MB+ memory
 RUN pip install --no-cache-dir --upgrade pip && \
 	pip install --prefix=/install --no-cache-dir --retries 5 --default-timeout=1000 \
 	fastapi uvicorn \
@@ -25,7 +25,6 @@ RUN pip install --no-cache-dir --upgrade pip && \
 	langchain-openai langchain-groq langchain-text-splitters \
 	langchain-huggingface langgraph \
 	supabase psycopg2-binary \
-	fastembed \
 	beautifulsoup4 pypdf \
 	python-dotenv pydantic requests httpx langdetect tqdm \
 	gotrue langchain-ollama langsmith ddgs

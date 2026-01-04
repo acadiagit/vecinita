@@ -7709,7 +7709,6 @@ dependencies = [
     { name = "beautifulsoup4" },
     { name = "ddgs" },
     { name = "fastapi" },
-    { name = "fastembed" },
     { name = "gotrue" },
     { name = "httpx" },
     { name = "langchain" },
@@ -7739,6 +7738,7 @@ dependencies = [
 all = [
     { name = "black" },
     { name = "docker" },
+    { name = "fastembed" },
     { name = "graphviz" },
     { name = "httpx" },
     { name = "ipython", version = "8.37.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
@@ -7779,13 +7779,16 @@ docker = [
     { name = "docker" },
 ]
 embedding = [
+    { name = "fastembed" },
     { name = "sentence-transformers" },
 ]
 ml = [
     { name = "tf-keras" },
 ]
-scraping = [
+scraper = [
+    { name = "fastembed" },
     { name = "playwright" },
+    { name = "sentence-transformers" },
     { name = "unstructured", extra = ["doc", "docx", "pdf", "ppt"] },
 ]
 visualization = [
@@ -7807,7 +7810,8 @@ requires-dist = [
     { name = "docker", marker = "extra == 'dev'", specifier = ">=7.0.0" },
     { name = "docker", marker = "extra == 'docker'", specifier = ">=7.0.0" },
     { name = "fastapi" },
-    { name = "fastembed" },
+    { name = "fastembed", marker = "extra == 'embedding'" },
+    { name = "fastembed", marker = "extra == 'scraper'" },
     { name = "gotrue", specifier = ">=2.0.0" },
     { name = "graphviz", marker = "extra == 'visualization'", specifier = ">=0.20.0" },
     { name = "httpx" },
@@ -7829,7 +7833,7 @@ requires-dist = [
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.8.0" },
     { name = "onnxruntime", marker = "sys_platform == 'win32'", specifier = ">=1.18.0,<1.24.0.dev0" },
     { name = "playwright", marker = "extra == 'dev'", specifier = ">=1.40.0" },
-    { name = "playwright", marker = "extra == 'scraping'", specifier = ">=1.40.0" },
+    { name = "playwright", marker = "extra == 'scraper'", specifier = ">=1.40.0" },
     { name = "psycopg2-binary" },
     { name = "pydantic" },
     { name = "pygraphviz", marker = "extra == 'visualization'", specifier = ">=1.14.0" },
@@ -7844,16 +7848,17 @@ requires-dist = [
     { name = "requests" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.2.0" },
     { name = "sentence-transformers", marker = "extra == 'embedding'", specifier = ">=5.1.2" },
+    { name = "sentence-transformers", marker = "extra == 'scraper'", specifier = ">=5.1.2" },
     { name = "supabase" },
     { name = "tf-keras", marker = "extra == 'ml'", specifier = ">=2.20.1" },
     { name = "tokenizers", specifier = ">=0.15.0,<0.22.0rc0" },
     { name = "tqdm" },
     { name = "unstructured", extras = ["doc", "docx", "ppt", "pdf"], marker = "extra == 'dev'", specifier = ">=0.14.0" },
-    { name = "unstructured", extras = ["doc", "docx", "ppt", "pdf"], marker = "extra == 'scraping'", specifier = ">=0.14.0" },
+    { name = "unstructured", extras = ["doc", "docx", "ppt", "pdf"], marker = "extra == 'scraper'", specifier = ">=0.14.0" },
     { name = "uvicorn" },
     { name = "vecinita", extras = ["dev", "scraping", "docker", "visualization", "embedding"], marker = "extra == 'all'" },
 ]
-provides-extras = ["scraping", "docker", "embedding", "ml", "dev", "ci", "visualization", "all"]
+provides-extras = ["agent", "scraper", "docker", "embedding", "ml", "dev", "ci", "visualization", "all"]
 
 [package.metadata.requires-dev]
 dev = [

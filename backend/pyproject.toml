@@ -26,8 +26,6 @@ dependencies = [
     # Database & Vector Store
     "supabase",
     "psycopg2-binary",
-    # ML & Embeddings (FastEmbed is primary - lightweight and fast)
-    "fastembed",
     # Document Processing (lightweight only - playwright/unstructured in scraping extra)
     "beautifulsoup4",
     "pypdf",
@@ -51,10 +49,25 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# Document scraping with JavaScript support and advanced parsing
-scraping = [
+# Agent service dependencies (minimal - no embedding models, calls embedding service via HTTP)
+agent = [
+    # Agent calls embedding service for embeddings - no local models needed
+    # All required dependencies already in base
+]
+
+# Embedding service dependencies (lightweight - runs as separate Render service)
+embedding = [
+    "sentence-transformers>=5.1.2",  # Core embedding model
+    "scikit-learn",  # For similarity computations
+    "numpy",  # For numerical operations
+]
+
+# Scraper service dependencies (heavy - includes embedding models and parsers)
+scraper = [
     "unstructured[doc,docx,ppt,pdf]>=0.14.0",
     "playwright>=1.40.0",
+    "sentence-transformers>=5.1.2",  # For generating embeddings during scraping
+    "fastembed",  # Alternative lightweight embedding model
 ]
 
 # Docker utilities (only needed for local orchestration scripts)
@@ -62,10 +75,10 @@ docker = [
     "docker>=7.0.0",
 ]
 
+# Legacy embedding extra (for backward compatibility)
 embedding = [
-    # Heavy embedding models for local development/scraping only
-    # Production agent uses FastEmbed (included in base dependencies)
     "sentence-transformers>=5.1.2",
+    "fastembed",
 ]
 
 ml = [
