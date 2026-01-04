@@ -52,7 +52,8 @@ def get_embedding_model():
 class EmbedRequest(BaseModel):
     """Single text embedding request."""
 
-    text: str = Field(..., min_length=1, max_length=10000, description="Text to embed")
+    text: str = Field(..., min_length=1, max_length=10000,
+                      description="Text to embed")
 
 
 class BatchEmbedRequest(BaseModel):
@@ -66,7 +67,8 @@ class BatchEmbedRequest(BaseModel):
 class EmbeddingResponse(BaseModel):
     """Embedding response with metadata."""
 
-    embedding: List[float] = Field(..., description="384-dimensional embedding vector")
+    embedding: List[float] = Field(...,
+                                   description="384-dimensional embedding vector")
     dimension: int = Field(default=384, description="Embedding dimension")
     model: str = Field(default=_model_name, description="Model used")
 
@@ -74,7 +76,8 @@ class EmbeddingResponse(BaseModel):
 class BatchEmbeddingResponse(BaseModel):
     """Batch embedding response."""
 
-    embeddings: List[List[float]] = Field(..., description="List of embedding vectors")
+    embeddings: List[List[float]
+                     ] = Field(..., description="List of embedding vectors")
     dimension: int = Field(default=384, description="Embedding dimension")
     count: int = Field(..., description="Number of embeddings")
     model: str = Field(default=_model_name, description="Model used")
@@ -109,7 +112,8 @@ async def embed(request: EmbedRequest):
         )
     except Exception as e:
         logger.error(f"Error generating embedding: {e}")
-        raise HTTPException(status_code=500, detail=f"Embedding error: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Embedding error: {str(e)}")
 
 
 # Batch Embeddings
@@ -135,7 +139,8 @@ async def embed_batch(request: BatchEmbedRequest):
         )
     except Exception as e:
         logger.error(f"Error generating batch embeddings: {e}")
-        raise HTTPException(status_code=500, detail=f"Batch embedding error: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Batch embedding error: {str(e)}")
 
 
 # Similarity Search (optional utility)
@@ -173,7 +178,8 @@ async def similarity(query_request: EmbedRequest, texts_request: BatchEmbedReque
         return {"query": query_request.text, "results": results}
     except Exception as e:
         logger.error(f"Error computing similarity: {e}")
-        raise HTTPException(status_code=500, detail=f"Similarity error: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Similarity error: {str(e)}")
 
 
 # Root endpoint

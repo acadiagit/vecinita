@@ -74,29 +74,34 @@ class DatabaseUploader:
     def _init_embeddings(self) -> None:
         """Initialize embedding model with fallback chain: Service → FastEmbed → HuggingFace."""
         # Try embedding service first (lightweight, scalable)
-        embedding_service_url = os.getenv("EMBEDDING_SERVICE_URL", "http://embedding-service:8001")
-        
+        embedding_service_url = os.getenv(
+            "EMBEDDING_SERVICE_URL", "http://embedding-service:8001")
+
         if EMBEDDING_SERVICE_AVAILABLE:
             try:
-                log.info(f"Initializing Embedding Service client ({embedding_service_url})...")
-                self.embedding_model = create_embedding_client(embedding_service_url)
+                log.info(
+                    f"Initializing Embedding Service client ({embedding_service_url})...")
+                self.embedding_model = create_embedding_client(
+                    embedding_service_url)
                 self.embedding_client_type = "embedding_service"
-                log.info(f"✓ Embedding Service client initialized (384 dimensions)")
+                log.info(
+                    f"✓ Embedding Service client initialized (384 dimensions)")
                 return
             except Exception as e:
                 log.warning(f"Embedding Service initialization failed: {e}")
-        
+
         # Fallback to FastEmbed
         if FALLBACK_EMBEDDINGS_AVAILABLE:
             try:
                 log.info("Falling back to FastEmbed (local)...")
-                self.embedding_model = FastEmbedEmbeddings(model_name="fast-bge-small-en-v1.5")
+                self.embedding_model = FastEmbedEmbeddings(
+                    model_name="fast-bge-small-en-v1.5")
                 self.embedding_client_type = "fastembed"
                 log.info("✓ FastEmbed initialized (384 dimensions)")
                 return
             except Exception as e:
                 log.warning(f"FastEmbed initialization failed: {e}")
-        
+
         # Final fallback to HuggingFace
         if FALLBACK_EMBEDDINGS_AVAILABLE:
             try:
@@ -109,7 +114,7 @@ class DatabaseUploader:
                 return
             except Exception as e:
                 log.error(f"HuggingFace initialization failed: {e}")
-        
+
         raise RuntimeError(
             "Failed to initialize any embedding model. "
             "Install dependencies: pip install langchain-community fastembed"
@@ -222,8 +227,9 @@ class DatabaseUploader:
         if not self.embedding_model:
             raise RuntimeError("Embedding model not initialized")
 
-        log.debug(f"Generating {len(texts)} embeddings with {self.embedding_client_type}...")
-        
+        log.debug(
+            f"Generating {len(texts)} embeddings with {self.embedding_client_type}...")
+
         # Embedding service and LangChain models use embed_documents()
         if self.embedding_client_type in ["embedding_service", "fastembed", "huggingface"]:
             try:
@@ -235,7 +241,8 @@ class DatabaseUploader:
                 raise
         else:
             # Legacy path (should not be reached with new fallback chain)
-            raise RuntimeError(f"Unsupported embedding client type: {self.embedding_client_type}")
+            raise RuntimeError(
+                f"Unsupported embedding client type: {self.embedding_client_type}")
 
     def _upload_batch(
         self,
