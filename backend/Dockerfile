@@ -45,4 +45,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=5 \
 
 # Start the FastAPI app via uvicorn (module path: src.agent.main:app)
 # Use PORT env var (default 8000 for local dev, 10000 for Render)
-CMD ["sh", "-c", "uvicorn src.agent.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+# Add graceful shutdown timeout to prevent hanging deploys
+CMD ["sh", "-c", "uvicorn src.agent.main:app --host 0.0.0.0 --port ${PORT:-8000} --timeout-graceful-shutdown 30"]
