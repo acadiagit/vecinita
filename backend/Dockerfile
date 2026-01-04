@@ -1,40 +1,55 @@
-# Backend Dockerfile (Vecinita FastAPI Agent - Optimized for Production)
-# This builds the Q&A agent without Playwright for faster builds and smaller images
+# Backend Dockerfile (Vecinita FastAPI Agent - Memory Optimized for Render)
+# This builds the Q&A agent without Playwright or heavy embeddings
 # For scraping with Playwright, see Dockerfile.scraper
 
-# Use slim Python image for production
-FROM python:3.11-slim-bookworm
+# Build stage - install dependencies
+FROM python:3.11-slim-bookworm AS builder
 
-# Set the working directory in the container
 WORKDIR /app
 
-# Copy backend Python project manifest
-COPY pyproject.toml ./
-
-# Copy source code and supporting folders from backend context
-COPY src/ ./src/
-COPY scripts/ ./scripts/
-COPY tests/ ./tests/
-
-# Install system dependencies required for building packages
+# Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
 	build-essential \
-	curl \
 	pkg-config && \
 	rm -rf /var/lib/apt/lists/*
+
+# Copy only what's needed for dependency installation
+COPY pyproject.toml ./
+
+# Install dependencies to /install (without sentence-transformers)
+# FastEmbed is lighter and faster than sentence-transformers
+RUN pip install --no-cache-dir --upgrade pip && \
+	pip install --prefix=/install --no-cache-dir --retries 5 --default-timeout=1000 \
+	fastapi uvicorn \
+	langchain langchain-community langchain-core \
+	langchain-openai langchain-groq langchain-text-splitters \
+	langchain-huggingface langgraph \
+	supabase psycopg2-binary \
+	fastembed \
+	beautifulsoup4 pypdf \
+	python-dotenv pydantic requests httpx langdetect tqdm \
+	gotrue langchain-ollama langsmith ddgs
+
+# Runtime stage - minimal image
+FROM python:3.11-slim-bookworm AS runtime
+
+WORKDIR /app
+
+# Install only runtime dependencies (curl for healthcheck)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+	curl && \
+	rm -rf /var/lib/apt/lists/*
+
+# Copy installed packages from builder
+COPY --from=builder /install /usr/local
+
+# Copy application code
+COPY src/ ./src/
+COPY scripts/ ./scripts/
 
 # Python env flags
 ENV PYTHONUNBUFFERED=1
 ENV TF_ENABLE_ONEDNN_OPTS=0
-
-# Upgrade pip and install package with ONLY embedding extra (not scraping)
-# This excludes Playwright and Unstructured, reducing image size and build time
-RUN pip install --no-cache-dir --upgrade pip && \
-	pip install --no-cache-dir --retries 5 --default-timeout=1000 ".[embedding]"
-
-# Pre-cache embedding model to speed up first run
-# Align with default used in app (all-MiniLM-L6-v2)
-RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')" || true
 
 # Expose the FastAPI port
 EXPOSE 8000

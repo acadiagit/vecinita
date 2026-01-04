@@ -108,19 +108,19 @@ try:
         raise RuntimeError(
             "No LLM provider configured. Set DEEPSEEK_API_KEY or GROQ_API_KEY or OPENAI_API_KEY/OPEN_API_KEY or OLLAMA_BASE_URL.")
 
-    # Use all-MiniLM-L6-v2 with 384 dimensions by default.
-    # If sentence-transformers is unavailable (CI minimal deps), fall back to FastEmbed.
-    model_name = "sentence-transformers/all-MiniLM-L6-v2"
-    logger.info(f"Initializing embedding model: {model_name}...")
+    # Use FastEmbed for production (lighter and faster than sentence-transformers)
+    # FastEmbed auto-downloads small models on first use (~25MB vs 90MB+)
+    logger.info("Initializing embedding model (FastEmbed)...")
     try:
-        embedding_model = HuggingFaceEmbeddings(model_name=model_name)
-        logger.info("Embedding model initialized successfully (HuggingFace)")
+        embedding_model = FastEmbedEmbeddings(model_name="fast-bge-small-en-v1.5")
+        logger.info("Embedding model initialized successfully (FastEmbed)")
     except Exception as emb_exc:
         logger.warning(
-            f"HuggingFaceEmbeddings unavailable ({emb_exc}); falling back to FastEmbedEmbeddings."
+            f"FastEmbedEmbeddings failed ({emb_exc}); falling back to HuggingFace."
         )
-        embedding_model = FastEmbedEmbeddings()
-        logger.info("Embedding model initialized successfully (FastEmbed)")
+        model_name = "sentence-transformers/all-MiniLM-L6-v2"
+        embedding_model = HuggingFaceEmbeddings(model_name=model_name)
+        logger.info("Embedding model initialized successfully (HuggingFace fallback)")
 except Exception as e:
     logger.error(f"Failed to initialize clients: {e}")
     logger.error(traceback.format_exc())

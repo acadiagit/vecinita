@@ -26,9 +26,8 @@ dependencies = [
     # Database & Vector Store
     "supabase",
     "psycopg2-binary",
-    # ML & Embeddings
+    # ML & Embeddings (FastEmbed is primary - lightweight and fast)
     "fastembed",
-    "sentence-transformers>=5.2.0",
     # Document Processing (lightweight only - playwright/unstructured in scraping extra)
     "beautifulsoup4",
     "pypdf",
@@ -64,7 +63,8 @@ docker = [
 ]
 
 embedding = [
-    # Local embeddings with SentenceTransformers (optional, use fastembed for main)
+    # Heavy embedding models for local development/scraping only
+    # Production agent uses FastEmbed (included in base dependencies)
     "sentence-transformers>=5.1.2",
 ]
 

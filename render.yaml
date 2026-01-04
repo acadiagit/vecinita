@@ -1,7 +1,7 @@
 services:
-  # Backend FastAPI Service (Docker)
+  # Backend FastAPI Agent Service (Docker) - Lightweight, FastEmbed only
   - type: web
-    name: vecinita-backend
+    name: vecinita-agent
     runtime: docker
     region: virginia
     plan: starter
@@ -30,6 +30,26 @@ services:
     # Health check
     healthCheckPath: /health
 
+  # Background Scraper Service (Cron Job) - Heavy dependencies with Playwright
+  # Uncomment to enable scheduled scraping runs
+  # - type: cron
+  #   name: vecinita-scraper
+  #   runtime: docker
+  #   region: virginia
+  #   plan: starter
+  #   dockerfilePath: ./backend/Dockerfile.scraper
+  #   dockerContext: ./backend
+  #   schedule: "0 2 * * *"  # Daily at 2 AM UTC
+  #   envVars:
+  #     - key: SUPABASE_URL
+  #       sync: false  # Set in Dashboard
+  #     - key: SUPABASE_KEY
+  #       sync: false  # Set in Dashboard
+  #     - key: DATABASE_URL
+  #       sync: false  # Set in Dashboard
+  #   # Scraper command (customize as needed)
+  #   # For example: python -m src.scraper.cli scrape data/urls.txt
+
   # Frontend Vite Service (Docker)
   - type: web
     name: vecinita-frontend
@@ -42,7 +62,7 @@ services:
     
     # Environment variables (build-time for Vite)
     # Note: Frontend uses PUBLIC URL because browser makes API calls
-    # For backend-to-backend calls, use internal: vecinita-backend:10000
+    # Update this URL to match your actual agent service URL
     envVars:
       - key: VITE_BACKEND_URL
         value: https://vecinita-backend-5qrt.onrender.com

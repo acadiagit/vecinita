@@ -1,24 +1,23 @@
 services:
-  vecinita-app:
+  # FastAPI Agent Service - Lightweight, FastEmbed only
+  vecinita-agent:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    image: vecinita-app:latest
-    container_name: vecinita-app
+    image: vecinita-agent:latest
+    container_name: vecinita-agent
     ports:
       - "8000:8000"
     environment:
       SUPABASE_URL: ${SUPABASE_URL}
       SUPABASE_KEY: ${SUPABASE_KEY}
-      DATABASE_URL: ${DATABASE_URL}
       GROQ_API_KEY: ${GROQ_API_KEY}
       OPEN_API_KEY: ${OPEN_API_KEY}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
       LANGSMITH_TRACING: ${LANGSMITH_TRACING}
       LANGSMITH_ENDPOINT: ${LANGSMITH_ENDPOINT}
       LANGSMITH_API_KEY: ${LANGSMITH_API_KEY}
       LANGSMITH_PROJECT: ${LANGSMITH_PROJECT}
-      EMBEDDING_MODEL: ${EMBEDDING_MODEL}
-      USE_LOCAL_EMBEDDINGS: ${USE_LOCAL_EMBEDDINGS}
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL}
       OLLAMA_MODEL: ${OLLAMA_MODEL}
       TF_ENABLE_ONEDNN_OPTS: "0"
@@ -32,6 +31,27 @@ services:
       retries: 5
       start_period: 40s
 
+  # Background Scraper Service - Heavy dependencies with Playwright
+  # Uncomment to run scraper alongside agent
+  # vecinita-scraper:
+  #   build:
+  #     context: ./backend
+  #     dockerfile: Dockerfile.scraper
+  #   image: vecinita-scraper:latest
+  #   container_name: vecinita-scraper
+  #   environment:
+  #     SUPABASE_URL: ${SUPABASE_URL}
+  #     SUPABASE_KEY: ${SUPABASE_KEY}
+  #     DATABASE_URL: ${DATABASE_URL}
+  #     PYTHONUNBUFFERED: "1"
+  #   volumes:
+  #     - ./data:/app/data
+  #     - ./backend/data:/app/backend/data
+  #   # Run scraper once and exit
+  #   command: python -m src.scraper.cli scrape data/urls.txt
+  #   restart: "no"
+
+  # Frontend Vite Service
   frontend:
     build:
       context: ./frontend
@@ -39,10 +59,10 @@ services:
     image: vecinita-frontend:latest
     container_name: vecinita-frontend
     depends_on:
-      vecinita-app:
+      vecinita-agent:
         condition: service_healthy
     environment:
-      VITE_BACKEND_URL: ${VITE_BACKEND_URL:-http://vecinita-app:8000}
+      VITE_BACKEND_URL: ${VITE_BACKEND_URL:-http://vecinita-agent:8000}
     ports:
       - "3000:80"
     restart: unless-stopped
