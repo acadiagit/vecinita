@@ -45,7 +45,7 @@ services:
     # For backend-to-backend calls, use internal: vecinita-backend:10000
     envVars:
       - key: VITE_BACKEND_URL
-        value: https://vecinita-backend.onrender.com
+        value: https://vecinita-backend-5qrt.onrender.com
 
   # Optional: PostgreSQL Database (if not using external Supabase)
   # Uncomment if you want to manage PostgreSQL on Render
