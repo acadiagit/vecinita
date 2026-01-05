@@ -64,5 +64,3 @@ services:
     dockerfilePath: ./frontend/Dockerfile
     dockerContext: ./frontend
     autoDeployTrigger: commit
-    
-    healthCheckPath: /
