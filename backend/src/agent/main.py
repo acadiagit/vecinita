@@ -362,6 +362,78 @@ def agent_node(state: AgentState) -> AgentState:
     raise last_exc
 
 
+def classify_query_complexity(state: AgentState) -> str:
+    """Classify if query needs planning or can go straight to agent using LLM.
+
+    Uses the LLM to intelligently determine query complexity.
+
+    Returns:
+        - "simple" for straightforward questions that don't need planning
+        - "complex" for questions requiring planning and multi-step reasoning
+    """
+    question = state["question"]
+    language = state["language"]
+
+    # Create classification prompt
+    if language == 'es':
+        classification_prompt = f"""Analiza esta pregunta y clasifícala como SIMPLE o COMPLEJA.
+
+SIMPLE: Preguntas directas, saludos, definiciones básicas, preguntas de una sola respuesta.
+Ejemplos: "Hola", "¿Qué es SNAP?", "¿Quién eres?", "Gracias"
+
+COMPLEJA: Comparaciones, instrucciones paso a paso, múltiples partes, análisis profundo, listas exhaustivas.
+Ejemplos: "Compara programas de vivienda", "Explica cómo aplicar paso a paso", "Lista todos los recursos"
+
+Pregunta: "{question}"
+
+Responde SOLO con: SIMPLE o COMPLEJA"""
+    else:
+        classification_prompt = f"""Analyze this question and classify it as SIMPLE or COMPLEX.
+
+SIMPLE: Direct questions, greetings, basic definitions, single-answer questions.
+Examples: "Hello", "What is SNAP?", "Who are you?", "Thanks"
+
+COMPLEX: Comparisons, step-by-step instructions, multi-part questions, deep analysis, exhaustive lists.
+Examples: "Compare housing programs", "Explain how to apply step by step", "List all resources"
+
+Question: "{question}"
+
+Respond with ONLY: SIMPLE or COMPLEX"""
+
+    try:
+        # Use lightweight LLM for classification
+        llm = _get_llm_with_tools(state.get("provider"), state.get("model"))
+
+        # Get classification from LLM (without tools)
+        response = llm.invoke([HumanMessage(content=classification_prompt)])
+        classification = response.content.strip().upper()
+
+        # Parse response
+        if "SIMPLE" in classification:
+            logger.info(f"Query classified as SIMPLE by LLM: '{question}'")
+            return "simple"
+        elif "COMPLEX" in classification or "COMPLEJA" in classification:
+            logger.info(f"Query classified as COMPLEX by LLM: '{question}'")
+            return "complex"
+        else:
+            # If LLM response unclear, use word count heuristic
+            word_count = len(question.split())
+            result = "simple" if word_count < 10 else "complex"
+            logger.info(
+                f"Query classified as {result.upper()} by fallback heuristic ({word_count} words)")
+            return result
+
+    except Exception as e:
+        logger.warning(
+            f"LLM classification failed ({e}), using fallback heuristic")
+        # Fallback: word count heuristic
+        word_count = len(question.split())
+        result = "simple" if word_count < 10 else "complex"
+        logger.info(
+            f"Query classified as {result.upper()} by fallback ({word_count} words)")
+        return result
+
+
 def planning_node(state: AgentState) -> AgentState:
     """Planning node that analyzes the question and creates a search strategy.
 
@@ -496,10 +568,24 @@ workflow.add_node("planning", planning_node)
 workflow.add_node("agent", agent_node)
 workflow.add_node("tools", ToolNode(tools))
 
-# Add edges
-workflow.add_edge(START, "planning")
+# Add conditional routing from START based on query complexity
+# Simple queries skip planning and go straight to agent
+workflow.add_conditional_edges(
+    START,
+    classify_query_complexity,
+    {
+        "simple": "agent",    # Simple queries: direct to agent
+        "complex": "planning"  # Complex queries: plan first
+    }
+)
+
+# Planning always goes to agent
 workflow.add_edge("planning", "agent")
+
+# Agent decides: continue with tools or end
 workflow.add_conditional_edges("agent", should_continue, ["tools", END])
+
+# Tools loop back to agent
 workflow.add_edge("tools", "agent")
 
 # Compile with memory
