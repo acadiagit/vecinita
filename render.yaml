@@ -51,9 +51,12 @@ services:
     dockerContext: ./backend
     schedule: "0 2 * * *"  # Daily at 2 AM UTC
     envVars:
+      - key: PYTHONUNBUFFERED
+        value: "1"
       - key: EMBEDDING_SERVICE_URL
-        value: "http://vecinita-embedding:8001"  # Private network address
-      # Add to Dashboard: SUPABASE_URL, SUPABASE_KEY, DATABASE_URL
+        value: "http://vecinita-embedding:8001"  # For direct service-to-service communication if needed
+      # CRITICAL: Add to Render Dashboard > Environment Variables:
+      # SUPABASE_URL, SUPABASE_KEY, DATABASE_URL
 
   # Frontend Vite Service (Free tier)
   - type: web

@@ -40,12 +40,11 @@ RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTr
 # Note: Playwright browsers are already included in the base image (mcr.microsoft.com/playwright/python:v1.49.0-jammy)
 # No need to install them again - this would fail due to PATH issues during pip install
 
-# Expose the FastAPI port (uses PORT env var)
-EXPOSE ${PORT}
+# Note: No port exposure - this is a batch scraper, not a web service
+# Note: No health check for cron jobs - they run once and exit
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=5 \
-	CMD curl -f http://localhost:${PORT:-8000}/health || exit 1
+# Make sure the cron wrapper script is executable
+RUN chmod +x scripts/cron_scraper.sh
 
-# Start the FastAPI app via uvicorn
-CMD ["sh", "-c", "uvicorn src.agent.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+# Run the scraper via the cron wrapper (validates env vars, runs in streaming mode)
+CMD ["/bin/sh", "scripts/cron_scraper.sh"]
