@@ -75,12 +75,6 @@ docker = [
     "docker>=7.0.0",
 ]
 
-# Legacy embedding extra (for backward compatibility)
-embedding = [
-    "sentence-transformers>=5.1.2",
-    "fastembed",
-]
-
 ml = [
     # Optional TensorFlow/Keras stack (pulls large CUDA libs on Linux runners)
     "tf-keras>=2.20.1",
@@ -266,7 +260,3 @@ ignore_missing_imports = true
 # See: uv.toml for detailed configuration
 
 [dependency-groups]
-dev = [
-    "pytest>=9.0.0",
-    "pytest-cov>=7.0.0",
-]
