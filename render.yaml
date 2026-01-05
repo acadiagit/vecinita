@@ -41,12 +41,11 @@ services:
     
     healthCheckPath: /health
 
-  # Background Scraper Service (Free tier cron job)
+  # Background Scraper Service - Requires paid plan (Starter or higher)
   - type: cron
     name: vecinita-scraper
     runtime: docker
     region: virginia
-    plan: free
     dockerfilePath: ./backend/Dockerfile.scraper
     dockerContext: ./backend
     schedule: "0 2 * * *"  # Daily at 2 AM UTC
