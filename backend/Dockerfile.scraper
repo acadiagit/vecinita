@@ -37,8 +37,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Pre-cache embedding model to speed up first run
 RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')" || true
 
-# Ensure Playwright browsers are installed
-RUN python -m playwright install --with-deps
+# Note: Playwright browsers are already included in the base image (mcr.microsoft.com/playwright/python:v1.49.0-jammy)
+# No need to install them again - this would fail due to PATH issues during pip install
 
 # Expose the FastAPI port (uses PORT env var)
 EXPOSE ${PORT}
