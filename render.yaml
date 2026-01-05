@@ -35,9 +35,10 @@ services:
       - key: TF_ENABLE_ONEDNN_OPTS
         value: "0"
       - key: EMBEDDING_SERVICE_URL
-        value: "https://vecinita-embedding.onrender.com"  # Call embedding service
+        value: "http://vecinita-embedding:8001"  # Private network address (internal communication)
       # Add these to Render Dashboard > Environment Variables:
-      # SUPABASE_URL, SUPABASE_KEY, GROQ_API_KEY
+      # SUPABASE_URL, SUPABASE_KEY, GROQ_API_KEY, OPEN_API_KEY, DEEPSEEK_API_KEY
+      # TAVILY_API_KEY, LANGSMITH_API_KEY, LANGSMITH_PROJECT
     
     healthCheckPath: /health
 
@@ -51,7 +52,7 @@ services:
     schedule: "0 2 * * *"  # Daily at 2 AM UTC
     envVars:
       - key: EMBEDDING_SERVICE_URL
-        value: "https://vecinita-embedding.onrender.com"
+        value: "http://vecinita-embedding:8001"  # Private network address
       # Add to Dashboard: SUPABASE_URL, SUPABASE_KEY, DATABASE_URL
 
   # Frontend Vite Service (Free tier)
@@ -64,6 +65,4 @@ services:
     dockerContext: ./frontend
     autoDeployTrigger: commit
     
-    envVars:
-      - key: VITE_BACKEND_URL
-        value: https://vecinita-agent.onrender.com
+    dockerCommand: --build-arg VITE_BACKEND_URL=https://vecinita-agent.onrender.com

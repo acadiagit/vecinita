@@ -49,9 +49,10 @@ COPY scripts/ ./scripts/
 # Python env flags
 ENV PYTHONUNBUFFERED=1
 ENV TF_ENABLE_ONEDNN_OPTS=0
+ENV PORT=10000
 
-# Expose the FastAPI port
-EXPOSE 8000
+# Expose the FastAPI port (uses PORT env var, default 10000 for Render)
+EXPOSE ${PORT}
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=5 \

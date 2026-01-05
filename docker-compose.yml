@@ -33,22 +33,34 @@ services:
     ports:
       - "8000:8000"  # Local: 8000 | Render: 10000
     environment:
+      # Core Infrastructure
+      PORT: "8000"  # Local dev port (Render uses 10000)
+      PYTHONUNBUFFERED: "1"
+      TF_ENABLE_ONEDNN_OPTS: "0"
+      EMBEDDING_SERVICE_URL: "http://embedding-service:8001"  # Docker internal network
+      
+      # Database
       SUPABASE_URL: ${SUPABASE_URL}
       SUPABASE_KEY: ${SUPABASE_KEY}
+      DATABASE_URL: ${DATABASE_URL}
+      
+      # LLM API Keys
       GROQ_API_KEY: ${GROQ_API_KEY}
       OPEN_API_KEY: ${OPEN_API_KEY}
       DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
+      
+      # Web Search
       TAVILY_API_KEY: ${TAVILY_API_KEY}
-      LANGSMITH_TRACING: ${LANGSMITH_TRACING}
+      
+      # Tracing & Monitoring
+      LANGSMITH_TRACING: ${LANGSMITH_TRACING:-false}
       LANGSMITH_ENDPOINT: ${LANGSMITH_ENDPOINT}
       LANGSMITH_API_KEY: ${LANGSMITH_API_KEY}
       LANGSMITH_PROJECT: ${LANGSMITH_PROJECT}
+      
+      # Local LLM (Optional)
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL}
       OLLAMA_MODEL: ${OLLAMA_MODEL}
-      TF_ENABLE_ONEDNN_OPTS: "0"
-      PORT: "8000"
-      PYTHONUNBUFFERED: "1"
-      EMBEDDING_SERVICE_URL: "http://embedding-service:8001"  # Local: service name | Render: https://vecinita-embedding.onrender.com
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "sh", "-c", "curl -f http://localhost:$$PORT/health"]
@@ -86,13 +98,13 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        VITE_BACKEND_URL: ${VITE_BACKEND_URL:-http://localhost:8000}  # Local: localhost:8000 | Render: https://vecinita-agent.onrender.com
     image: vecinita-frontend:latest
     container_name: vecinita-frontend
     depends_on:
       vecinita-agent:
         condition: service_healthy
-    environment:
-      VITE_BACKEND_URL: ${VITE_BACKEND_URL:-http://vecinita-agent:8000}
     ports:
       - "3000:80"
     restart: unless-stopped

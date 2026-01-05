@@ -11,9 +11,11 @@ RUN if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; else npm inst
 # Copy source
 COPY . .
 
-# Build static assets with backend URL from environment
-# VITE_BACKEND_URL is set in render.yaml or via --build-arg
-RUN VITE_BACKEND_URL=${VITE_BACKEND_URL:-https://vecinita-backend-5qrt.onrender.com} npm run build
+# Accept backend URL as build argument
+ARG VITE_BACKEND_URL=https://vecinita-agent.onrender.com
+
+# Build static assets with backend URL baked into bundle
+RUN VITE_BACKEND_URL=${VITE_BACKEND_URL} npm run build
 
 # Runtime stage using Nginx
 FROM nginx:alpine AS runtime
