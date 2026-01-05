@@ -18,7 +18,7 @@ ARG VITE_BACKEND_URL=https://vecinita-agent.onrender.com
 RUN VITE_BACKEND_URL=${VITE_BACKEND_URL} npm run build
 
 # Runtime stage using Nginx
-FROM nginx:alpine AS runtime
+FROM nginx:alpine
 
 # Copy nginx config for SPA routing
 COPY <<EOF /etc/nginx/conf.d/default.conf
@@ -38,9 +38,21 @@ server {
     expires 1y;
     add_header Cache-Control "public, immutable";
   }
+
+  # Health check endpoint
+  location = /health {
+    access_log off;
+    return 200 "ok\n";
+    add_header Content-Type text/plain;
+  }
 }
 EOF
 
+# Copy built assets from build stage
 COPY --from=build /app/dist /usr/share/nginx/html
+
+# Default nginx port
 EXPOSE 80
+
+# Start nginx
 CMD ["nginx", "-g", "daemon off;"]
