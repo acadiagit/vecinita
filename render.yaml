@@ -65,4 +65,4 @@ services:
     dockerContext: ./frontend
     autoDeployTrigger: commit
     
-    dockerCommand: --build-arg VITE_BACKEND_URL=https://vecinita-agent.onrender.com
+    healthCheckPath: /
