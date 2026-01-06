@@ -14,7 +14,7 @@ services:
       HF_HOME: /tmp/huggingface_cache
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      test: ["CMD", "python", "-c", "import httpx; exit(0 if httpx.get('http://localhost:8001/health', timeout=5).status_code == 200 else 1)"]
       interval: 30s
       timeout: 10s
       retries: 5
