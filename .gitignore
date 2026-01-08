@@ -28,7 +28,7 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-
+*.bck
 # Virtual Environments
 venv/
 ENV/
@@ -102,3 +102,4 @@ utils/old_vector_loader
 
 # Ignore other project-specific files
 .venv*
+*.pdf

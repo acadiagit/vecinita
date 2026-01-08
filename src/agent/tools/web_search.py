@@ -98,7 +98,8 @@ def create_web_search_tool(search_depth: str = "advanced", max_results: int = 5)
                         "content": r.get("content") or r.get("answer") or "",
                         "url": r.get("url") or r.get("source") or "",
                     })
-                return normalized
+                if normalized:
+                    return normalized
 
             # DuckDuckGo fallback
             if ddg is not None:
@@ -117,12 +118,25 @@ def create_web_search_tool(search_depth: str = "advanced", max_results: int = 5)
                         "content": results,
                         "url": "",
                     })
-                return normalized
+                if normalized:
+                    return normalized
 
-            logger.error("No web search provider available")
-            return []
+            # If we get here, no results were found or no provider is available.
+            # CRITICAL FIX: Return a message instead of an empty list so the LLM doesn't crash.
+            logger.warning("No web search provider available or no results found.")
+            return [{
+                "title": "System",
+                "content": "Web search is currently unavailable or returned no results. Please answer based on internal knowledge if possible.",
+                "url": ""
+            }]
+
         except Exception as e:
             logger.error(f"Web search error: {e}")
-            return []
+            # CRITICAL FIX: Return the error as content so the LLM knows what happened.
+            return [{
+                "title": "Error",
+                "content": f"Web search failed: {str(e)}",
+                "url": ""
+            }]
 
     return web_search

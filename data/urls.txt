@@ -1,7 +1,10 @@
 # VECINA Public Training Material - Curated URL List
 # Resources organized by category for web scraping
-# Last updated: 2025-12-22
-
+# Last updated: 2026-01-03
+# PDF,md, and other text formats
+#http://localhost:8081/RIOSpdf.pdf
+#http://localhost:8081/MentalandBehavioralResourceGuide-english_11162022.pdf
+#
 # ===== CORE VECINA INFRASTRUCTURE =====
 https://wrwc.org
 https://vecina.wrwc.org
