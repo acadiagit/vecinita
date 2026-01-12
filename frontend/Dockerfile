@@ -1,58 +1,59 @@
-# Frontend Dockerfile (Vite React + Tailwind + shadcn)
-
 # Build stage
-FROM node:20-alpine AS build
+FROM node:18-alpine AS builder
+
 WORKDIR /app
 
-# Install deps
-COPY package.json package-lock.json* ./
-RUN if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; else npm install --no-audit --no-fund; fi
+# Copy package files
+COPY package*.json ./
 
-# Copy source
+# Install dependencies
+RUN npm ci
+
+# Copy source code
 COPY . .
 
-# Accept backend URL as build argument
-ARG VITE_BACKEND_URL=https://vecinita-agent.onrender.com
+# Build the application
+# Build-time argument for backend URL
+ARG VITE_BACKEND_URL=http://localhost:8000
+ENV VITE_BACKEND_URL=$VITE_BACKEND_URL
 
-# Build static assets with backend URL baked into bundle
-RUN VITE_BACKEND_URL=${VITE_BACKEND_URL} npm run build
+RUN npm run build
 
-# Runtime stage using Nginx
+# Runtime stage
 FROM nginx:alpine
 
-# Copy nginx config for SPA routing
-COPY <<EOF /etc/nginx/conf.d/default.conf
-server {
-  listen 80;
-  server_name _;
-  root /usr/share/nginx/html;
-  index index.html;
+# Copy nginx configuration for SPA routing
+RUN echo 'server { \
+    listen 80; \
+    server_name _; \
+    root /usr/share/nginx/html; \
+    index index.html; \
+    \
+    # SPA routing: send all requests to index.html except for static assets \
+    location / { \
+        try_files $uri $uri/ /index.html; \
+    } \
+    \
+    # Cache busting for static assets \
+    location ~* ^/assets/ { \
+        expires 1y; \
+        add_header Cache-Control "public, immutable"; \
+    } \
+    \
+    # Disable cache for index.html \
+    location = /index.html { \
+        expires -1; \
+        add_header Cache-Control "no-cache, no-store, must-revalidate"; \
+    } \
+}' > /etc/nginx/conf.d/default.conf
 
-  # SPA routing: redirect all non-file requests to index.html
-  location / {
-    try_files \$uri \$uri/ /index.html;
-  }
+# Copy built application from builder
+COPY --from=builder /app/dist /usr/share/nginx/html
 
-  # Cache busting for assets
-  location /assets/ {
-    expires 1y;
-    add_header Cache-Control "public, immutable";
-  }
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
+    CMD wget --quiet --tries=1 --spider http://localhost/ || exit 1
 
-  # Health check endpoint
-  location = /health {
-    access_log off;
-    return 200 "ok\n";
-    add_header Content-Type text/plain;
-  }
-}
-EOF
-
-# Copy built assets from build stage
-COPY --from=build /app/dist /usr/share/nginx/html
-
-# Default nginx port
 EXPOSE 80
 
-# Start nginx
 CMD ["nginx", "-g", "daemon off;"]

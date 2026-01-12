@@ -93,7 +93,7 @@ services:
   #   command: python -m src.scraper.cli scrape data/urls.txt
   #   restart: "no"
 
-  # Frontend Vite Service
+  # Frontend Vite Service - TypeScript + React + Tailwind v4
   frontend:
     build:
       context: ./frontend
@@ -107,7 +107,16 @@ services:
         condition: service_healthy
     ports:
       - "3000:80"
+    environment:
+      # Build-time variables (injected during docker build)
+      VITE_BACKEND_URL: ${VITE_BACKEND_URL:-http://localhost:8000}
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
 # Optional: define a network
 # networks:
