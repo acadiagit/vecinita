@@ -28,7 +28,7 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-
+*.bck
 # Virtual Environments
 venv/
 ENV/
@@ -116,3 +116,4 @@ frontend/playwright-report/
 # Testing artifacts
 test-results/
 .last-run.json
+*.pdf
