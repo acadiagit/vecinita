@@ -173,7 +173,7 @@ Week 7+: 100% → Full rollout
    - SSE streaming support
    - API passthrough
 
-5. **[API_INTEGRATION_SPEC.md](../API_INTEGRATION_SPEC.md)** (Previously created, 23 KB)
+5. **[API_INTEGRATION_SPEC.md](API_INTEGRATION_SPEC.md)** (Previously created, 23 KB)
    - Full `/config` and `/ask-stream` endpoint specs
    - Request/response examples
    - TypeScript interfaces
@@ -509,7 +509,7 @@ API_INTEGRATION_SPEC.md              # API specification
 
 **For Architecture Questions:**
 - Review this document (IMPLEMENTATION_COMPLETE.md)
-- Check [API_INTEGRATION_SPEC.md](../API_INTEGRATION_SPEC.md) for backend API
+- Check [API_INTEGRATION_SPEC.md](API_INTEGRATION_SPEC.md) for backend API
 - Examine `src/api/client.ts` for integration logic
 - Review `src/app/App.tsx` for UI implementation
 
