@@ -7738,19 +7738,22 @@ dependencies = [
 all = [
     { name = "black" },
     { name = "docker" },
-    { name = "fastembed" },
     { name = "graphviz" },
     { name = "httpx" },
     { name = "ipython", version = "8.37.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "ipython", version = "9.8.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "jupyter" },
     { name = "mypy" },
+    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "numpy", version = "2.3.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "playwright" },
     { name = "pygraphviz" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
     { name = "ruff" },
+    { name = "scikit-learn", version = "1.7.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "scikit-learn", version = "1.8.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "sentence-transformers" },
     { name = "unstructured", extra = ["doc", "docx", "pdf", "ppt"] },
 ]
@@ -7779,7 +7782,10 @@ docker = [
     { name = "docker" },
 ]
 embedding = [
-    { name = "fastembed" },
+    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "numpy", version = "2.3.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "scikit-learn", version = "1.7.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "scikit-learn", version = "1.8.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "sentence-transformers" },
 ]
 ml = [
@@ -7796,12 +7802,6 @@ visualization = [
     { name = "pygraphviz" },
 ]
 
-[package.dev-dependencies]
-dev = [
-    { name = "pytest" },
-    { name = "pytest-cov" },
-]
-
 [package.metadata]
 requires-dist = [
     { name = "beautifulsoup4" },
@@ -7810,7 +7810,6 @@ requires-dist = [
     { name = "docker", marker = "extra == 'dev'", specifier = ">=7.0.0" },
     { name = "docker", marker = "extra == 'docker'", specifier = ">=7.0.0" },
     { name = "fastapi" },
-    { name = "fastembed", marker = "extra == 'embedding'" },
     { name = "fastembed", marker = "extra == 'scraper'" },
     { name = "gotrue", specifier = ">=2.0.0" },
     { name = "graphviz", marker = "extra == 'visualization'", specifier = ">=0.20.0" },
@@ -7831,6 +7830,7 @@ requires-dist = [
     { name = "langgraph" },
     { name = "langsmith", specifier = ">=0.4.56" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.8.0" },
+    { name = "numpy", marker = "extra == 'embedding'" },
     { name = "onnxruntime", marker = "sys_platform == 'win32'", specifier = ">=1.18.0,<1.24.0.dev0" },
     { name = "playwright", marker = "extra == 'dev'", specifier = ">=1.40.0" },
     { name = "playwright", marker = "extra == 'scraper'", specifier = ">=1.40.0" },
@@ -7847,6 +7847,7 @@ requires-dist = [
     { name = "python-dotenv" },
     { name = "requests" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.2.0" },
+    { name = "scikit-learn", marker = "extra == 'embedding'" },
     { name = "sentence-transformers", marker = "extra == 'embedding'", specifier = ">=5.1.2" },
     { name = "sentence-transformers", marker = "extra == 'scraper'", specifier = ">=5.1.2" },
     { name = "supabase" },
@@ -7858,13 +7859,7 @@ requires-dist = [
     { name = "uvicorn" },
     { name = "vecinita", extras = ["dev", "scraping", "docker", "visualization", "embedding"], marker = "extra == 'all'" },
 ]
-provides-extras = ["agent", "scraper", "docker", "embedding", "ml", "dev", "ci", "visualization", "all"]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "pytest", specifier = ">=9.0.0" },
-    { name = "pytest-cov", specifier = ">=7.0.0" },
-]
+provides-extras = ["agent", "embedding", "scraper", "docker", "ml", "dev", "ci", "visualization", "all"]
 
 [[package]]
 name = "wcwidth"
