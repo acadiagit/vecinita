@@ -1,49 +1,152 @@
+# Local Development Full Stack
+# Includes: PostgreSQL, PostgREST, pgAdmin, Embedding Service, Agent Service, Frontend, Scraper
+# Usage: docker-compose up
+# Production uses cloud Supabase and Render services (see .env.prod and docs/RENDER_DEPLOYMENT_THREE_SERVICES.md)
+
 services:
-  vecinita-app:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    image: vecinita-app:latest
-    container_name: vecinita-app
-    ports:
-      - "8000:8000"
+  # Local PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: vecinita-postgres-local
     environment:
-      SUPABASE_URL: ${SUPABASE_URL}
-      SUPABASE_KEY: ${SUPABASE_KEY}
-      DATABASE_URL: ${DATABASE_URL}
-      GROQ_API_KEY: ${GROQ_API_KEY}
-      OPEN_API_KEY: ${OPEN_API_KEY}
-      LANGSMITH_TRACING: ${LANGSMITH_TRACING}
-      LANGSMITH_ENDPOINT: ${LANGSMITH_ENDPOINT}
-      LANGSMITH_API_KEY: ${LANGSMITH_API_KEY}
-      LANGSMITH_PROJECT: ${LANGSMITH_PROJECT}
-      EMBEDDING_MODEL: ${EMBEDDING_MODEL}
-      USE_LOCAL_EMBEDDINGS: ${USE_LOCAL_EMBEDDINGS}
-      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL}
-      OLLAMA_MODEL: ${OLLAMA_MODEL}
-      TF_ENABLE_ONEDNN_OPTS: "0"
-      PORT: "8000"
-      PYTHONUNBUFFERED: "1"
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+      POSTGRES_INITDB_ARGS: "--locale=en_US.UTF-8 --encoding=UTF8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data_local:/var/lib/postgresql/data
     restart: unless-stopped
+    networks:
+      - vecinita-network
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://localhost:8000/health" ]
-      interval: 30s
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
       timeout: 5s
       retries: 5
 
+  # PostgREST - REST API layer on top of PostgreSQL
+  postgrest:
+    image: postgrest/postgrest:v12.0.1
+    container_name: vecinita-postgrest-local
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGRST_DB_URI: postgresql://postgres:postgres@vecinita-postgres-local:5432/postgres
+      PGRST_DB_SCHEMA: public
+      PGRST_DB_ANON_ROLE: postgres
+      PGRST_JWT_SECRET: dev-jwt-secret-for-local-testing-only-32chars-min
+      PGRST_JWT_AUD: ""  # Allow any audience for development
+      PGRST_JWT_ROLE_CLAIM_KEY: ".role"
+    ports:
+      - "3001:3000"  # PostgREST REST API on localhost:3001
+    restart: unless-stopped
+    networks:
+      - vecinita-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # pgAdmin - PostgreSQL Management UI (Optional but useful)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: vecinita-pgadmin-local
+    depends_on:
+      - postgres
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    restart: unless-stopped
+    networks:
+      - vecinita-network
+
+  # ============================================================================
+  # MICROSERVICES (Agent, Embedding, Scraper)
+  # ============================================================================
+
+  # Embedding Service - Lightweight microservice for text embeddings
+  embedding-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.embedding
+    container_name: vecinita-embedding
+    ports:
+      - "8001:8001"
+    environment:
+      PORT: "8001"
+      PYTHONUNBUFFERED: "1"
+      HF_HOME: "/tmp/huggingface_cache"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks:
+      - vecinita-network
+
+  # Agent Service - FastAPI Q&A backend
+  vecinita-agent:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: vecinita-agent
+    ports:
+      - "8000:8000"
+    environment:
+      PORT: "8000"
+      PYTHONUNBUFFERED: "1"
+      EMBEDDING_SERVICE_URL: "http://embedding-service:8001"
+      SUPABASE_URL: "http://postgrest:3000"
+      SUPABASE_KEY: "dev-anon-key"
+      GROQ_API_KEY: "${GROQ_API_KEY}"
+      DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/postgres"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      postgrest:
+        condition: service_healthy
+      embedding-service:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks:
+      - vecinita-network
+
+  # Frontend - Vite React application
   frontend:
     build:
       context: ./frontend
-    image: vecinita-frontend:latest
+      dockerfile: Dockerfile
     container_name: vecinita-frontend
-    depends_on:
-      - vecinita-app
-    environment:
-      VITE_BACKEND_URL: "http://vecinita-app:8000"
     ports:
-      - "3000:80"
+      - "5173:5173"
+    environment:
+      VITE_BACKEND_URL: "http://localhost:8000"
+    depends_on:
+      - vecinita-agent
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5173"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks:
+      - vecinita-network
 
-# Optional: define a network (Docker creates a default bridge network)
-# networks:
-#   default:
-#     name: vecinita-net
+volumes:
+  postgres_data_local:
+
+networks:
+  vecinita-network:
+    driver: bridge
