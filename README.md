@@ -182,12 +182,14 @@ npm run test:e2e                 # E2E tests (Playwright)
 - **[frontend/README.md](frontend/README.md)** - Frontend components and testing
 
 ### Deployment
-- **[docs/RENDER_DEPLOYMENT_THREE_SERVICES.md](docs/RENDER_DEPLOYMENT_THREE_SERVICES.md)** - Step-by-step Render deployment (free tier)
+- **[docs/GCP_CLOUD_RUN_DEPLOYMENT.md](docs/GCP_CLOUD_RUN_DEPLOYMENT.md)** - Google Cloud Run deployment (recommended)
+- **[docs/RENDER_DEPLOYMENT_THREE_SERVICES.md](docs/RENDER_DEPLOYMENT_THREE_SERVICES.md)** - Step-by-step Render deployment (alternative)
 - **[docs/QUICK_REFERENCE_MICROSERVICE.md](docs/QUICK_REFERENCE_MICROSERVICE.md)** - Quick reference for microservice setup
 - **[docs/ARCHITECTURE_MICROSERVICE.md](docs/ARCHITECTURE_MICROSERVICE.md)** - Detailed architecture documentation
 
 ### Technical Documentation
 - **[docs/](docs/)** - Comprehensive technical docs
+  - [FULL_STACK_RESTORATION_COMPLETE.md](docs/FULL_STACK_RESTORATION_COMPLETE.md) - Full-stack setup status
   - [FINAL_STATUS_REPORT.md](docs/FINAL_STATUS_REPORT.md) - Project status and achievements
   - [LANGGRAPH_REFACTOR_SUMMARY.md](docs/LANGGRAPH_REFACTOR_SUMMARY.md) - Agent architecture details
   - [TEST_COVERAGE_SUMMARY.md](docs/TEST_COVERAGE_SUMMARY.md) - Test suite overview
@@ -255,7 +257,8 @@ GROQ_API_KEY=<your-groq-api-key>
 ```bash
 TAVILY_API_KEY=<your-tavily-key>                          # For enhanced web search
 VITE_BACKEND_URL=http://localhost:8000                    # Frontend backend URL (local)
-EMBEDDING_SERVICE_URL=http://embedding-service:8001       # Embedding service URL (Docker)
+EMBEDDING_SERVICE_URL=http://embedding-service:8001       # Embedding service URL (Docker local)
+# For Cloud Run deployment: https://vecinita-embedding-<HASH>-<REGION>.run.app
 # For Render deployment: https://vecinita-embedding.onrender.com
 ```
 

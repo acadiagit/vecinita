@@ -46,7 +46,8 @@ services:
     networks:
       - vecinita-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      # Use a simple binary check to avoid missing curl/wget in the image
+      test: ["CMD", "postgrest", "--version"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -102,7 +103,7 @@ services:
     environment:
       PORT: "8000"
       PYTHONUNBUFFERED: "1"
-      EMBEDDING_SERVICE_URL: "http://embedding-service:8001"
+      EMBEDDING_SERVICE_URL: "${EMBEDDING_SERVICE_URL:-http://embedding-service:8001}"
       SUPABASE_URL: "http://postgrest:3000"
       SUPABASE_KEY: "dev-anon-key"
       GROQ_API_KEY: "${GROQ_API_KEY}"
@@ -130,14 +131,17 @@ services:
       dockerfile: Dockerfile
     container_name: vecinita-frontend
     ports:
-      - "5173:5173"
+      - "5173:80"
     environment:
-      VITE_BACKEND_URL: "http://localhost:8000"
+      # Empty VITE_BACKEND_URL enables relative paths (/config, /ask-stream)
+      # Nginx proxies these requests to the backend via Docker network
+      # Fixes "Failed to fetch" errors in Codespaces preview URLs
+      VITE_BACKEND_URL: ""
     depends_on:
       - vecinita-agent
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5173"]
+      test: ["CMD", "curl", "-f", "http://localhost/"]
       interval: 15s
       timeout: 5s
       retries: 3

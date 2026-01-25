@@ -16,14 +16,28 @@ echo -e "${BLUE}======================================"
 echo "Vecinita Modal Deployment Script"
 echo "======================================${NC}\n"
 
-# Check prerequisites
-if ! command -v modal &> /dev/null; then
-    echo -e "${RED}❌ Modal CLI not found. Install with: pip install modal${NC}"
+# Check prerequisites (support uv- or python -m modal fallback)
+MODAL_CMD=""
+
+if command -v modal &> /dev/null; then
+    MODAL_CMD="modal"
+elif command -v uv &> /dev/null && uv run python -c "import modal" &> /dev/null; then
+    MODAL_CMD="uv run python -m modal"
+elif python -c "import modal" &> /dev/null; then
+    MODAL_CMD="python -m modal"
+else
+    echo -e "${RED}❌ Modal CLI not found.${NC}"
+    echo -e "  Install using one of:" 
+    echo -e "    ${BLUE}uv tool install modal${NC} (recommended)"
+    echo -e "    ${BLUE}pipx install modal${NC}"
+    echo -e "    ${BLUE}pip install modal${NC}"
     exit 1
 fi
 
-if ! modal token list &> /dev/null 2>&1; then
-    echo -e "${RED}❌ Not authenticated with Modal. Run: modal token new${NC}"
+# Authentication check
+if ! bash -lc "$MODAL_CMD token list" &> /dev/null; then
+    echo -e "${RED}❌ Not authenticated with Modal.${NC}"
+    echo -e "  Run: ${BLUE}$MODAL_CMD token new${NC}"
     exit 1
 fi
 
@@ -61,7 +75,7 @@ if [ "$DEPLOY_EMBEDDING" = true ]; then
     fi
     
     echo "  Deploying backend/src/embedding_service/main.py..."
-    modal deploy backend/src/embedding_service/main.py --name vecinita-embedding 2>&1 | tee /tmp/modal_embedding.log
+    bash -lc "$MODAL_CMD deploy backend/src/embedding_service/main.py --name vecinita-embedding" 2>&1 | tee /tmp/modal_embedding.log
     
     # Extract URL
     EMBEDDING_URL=$(grep -oP '(?<=Available at ).*' /tmp/modal_embedding.log || echo "https://vecinita-embedding--latest.modal.run")
@@ -85,7 +99,7 @@ if [ "$DEPLOY_SCRAPER" = true ]; then
     fi
     
     echo "  Deploying backend/src/scraper/main.py..."
-    modal deploy backend/src/scraper/main.py --name vecinita-scraper 2>&1 | tee /tmp/modal_scraper.log
+    bash -lc "$MODAL_CMD deploy backend/src/scraper/main.py --name vecinita-scraper" 2>&1 | tee /tmp/modal_scraper.log
     
     echo -e "${GREEN}✓ Scraper Deployed${NC}"
     echo -e "  Schedule: Daily cron job\n"
@@ -101,7 +115,7 @@ echo "======================================${NC}\n"
 echo -e "${YELLOW}Next Steps:${NC}"
 echo ""
 echo "1. Create Modal secrets (one-time):"
-echo "   ${BLUE}modal secret create vecinita-secrets${NC}"
+echo "   ${BLUE}$MODAL_CMD secret create vecinita-secrets${NC}"
 echo "   Add environment variables:"
 echo "     SUPABASE_URL=https://..."
 echo "     SUPABASE_KEY=eyJ..."
@@ -113,14 +127,14 @@ if [ -n "$EMBEDDING_SERVICE_URL" ]; then
 fi
 echo ""
 echo "3. Monitor deployments:"
-echo "   ${BLUE}modal app logs vecinita-embedding${NC}"
-echo "   ${BLUE}modal app logs vecinita-scraper${NC}"
+echo "   ${BLUE}$MODAL_CMD app logs vecinita-embedding${NC}"
+echo "   ${BLUE}$MODAL_CMD app logs vecinita-scraper${NC}"
 echo ""
 echo "4. Test services:"
 echo "   ${BLUE}curl $EMBEDDING_SERVICE_URL/health${NC}"
 echo ""
 echo "5. To undeploy:"
-echo "   ${BLUE}modal app delete vecinita-embedding${NC}"
-echo "   ${BLUE}modal app delete vecinita-scraper${NC}"
+echo "   ${BLUE}$MODAL_CMD app delete vecinita-embedding${NC}"
+echo "   ${BLUE}$MODAL_CMD app delete vecinita-scraper${NC}"
 echo ""
 echo "More info: modal app logs, modal app info <name>"

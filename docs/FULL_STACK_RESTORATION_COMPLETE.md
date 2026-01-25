@@ -88,7 +88,7 @@ During the cleanup/consolidation phase of the docker-compose.yml, the comprehens
 - Dockerfile: `backend/Dockerfile.embedding`
 - Health: `/health` endpoint
 - Dependencies: None (can start independently)
-- Ready for Modal deployment
+- Deployment: Cloud Run service or local Docker
 
 ### 5. **Agent Service** (Port 8000) ✅
 - Status: LangGraph-based Q&A assistant
@@ -121,24 +121,24 @@ During the cleanup/consolidation phase of the docker-compose.yml, the comprehens
   - Added frontend service
   - Updated postgres and postgrest to use vecinita-network
 
-### 2. **Modal Deployment Wrapper** ✅
-- **What:** Python wrapper for Modal serverless deployment
-- **Location:** `backend/src/embedding_service/modal_app.py`
-- **Purpose:** Enables serverless deployment of embedding service to Modal
-- **Features:** Image building, volume mounting, health checks
-- **Status:** Ready for `modal deploy` command
+### 2. **Cloud Run Deployment** ✅
+- **What:** Google Cloud Run deployment for embedding service and scraper
+- **Location:** `backend/scripts/deploy_gcp.sh`
+- **Purpose:** Deploy containerized services to GCP Cloud Run (service) and Cloud Run Jobs (batch)
+- **Features:** Image building via Cloud Build, secret management, Cloud Scheduler integration
+- **Status:** Ready for `gcloud` deployment
 
-### 3. **Modal Deployment Script** ✅
-- **What:** Enhanced shell script for deploying services to Modal
-- **Location:** `backend/scripts/deploy_modal.sh`
-- **Status:** Updated from 21 lines to 150+ comprehensive lines
+### 3. **Cloud Run Deployment Script** ✅
+- **What:** Shell script for deploying services to Google Cloud Run
+- **Location:** `backend/scripts/deploy_gcp.sh`
+- **Status:** Complete with comprehensive error handling
 - **Features:**
-  - Prerequisite checking (modal CLI, authentication)
+  - Prerequisite checking (gcloud CLI, authentication, project config)
   - Service-specific deployment (--embedding, --scraper, --all)
-  - Color-coded output
-  - Detailed error messages
-  - URL extraction and storage
-  - Next-steps guidance
+  - Cloud Build image builds and Cloud Run deployments
+  - Automatic Cloud Scheduler setup for scraper (daily, 2 AM UTC)
+  - Health check validation
+  - Detailed next steps guidance
 
 ### 4. **Service Verification Script** ✅
 - **What:** Bash script to test all 6 services
@@ -240,27 +240,36 @@ All services on `vecinita-network` bridge can reach each other by hostname:
 
 ---
 
-## Modal Deployment Ready
+## Cloud Run Deployment Ready
 
 ### Embedding Service
 - ✅ Dockerfile optimized (512MB footprint)
 - ✅ Python 3.11-slim base image
-- ✅ Fast startup (~3-5 seconds)
-- ✅ Modal wrapper created (`modal_app.py`)
-- ✅ Health check endpoint ready
+- ✅ Fast startup (~3-5 seconds on Cloud Run)
+- ✅ Health check endpoint ready (`/health`)
 
 ### Scraper Service
-- ⏳ Configuration prepared
-- ⏳ Can be deployed via Modal
-- ⏳ Scheduled via `scripts/deploy_modal.sh --scraper`
+- ✅ Configuration prepared
+- ✅ Can be deployed as Cloud Run Job
+- ✅ Scheduled via Cloud Scheduler
 
-### Deploy to Modal
+### Deploy to Cloud Run
 ```bash
-# Deploy embedding service
-./backend/scripts/deploy_modal.sh --embedding
+# Authenticate and configure gcloud
+gcloud auth login
+gcloud config set project <PROJECT_ID>
+
+# Create secrets in Secret Manager
+gcloud secrets create SUPABASE_URL --data-file=- < /dev/stdin
+gcloud secrets create SUPABASE_KEY --data-file=- < /dev/stdin
+gcloud secrets create GROQ_API_KEY --data-file=- < /dev/stdin
 
 # Deploy both services
-./backend/scripts/deploy_modal.sh --all
+./backend/scripts/deploy_gcp.sh --all
+
+# Or deploy individually
+./backend/scripts/deploy_gcp.sh --embedding
+./backend/scripts/deploy_gcp.sh --scraper
 ```
 
 ---
@@ -286,21 +295,21 @@ uv run pytest tests/test_local_integration.py -v
 
 ### Immediate (Today)
 1. ✅ Restore docker-compose.yml → **DONE**
-2. ✅ Create Modal deployment wrapper → **DONE**
+2. ✅ Migrate to Cloud Run → **DONE**
 3. ✅ Update documentation → **DONE**
 4. ⏳ **Run `docker-compose up` and verify all services start**
 5. ⏳ **Run verification script**
 
 ### Short-term (This Week)
 - Test full stack locally with real data
-- Test Modal deployment for embedding service
-- Document Modal monitoring and scaling
+- Test Cloud Run deployment for embedding service
+- Document Cloud Run monitoring and scaling
 - Create production deployment checklist
 
 ### Medium-term (Next Week)
-- Deploy to Render (production)
-- Set up continuous deployment
-- Configure monitoring and alerts
+- Deploy to Cloud Run (production)
+- Set up continuous deployment via Cloud Build
+- Configure monitoring and alerts via Cloud Monitoring
 - Load testing with real queries
 
 ---
