@@ -86,11 +86,11 @@ cd backend
 # Install dependencies with uv (recommended)
 uv sync
 
-# Set environment variables
-export SUPABASE_URL="https://xxxxx.supabase.co"
-export SUPABASE_KEY="your-key"
-export GROQ_API_KEY="your-key"
-export TAVILY_API_KEY="your-key"  # optional
+# Set environment variables (recommended: use a .env file)
+# 1) Copy .env.example to .env at the repo root
+# 2) Fill in your local secrets
+# .env is already ignored by .gitignore and should not be committed
+cp ../.env.example ../.env  # or create manually
 
 # Run the agent server
 uv run -m uvicorn src.agent.main:app --reload
@@ -107,8 +107,8 @@ cd frontend
 # Install dependencies
 npm install
 
-# Set backend URL (optional, defaults to localhost:8000)
-export VITE_BACKEND_URL="http://localhost:8000"
+# (Optional) Create a local env file for the frontend
+# echo "VITE_BACKEND_URL=http://localhost:8000" > .env.local
 
 # Run dev server
 npm run dev
@@ -117,6 +117,14 @@ npm run dev
 npm run test          # Unit tests (Vitest)
 npm run test:e2e      # E2E tests (Playwright)
 ```
+
+## Environment Variables
+
+- Manage secrets locally using the `.env` file at the repo root.
+- A sanitized example is provided: `.env.example`.
+- Do not commit `.env` or any real secrets; `.gitignore` already excludes common env files.
+- Frontend can use `.env.local` for values like `VITE_BACKEND_URL`.
+
 
 ## Core Features
 
