@@ -116,8 +116,11 @@ class TestScraperWithMockedRequests:
 
     @patch('src.scraper.loaders.PlaywrightURLLoader')
     def test_playwright_loader_error_handling(self, mock_playwright):
-        """Test Playwright loader error recovery."""
-        mock_playwright.side_effect = Exception("Playwright failed")
+        """Test Playwright loader returns empty results on failure without fallback."""
+        # Playwright fails
+        mock_playwright_instance = Mock()
+        mock_playwright_instance.load.side_effect = Exception("Playwright failed")
+        mock_playwright.return_value = mock_playwright_instance
 
         config = Mock()
         config.RATE_LIMIT_DELAY = 0.1
@@ -128,12 +131,12 @@ class TestScraperWithMockedRequests:
         loader = SmartLoader(config)
         docs, loader_type, success = loader.load_url("https://test.com")
 
-        # When Playwright fails, it falls back to standard loader
-        # Since both fail for invalid URLs, success should be False
+        # Should have attempted Playwright first (it's marked as needing it)
+        assert mock_playwright.called
+
+        # Playwright failure returns empty results
+        assert docs == []
         assert success is False
-        # Loader type reflects which loader was used (may be fallback)
-        assert loader_type in [
-            "Playwright (JavaScript rendering)", "Unstructured URL Loader"]
 
     @patch('src.scraper.loaders.RecursiveUrlLoader')
     def test_recursive_loader_with_depth(self, mock_recursive):

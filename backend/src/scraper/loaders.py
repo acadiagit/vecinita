@@ -125,9 +125,13 @@ class SmartLoader:
 
         # 4. Playwright (JavaScript-heavy)
         if needs_playwright(url, self.config.sites_needing_playwright):
-            return self._load_playwright(url)
+            docs, loader_type, success = self._load_playwright(url)
+            if success:
+                return docs, loader_type, True
+            # Fall through to standard loader if Playwright fails
+            log.info("--> Playwright failed. Falling back to standard loader...")
 
-        # 5. Standard URL (default)
+        # 5. Standard URL (default) - also serves as fallback from Playwright
         return self._load_standard(url)
 
     def _load_with_forced_loader(self, url: str, loader_name: str) -> Tuple[List, str, bool]:
@@ -236,11 +240,12 @@ class SmartLoader:
             return docs, loader_type, len(docs) > 0
         except Exception as e:
             log.error(f"--> Playwright loading failed: {e}")
-            # Fallback to standard loader if Playwright fails
-            log.warning(f"--> Falling back to standard loader for {url}")
-            return self._load_standard(url, skip_playwright_fallback=True)
+            # Do not fall back to standard loader here to avoid potential recursion
+            log.warning(
+                f"--> Playwright loader failed for {url}; not falling back to standard loader and returning no documents.")
+            return [], loader_type, False
 
-    def _load_standard(self, url: str, skip_playwright_fallback: bool = False) -> Tuple[List, str, bool]:
+    def _load_standard(self, url: str) -> Tuple[List, str, bool]:
         """Load with standard Unstructured loader."""
         loader_type = "Unstructured URL Loader"
         log.info(f"--> Using {loader_type}")
@@ -262,18 +267,6 @@ class SmartLoader:
                     docs = loader.load()
                 except Exception as retry_e:
                     log.error(f"--> Retry failed: {retry_e}")
-
-            # If still nothing, try with Playwright as fallback (but avoid infinite recursion)
-            if len(docs) == 0 and not skip_playwright_fallback:
-                log.info(
-                    "--> Standard loader returned empty. Trying Playwright fallback...")
-                try:
-                    pw_docs, _, pw_success = self._load_playwright(url)
-                    if pw_success:
-                        log.info("--> Playwright fallback succeeded!")
-                        return pw_docs, "Unstructured (with Playwright fallback)", True
-                except Exception as fallback_e:
-                    log.error(f"--> Playwright fallback failed: {fallback_e}")
 
             return docs, loader_type, len(docs) > 0
         except Exception as e:

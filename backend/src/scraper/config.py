@@ -11,31 +11,80 @@ from pathlib import Path
 log = logging.getLogger(__name__)
 
 
+def _find_repo_root() -> Path:
+    """
+    Find the top-level repository root by searching upward for marker files.
+
+    This function is intended to locate the project repository directory that
+    contains the ``backend/`` folder, not the ``backend`` directory itself.
+    A typical layout is::
+
+        <repo_root>/
+            backend/
+                src/
+                    scraper/
+                        config.py
+            pyproject.toml
+            docker-compose.yml
+            .git/
+
+    The search walks upward from this file and stops at the first directory
+    that contains any of the following marker entries, which are expected to
+    live at the repository root:
+      - ``.git`` directory
+      - ``docker-compose.yml`` file
+      - ``pyproject.toml`` file
+
+    If no markers are found, the function falls back to a hardcoded relative
+    path based on this file's location.
+
+    Returns:
+        Path to the repository root directory (parent of ``backend/``).
+    """
+    current = Path(__file__).resolve()
+    marker_files = ['.git', 'docker-compose.yml', 'pyproject.toml']
+
+    # Search upward from this file's location
+    while current != current.parent:  # Stop at filesystem root
+        for marker in marker_files:
+            if (current / marker).exists():
+                log.debug(f"Found repo root marker '{marker}' at {current}")
+                return current
+        current = current.parent
+
+    # Fallback: use relative path (backend/src/scraper/config.py -> parent of backend)
+    fallback_root = Path(__file__).resolve().parents[3]
+    log.debug(
+        f"No repo root marker found; using fallback path: {fallback_root}")
+    return fallback_root
+
+
 class ScraperConfig:
     """Manages all scraper configuration."""
 
-    # Try to find config dir relative to repo root
-    # When running from backend/, look in ../data/config
-    # When running from repo root, look in data/config
-    _potential_config_dirs = [
-        Path("data/config"),  # From repo root
-        Path("../data/config"),  # From backend/
-        Path(__file__).parent.parent.parent.parent /
-        "data" / "config",  # Absolute from module
-    ]
+    # Resolve config directory:
+    # 1. Use SCRAPER_CONFIG_DIR if set.
+    # 2. Otherwise, use relative path from current file location
+    _env_config_dir = os.getenv("SCRAPER_CONFIG_DIR")
+    if _env_config_dir:
+        _config_dir_path = Path(_env_config_dir).expanduser().resolve()
+    else:
+        # From backend/src/scraper/config.py, go up 3 levels to project root, then data/config
+        _config_dir_path = Path(
+            __file__).resolve().parents[3] / "data" / "config"
 
-    CONFIG_DIR = None
-    for _dir in _potential_config_dirs:
-        if _dir.exists():
-            CONFIG_DIR = str(_dir)
-            break
+    if not _config_dir_path.exists():
+        log.warning(
+            "ScraperConfig config directory does not exist at %s. "
+            "Configuration lists may be empty.",
+            _config_dir_path,
+        )
 
-    if CONFIG_DIR is None:
-        CONFIG_DIR = "data/config"  # Fallback
+    CONFIG_DIR = _config_dir_path
 
-    RECURSIVE_SITES_FILE = os.path.join(CONFIG_DIR, "recursive_sites.txt")
-    PLAYWRIGHT_SITES_FILE = os.path.join(CONFIG_DIR, "playwright_sites.txt")
-    SKIP_SITES_FILE = os.path.join(CONFIG_DIR, "skip_sites.txt")
+    RECURSIVE_SITES_FILE = str(CONFIG_DIR / "recursive_sites.txt")
+    PLAYWRIGHT_SITES_FILE = str(CONFIG_DIR / "playwright_sites.txt")
+    SKIP_SITES_FILE = str(CONFIG_DIR / "skip_sites.txt")
     DATA_DIR = "data/"
 
     # Scraper settings

@@ -14,6 +14,16 @@ import logging
 import argparse
 from importlib import import_module
 
+# NOTE ON TESTABILITY:
+# We intentionally use a direct import of VecinaScraper here instead of a dynamic
+# import (e.g., via import_module) to keep the CLI entry point simple and avoid
+# runtime import resolution issues when packaging or invoking via `python -m`.
+#
+# If tests need to substitute or mock the scraper implementation, they should
+# patch this module-level name before calling `main()`, for example:
+#     from backend.src.scraper import main
+#     main.VecinaScraper = FakeScraper
+#     main.main()
 from .scraper import VecinaScraper
 
 
@@ -116,11 +126,11 @@ def main():
             try:
                 with open(args.input, 'r', encoding=encoding) as f:
                     urls = [
-                        line.strip()
+                        line.strip().lstrip('\ufeff')
                         for line in f
                         if line.strip() and not line.startswith('#')
                     ]
-                log.debug(
+                log.info(
                     f"Successfully read input file with {encoding} encoding")
                 decode_successful = True
                 break

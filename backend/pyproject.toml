@@ -26,13 +26,9 @@ dependencies = [
     # Database & Vector Store
     "supabase",
     "psycopg2-binary",
-    # ML & Embeddings (sentence-transformers moved to optional-dependencies due to numpy 2.x conflict)
-    "fastembed",
-    # Document Processing
+    # Document Processing (lightweight only - playwright/unstructured in scraping extra)
     "beautifulsoup4",
     "pypdf",
-    "unstructured",
-    "playwright",
     # Utilities
     "python-dotenv",
     "pydantic",
@@ -42,7 +38,6 @@ dependencies = [
     "tqdm",
     "gotrue>=2.0.0",
     "langchain-ollama>=1.0.0",
-    "docker>=7.0.0",
     # LangSmith for tracing and monitoring (now compatible with numpy 2.x)
     "langsmith>=0.4.56",
     # Pin onnxruntime and tokenizers to stable versions to avoid Windows compatibility issues
@@ -50,16 +45,34 @@ dependencies = [
     # tokenizers pre-releases require Rust compilation
     "onnxruntime>=1.18.0,<1.24.0.dev; sys_platform == 'win32'",
     "tokenizers>=0.15.0,<0.22.0rc",
-    # Heavy ML libraries moved to optional extras to keep CI lean
-    # Install these only when needed locally or in production builds
-    "sentence-transformers>=5.2.0",
     "ddgs>=9.10.0",
 ]
 
 [project.optional-dependencies]
+# Agent service dependencies (minimal - no embedding models, calls embedding service via HTTP)
+agent = [
+    # Agent calls embedding service for embeddings - no local models needed
+    # All required dependencies already in base
+]
+
+# Embedding service dependencies (lightweight - runs as separate Render service)
 embedding = [
-    # Local embeddings with SentenceTransformers (optional, use fastembed for main)
-    "sentence-transformers>=5.1.2",
+    "sentence-transformers>=5.1.2",  # Core embedding model
+    "scikit-learn",  # For similarity computations
+    "numpy",  # For numerical operations
+]
+
+# Scraper service dependencies (heavy - includes embedding models and parsers)
+scraper = [
+    "unstructured[doc,docx,ppt,pdf]>=0.14.0",
+    "playwright>=1.40.0",
+    "sentence-transformers>=5.1.2",  # For generating embeddings during scraping
+    "fastembed",  # Alternative lightweight embedding model
+]
+
+# Docker utilities (only needed for local orchestration scripts)
+docker = [
+    "docker>=7.0.0",
 ]
 
 ml = [
@@ -67,40 +80,44 @@ ml = [
     "tf-keras>=2.20.1",
 ]
 
+# Development: testing, code quality, and experimentation
 dev = [
     # Testing Framework
-    "pytest",
-    "pytest-asyncio",
-    "pytest-cov",
+    "pytest>=9.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=5.0.0",
     # FastAPI Testing
-    "httpx",
-    "fastapi",
+    "httpx>=0.25.0",
     # Code Quality Tools
-    "black",
-    "ruff",
-    "mypy",
+    "black>=24.1.0",
+    "ruff>=0.2.0",
+    "mypy>=1.8.0",
     # Jupyter for experimentation
-    "jupyter",
-    "ipython",
+    "jupyter>=1.0.0",
+    "ipython>=8.20.0",
+    # Optional scraping & docker utilities for local development
+    "unstructured[doc,docx,ppt,pdf]>=0.14.0",
+    "playwright>=1.40.0",
+    "docker>=7.0.0",
 ]
 
+# Minimal CI dependencies - no playwright or docker for faster CI builds
 ci = [
-    # Minimal test dependencies for CI to avoid large installs
-    "pytest",
-    "pytest-asyncio",
-    "pytest-cov",
-    # Keep httpx for API tests without launching browsers
-    "httpx",
+    "pytest>=9.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=5.0.0",
+    "httpx>=0.25.0",
 ]
 
 visualization = [
     # For graph visualization
-    "graphviz",
-    "pygraphviz",
+    "graphviz>=0.20.0",
+    "pygraphviz>=1.14.0",
 ]
 
+# All extras for local development
 all = [
-    "vecinita[dev,visualization,embedding]",
+    "vecinita[dev,scraping,docker,visualization,embedding]",
 ]
 
 [project.scripts]
@@ -243,7 +260,3 @@ ignore_missing_imports = true
 # See: uv.toml for detailed configuration
 
 [dependency-groups]
-dev = [
-    "pytest>=9.0.0",
-    "pytest-cov>=7.0.0",
-]

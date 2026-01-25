@@ -1,44 +1,64 @@
-# Backend Dockerfile (Vecinita FastAPI + Playwright Python)
+# Backend Dockerfile (Vecinita FastAPI Agent - ULTRA Memory Optimized for Render)
+# Calls separate embedding service for embeddings - ZERO local embedding models!
+# For scraping with Playwright, see Dockerfile.scraper
 
-# Use official Playwright Python image (includes browsers)
-FROM mcr.microsoft.com/playwright/python:v1.49.0-jammy
+# Build stage - install dependencies
+FROM python:3.11-slim-bookworm AS builder
 
-# Set the working directory in the container
 WORKDIR /app
 
-# Copy backend Python project manifest
-COPY pyproject.toml ./
-
-# Copy source code and supporting folders from backend context
-COPY src/ ./src/
-COPY scripts/ ./scripts/
-COPY tests/ ./tests/
-
-# Install system dependencies required for building packages
+# Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
 	build-essential \
-	graphviz \
-	graphviz-dev \
 	pkg-config && \
 	rm -rf /var/lib/apt/lists/*
+
+# Copy only what's needed for dependency installation
+COPY pyproject.toml ./
+
+# Install dependencies to /install (NO EMBEDDING MODELS!)
+# Embeddings handled by separate embedding service - saves ~50MB+ memory
+RUN pip install --no-cache-dir --upgrade pip && \
+	pip install --prefix=/install --no-cache-dir --retries 5 --default-timeout=1000 \
+	fastapi uvicorn \
+	langchain langchain-community langchain-core \
+	langchain-openai langchain-groq langchain-text-splitters \
+	langchain-huggingface langgraph \
+	supabase psycopg2-binary \
+	beautifulsoup4 pypdf \
+	python-dotenv pydantic requests httpx langdetect tqdm \
+	gotrue langchain-ollama langsmith ddgs
+
+# Runtime stage - minimal image
+FROM python:3.11-slim-bookworm AS runtime
+
+WORKDIR /app
+
+# Install only runtime dependencies (curl for healthcheck)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+	curl && \
+	rm -rf /var/lib/apt/lists/*
+
+# Copy installed packages from builder
+COPY --from=builder /install /usr/local
+
+# Copy application code
+COPY src/ ./src/
+COPY scripts/ ./scripts/
 
 # Python env flags
 ENV PYTHONUNBUFFERED=1
 ENV TF_ENABLE_ONEDNN_OPTS=0
+ENV PORT=10000
 
-# Upgrade pip and install package with embedding extra
-RUN pip install --no-cache-dir --upgrade pip && \
-	pip install --no-cache-dir --retries 5 --default-timeout=1000 ".[embedding]"
+# Expose the FastAPI port (uses PORT env var, default 10000 for Render)
+EXPOSE ${PORT}
 
-# Pre-cache embedding model to speed up first run (optional)
-# Align with default used in app (all-MiniLM-L6-v2)
-RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')" || true
-
-# Ensure Playwright browsers are installed
-RUN playwright install --with-deps
-
-# Expose the FastAPI port
-EXPOSE 8000
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=5 \
+	CMD curl -f http://localhost:${PORT:-8000}/health || exit 1
 
 # Start the FastAPI app via uvicorn (module path: src.agent.main:app)
-CMD ["uvicorn", "src.agent.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Use PORT env var (default 8000 for local dev, 10000 for Render)
+# Add graceful shutdown timeout to prevent hanging deploys
+CMD ["sh", "-c", "uvicorn src.agent.main:app --host 0.0.0.0 --port ${PORT:-8000} --timeout-graceful-shutdown 30"]

@@ -38,26 +38,29 @@ def _normalize_document(doc: Dict[str, Any]) -> Dict[str, Any]:
     )
     similarity = doc.get('similarity', 0.0)
     chunk_index = doc.get('chunk_index')
+    total_chunks = doc.get('total_chunks')
     metadata = doc.get('metadata', {})
 
     # Extract position info from metadata if available
+    # Always include these fields for consistent return type
     result = {
         'content': content,
         'source_url': source,
         'similarity': similarity,
+        'chunk_index': chunk_index,
+        'total_chunks': total_chunks,
+        'char_start': None,
+        'char_end': None,
+        'doc_index': None,
+        'metadata': metadata,  # Include full metadata for frontend use
     }
-    
-    if chunk_index is not None:
-        result['chunk_index'] = chunk_index
-    
+
+    # Populate position fields from metadata if available
     if isinstance(metadata, dict):
-        if 'char_start' in metadata:
-            result['char_start'] = metadata['char_start']
-        if 'char_end' in metadata:
-            result['char_end'] = metadata['char_end']
-        if 'doc_index' in metadata:
-            result['doc_index'] = metadata['doc_index']
-    
+        result['char_start'] = metadata.get('char_start')
+        result['char_end'] = metadata.get('char_end')
+        result['doc_index'] = metadata.get('doc_index')
+
     return result
 
 
@@ -68,6 +71,17 @@ def _format_db_error(e: Exception) -> str:
     connectivity problems, auth failures, and embedding dimension mismatches.
     """
     msg = str(e).lower()
+
+    # Function overloading conflict (PGRST203)
+    if (
+        "pgrst203" in msg or
+        "could not choose the best candidate function" in msg or
+        "function overloading" in msg
+    ):
+        return (
+            "RPC function overload conflict: Multiple versions of 'search_similar_documents' exist. "
+            "Run scripts/fix_rpc_overload.sql in Supabase SQL Editor to resolve."
+        )
 
     # RPC function missing
     if (
@@ -125,14 +139,15 @@ def db_search_tool(query: str) -> str:
         query: The user's question or search query
 
     Returns:
-        A JSON string containing a list of relevant documents with content and source URLs.
-        Each document contains 'content', 'source_url', and 'similarity' fields.
-        Returns an empty list JSON string if no relevant documents are found.
+        A JSON string containing a list of relevant documents. Parse the result
+        with json.loads() to get Python objects. Each document contains 'content',
+        'source_url', 'similarity', and position fields. Returns "[]" (empty JSON array)
+        if no relevant documents are found.
 
     Example:
         >>> results = db_search_tool("What community services are available?")
         >>> import json
-        >>> docs = json.loads(results)
+        >>> docs = json.loads(results)  # Parse JSON string to Python list
         >>> for doc in docs:
         ...     print(f"Source: {doc['source_url']}")
         ...     print(f"Content: {doc['content']}")
@@ -169,8 +184,9 @@ def create_db_search_tool(supabase_client, embedding_model, match_threshold: flo
             query: The user's question or search query
 
         Returns:
-            A JSON string containing a list of relevant documents with content and source URLs.
-            Returns "[]" if no relevant documents are found.
+            A JSON string containing a list of relevant documents. Parse the result
+            with json.loads() to get Python objects. Returns "[]" (empty JSON array)
+            if no relevant documents are found or on error.
         """
         try:
             logger.info(
@@ -178,9 +194,11 @@ def create_db_search_tool(supabase_client, embedding_model, match_threshold: flo
             question_embedding = embedding_model.embed_query(query)
             logger.info(
                 f"DB Search: Embedding generated. Dimension: {len(question_embedding)}")
+            logger.info(
+                f"DB Search: Embedding first 5 values: {question_embedding[:5]}")
 
             logger.info(
-                "DB Search: Searching for similar documents in Supabase...")
+                f"DB Search: Searching Supabase with threshold={match_threshold}, match_count={match_count}...")
             relevant_docs = supabase_client.rpc(
                 "search_similar_documents",
                 {
@@ -191,16 +209,29 @@ def create_db_search_tool(supabase_client, embedding_model, match_threshold: flo
             ).execute()
 
             logger.info(
+                f"DB Search: RPC call completed. Result type: {type(relevant_docs)}")
+            logger.info(
                 f"DB Search: Found {len(relevant_docs.data) if relevant_docs.data else 0} relevant documents")
+
+            if relevant_docs.data:
+                # Log similarity scores for debugging
+                similarities = [doc.get('similarity', 0)
+                                for doc in relevant_docs.data]
+                logger.info(f"DB Search: Similarity scores: {similarities}")
+                logger.info(
+                    f"DB Search: Min={min(similarities):.3f}, Max={max(similarities):.3f}, Avg={sum(similarities)/len(similarities):.3f}")
 
             if not relevant_docs.data:
                 # Return empty JSON array string when no relevant documents are found
+                logger.warning(
+                    f"DB Search: No documents found with threshold {match_threshold}. Consider lowering threshold.")
                 return "[]"
 
             # Normalize document format using helper function
             results = [_normalize_document(doc) for doc in relevant_docs.data]
 
             # Return JSON string for proper LLM serialization
+            logger.info(f"DB Search: Returning {len(results)} results as JSON")
             return json.dumps(results, ensure_ascii=False)
 
         except Exception as e:

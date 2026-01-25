@@ -72,9 +72,9 @@ def create_web_search_tool(search_depth: str = "advanced", max_results: int = 5)
     if not use_tavily:
         try:
             from langchain_community.tools import DuckDuckGoSearchResults
-            # Suppress noisy internal ddgs engine error logs (e.g., grokipedia DNS errors)
+            # Suppress noisy internal ddgs engine logs while preserving warnings and errors
             try:
-                logging.getLogger("ddgs.ddgs").setLevel(logging.ERROR)
+                logging.getLogger("ddgs.ddgs").setLevel(logging.WARNING)
             except Exception:
                 pass
             ddg = DuckDuckGoSearchResults(num_results=max_results)
@@ -104,10 +104,8 @@ def create_web_search_tool(search_depth: str = "advanced", max_results: int = 5)
                         "content": r.get("content") or r.get("answer") or "",
                         "url": r.get("url") or r.get("source") or "",
                     })
-                return json.dumps(normalized, ensure_ascii=False)
-
             # DuckDuckGo fallback
-            if ddg is not None:
+            elif ddg is not None:
                 logger.info(f"Web search (DuckDuckGo): {query}")
                 results = ddg.invoke(query)
                 if isinstance(results, list):
@@ -123,12 +121,24 @@ def create_web_search_tool(search_depth: str = "advanced", max_results: int = 5)
                         "content": results,
                         "url": "",
                     })
-                return json.dumps(normalized, ensure_ascii=False)
+                if normalized:
+                    return normalized
 
-            logger.error("No web search provider available")
-            return "[]"
+            # If we get here, no results were found or no provider is available.
+            # CRITICAL FIX: Return a message instead of an empty list so the LLM doesn't crash.
+            logger.warning(
+                "No web search provider available or no results found.")
+            return [{
+                "title": "System",
+                "content": "Web search is currently unavailable or returned no results. Please answer based on internal knowledge if possible.",
+                "url": ""
+            }]
+
         except Exception as e:
             logger.error(f"Web search error: {e}")
-            return "[]"
-
-    return web_search
+            # CRITICAL FIX: Return the error as content so the LLM knows what happened.
+            return [{
+                "title": "Error",
+                "content": f"Web search failed: {str(e)}",
+                "url": ""
+            }]

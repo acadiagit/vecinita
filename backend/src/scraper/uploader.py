@@ -15,11 +15,19 @@ try:
 except ImportError:
     SUPABASE_AVAILABLE = False
 
+# Import embedding service client (preferred)
 try:
-    from sentence_transformers import SentenceTransformer
-    LOCAL_EMBEDDINGS_AVAILABLE = True
+    from src.embedding_service.client import create_embedding_client
+    EMBEDDING_SERVICE_AVAILABLE = True
 except ImportError:
-    LOCAL_EMBEDDINGS_AVAILABLE = False
+    EMBEDDING_SERVICE_AVAILABLE = False
+
+# Import fallback embedding options
+try:
+    from langchain_community.embeddings import FastEmbedEmbeddings, HuggingFaceEmbeddings
+    FALLBACK_EMBEDDINGS_AVAILABLE = True
+except ImportError:
+    FALLBACK_EMBEDDINGS_AVAILABLE = False
 
 log = logging.getLogger('vecinita_pipeline.uploader')
 log.addHandler(logging.NullHandler())
@@ -45,7 +53,7 @@ class DatabaseUploader:
         Initialize database uploader.
 
         Args:
-            use_local_embeddings: If True, use local embeddings. If False, requires OpenAI API key.
+            use_local_embeddings: If True, use embedding service (or fallback). If False, requires OpenAI API key.
         """
         if not SUPABASE_AVAILABLE:
             raise ImportError(
@@ -53,21 +61,64 @@ class DatabaseUploader:
 
         self.use_local_embeddings = use_local_embeddings
         self.embedding_model = None
+        self.embedding_client_type = None
         self.supabase_client = None
 
-        # Initialize embeddings
+        # Initialize embeddings with fallback chain
         if use_local_embeddings:
-            if not LOCAL_EMBEDDINGS_AVAILABLE:
-                raise ImportError(
-                    "sentence-transformers not installed. Install with: pip install sentence-transformers")
-            log.info("Initializing local embedding model (all-MiniLM-L6-v2)...")
-            self.embedding_model = SentenceTransformer(
-                "sentence-transformers/all-MiniLM-L6-v2"
-            )
-            log.info("✓ Local embedding model loaded (384 dimensions)")
+            self._init_embeddings()
 
         # Initialize Supabase connection
         self._init_supabase()
+
+    def _init_embeddings(self) -> None:
+        """Initialize embedding model with fallback chain: Service → FastEmbed → HuggingFace."""
+        # Try embedding service first (lightweight, scalable)
+        embedding_service_url = os.getenv(
+            "EMBEDDING_SERVICE_URL", "http://embedding-service:8001")
+
+        if EMBEDDING_SERVICE_AVAILABLE:
+            try:
+                log.info(
+                    f"Initializing Embedding Service client ({embedding_service_url})...")
+                self.embedding_model = create_embedding_client(
+                    embedding_service_url)
+                self.embedding_client_type = "embedding_service"
+                log.info(
+                    f"✓ Embedding Service client initialized (384 dimensions)")
+                return
+            except Exception as e:
+                log.warning(f"Embedding Service initialization failed: {e}")
+
+        # Fallback to FastEmbed
+        if FALLBACK_EMBEDDINGS_AVAILABLE:
+            try:
+                log.info("Falling back to FastEmbed (local)...")
+                self.embedding_model = FastEmbedEmbeddings(
+                    model_name="fast-bge-small-en-v1.5")
+                self.embedding_client_type = "fastembed"
+                log.info("✓ FastEmbed initialized (384 dimensions)")
+                return
+            except Exception as e:
+                log.warning(f"FastEmbed initialization failed: {e}")
+
+        # Final fallback to HuggingFace
+        if FALLBACK_EMBEDDINGS_AVAILABLE:
+            try:
+                log.info("Falling back to HuggingFace (local)...")
+                self.embedding_model = HuggingFaceEmbeddings(
+                    model_name="sentence-transformers/all-MiniLM-L6-v2"
+                )
+                self.embedding_client_type = "huggingface"
+                log.info("✓ HuggingFace embeddings initialized (384 dimensions)")
+                return
+            except Exception as e:
+                log.error(f"HuggingFace initialization failed: {e}")
+
+        raise RuntimeError(
+            "Failed to initialize any embedding model. "
+            "Install dependencies: pip install langchain-community fastembed"
+        )
 
     def _init_supabase(self) -> None:
         """Initialize Supabase client."""
@@ -172,17 +223,26 @@ class DatabaseUploader:
             )
 
     def _generate_local_embeddings(self, texts: List[str]) -> List[List[float]]:
-        """Generate embeddings using local model."""
+        """Generate embeddings using embedding service or local fallback."""
         if not self.embedding_model:
             raise RuntimeError("Embedding model not initialized")
 
-        log.debug(f"Generating {len(texts)} embeddings with local model...")
-        embeddings = self.embedding_model.encode(
-            texts,
-            convert_to_numpy=False,
-            show_progress_bar=False
-        )
-        return [emb.tolist() if hasattr(emb, 'tolist') else emb for emb in embeddings]
+        log.debug(
+            f"Generating {len(texts)} embeddings with {self.embedding_client_type}...")
+
+        # Embedding service and LangChain models use embed_documents()
+        if self.embedding_client_type in ["embedding_service", "fastembed", "huggingface"]:
+            try:
+                embeddings = self.embedding_model.embed_documents(texts)
+                log.debug(f"✓ Generated {len(embeddings)} embeddings")
+                return embeddings
+            except Exception as e:
+                log.error(f"Embedding generation failed: {e}")
+                raise
+        else:
+            # Legacy path (should not be reached with new fallback chain)
+            raise RuntimeError(
+                f"Unsupported embedding client type: {self.embedding_client_type}")
 
     def _upload_batch(
         self,
@@ -257,6 +317,92 @@ class DatabaseUploader:
                 )
                 failed += 1
 
+        return successful, failed
+
+    def upload_links(
+        self,
+        links: List[str],
+        source_url: str,
+        loader_type: str = "Unknown"
+    ) -> Tuple[int, int]:
+        """
+        Upload extracted links as searchable chunks.
+
+        Links are stored in document_chunks with metadata marking them as extracted links.
+        This makes them discoverable through vector search.
+
+        Args:
+            links: List of URLs extracted from the source
+            source_url: The URL that was scraped
+            loader_type: Type of loader used to extract the links
+
+        Returns:
+            Tuple of (successful_uploads, failed_uploads)
+        """
+        if not links:
+            log.debug(f"No links to upload from {source_url}")
+            return 0, 0
+
+        if not self.supabase_client:
+            log.error("Supabase client not initialized")
+            return 0, len(links)
+
+        log.info(
+            f"--> Uploading {len(links)} extracted links from {source_url}...")
+
+        # Create link chunks - each link becomes a searchable chunk
+        records = []
+        for idx, link in enumerate(links, 1):
+            # Create content that's useful for search: "Link: <url>"
+            content = f"Link: {link}"
+
+            embedding = self._generate_local_embeddings([link])[0]
+
+            record = {
+                "content": content,
+                "source_url": source_url,  # Track where the link was found
+                "chunk_index": idx,
+                "total_chunks": len(links),
+                "embedding": embedding,
+                "metadata": {
+                    "link_target": link,
+                    "link_source": source_url,
+                    "loader_type": loader_type,
+                    "type": "extracted_link"  # Mark this as an extracted link
+                },
+                "scraped_at": datetime.utcnow().isoformat(),
+            }
+            records.append(record)
+
+        # Upload in batches
+        successful = 0
+        failed = 0
+        batch_size = 50
+
+        for i in range(0, len(records), batch_size):
+            batch = records[i:i + batch_size]
+
+            try:
+                response = self.supabase_client.table(
+                    "document_chunks").insert(batch).execute()
+                successful += len(batch)
+                log.debug(f"Batch of {len(batch)} links uploaded successfully")
+            except Exception as e:
+                log.warning(f"Batch upload of links failed: {e}")
+                # Try individual uploads
+                for record in batch:
+                    try:
+                        self.supabase_client.table(
+                            "document_chunks").insert([record]).execute()
+                        successful += 1
+                    except Exception as e2:
+                        log.warning(
+                            f"Failed to upload link {record['metadata']['link_target']}: {e2}"
+                        )
+                        failed += 1
+
+        log.info(
+            f"--> ✅ Links upload complete: {successful} successful, {failed} failed")
         return successful, failed
 
     def close(self) -> None:

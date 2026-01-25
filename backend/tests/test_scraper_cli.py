@@ -36,7 +36,7 @@ class TestScraperCLI:
                 '--output-file', output_file,
                 '--failed-log', failed_log
             ]):
-                with patch('src.scraper.scraper.VecinaScraper') as mock_scraper:
+                with patch('src.scraper.main.VecinaScraper') as mock_scraper:
                     mock_instance = Mock()
                     mock_instance.scrape_urls.return_value = (1, 0, 1)
                     mock_scraper.return_value = mock_instance
@@ -287,7 +287,7 @@ class TestScraperCLIURLParsing:
             failed_log = os.path.join(tmpdir, 'failed.txt')
 
             # Write file with explicit UTF-8 encoding containing only comments
-            with open(urls_file, 'w', encoding='utf-8', newline='') as f:
+            with open(urls_file, 'w', encoding='utf-8') as f:
                 f.write("# Only comments\n")
                 f.write("# No actual URLs\n")
 
@@ -302,3 +302,116 @@ class TestScraperCLIURLParsing:
 
                 # Should exit gracefully (code 0 for empty URL list after filtering comments)
                 assert exc_info.value.code == 0
+
+    def test_cli_handles_utf8_with_bom(self):
+        """Test CLI correctly reads UTF-8 files with BOM."""
+        from src.scraper.main import main
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            urls_file = os.path.join(tmpdir, 'urls_with_bom.txt')
+            output_file = os.path.join(tmpdir, 'output.txt')
+            failed_log = os.path.join(tmpdir, 'failed.txt')
+
+            # Write file with UTF-8 BOM encoding
+            with open(urls_file, 'w', encoding='utf-8-sig') as f:
+                f.write("https://example.com\n")
+                f.write("https://test.org\n")
+
+            with patch.object(sys, 'argv', [
+                'main.py',
+                '--input', urls_file,
+                '--output-file', output_file,
+                '--failed-log', failed_log
+            ]):
+                with patch('src.scraper.main.VecinaScraper') as mock_scraper:
+                    mock_instance = Mock()
+                    mock_instance.scrape_urls.return_value = (2, 2, 0)
+                    mock_instance.print_summary = Mock()
+                    mock_instance.finalize = Mock()
+                    mock_scraper.return_value = mock_instance
+
+                    main()
+
+                    # Verify URLs were parsed correctly despite BOM
+                    called_urls = mock_instance.scrape_urls.call_args[0][0]
+                    assert len(called_urls) == 2
+                    assert "https://example.com" in called_urls
+                    assert "https://test.org" in called_urls
+
+    def test_cli_handles_latin1_encoding(self):
+        """Test CLI falls back to latin-1 encoding when UTF-8 fails."""
+        from src.scraper.main import main
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            urls_file = os.path.join(tmpdir, 'urls_latin1.txt')
+            output_file = os.path.join(tmpdir, 'output.txt')
+            failed_log = os.path.join(tmpdir, 'failed.txt')
+
+            # Write file with latin-1 encoding (includes special characters)
+            # Using latin-1 specific character: é (0xe9 in latin-1)
+            content = "# Sitio con carácter especial\nhttps://example.com/página\n"
+            with open(urls_file, 'wb') as f:
+                f.write(content.encode('latin-1'))
+
+            with patch.object(sys, 'argv', [
+                'main.py',
+                '--input', urls_file,
+                '--output-file', output_file,
+                '--failed-log', failed_log
+            ]):
+                with patch('src.scraper.main.VecinaScraper') as mock_scraper:
+                    mock_instance = Mock()
+                    mock_instance.scrape_urls.return_value = (1, 1, 0)
+                    mock_instance.print_summary = Mock()
+                    mock_instance.finalize = Mock()
+                    mock_scraper.return_value = mock_instance
+
+                    main()
+
+                    # Verify URL was parsed correctly with latin-1 encoding
+                    called_urls = mock_instance.scrape_urls.call_args[0][0]
+                    assert len(called_urls) == 1
+                    assert "página" in called_urls[0]
+
+    def test_cli_encoding_fallback_order(self):
+        """Test CLI tries encodings in correct order: utf-8, utf-8-sig, latin-1."""
+        from src.scraper.main import main
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            urls_file = os.path.join(tmpdir, 'urls.txt')
+            output_file = os.path.join(tmpdir, 'output.txt')
+            failed_log = os.path.join(tmpdir, 'failed.txt')
+
+            # Create a file that's valid UTF-8
+            with open(urls_file, 'w', encoding='utf-8') as f:
+                f.write("https://example.com\n")
+
+            with patch.object(sys, 'argv', [
+                'main.py',
+                '--input', urls_file,
+                '--output-file', output_file,
+                '--failed-log', failed_log
+            ]):
+                with patch('src.scraper.main.VecinaScraper') as mock_scraper:
+                    mock_instance = Mock()
+                    mock_instance.scrape_urls.return_value = (1, 1, 0)
+                    mock_instance.print_summary = Mock()
+                    mock_instance.finalize = Mock()
+                    mock_scraper.return_value = mock_instance
+
+                    # Patch open to track encoding attempts
+                    original_open = open
+                    encoding_attempts = []
+
+                    def tracking_open(*args, **kwargs):
+                        if 'encoding' in kwargs:
+                            encoding_attempts.append(kwargs['encoding'])
+                        return original_open(*args, **kwargs)
+
+                    with patch('builtins.open', side_effect=tracking_open):
+                        main()
+
+                    # Verify utf-8 was tried first (and succeeded)
+                    assert 'utf-8' in encoding_attempts
+                    # Since UTF-8 succeeds, we shouldn't need to try other encodings
+                    assert encoding_attempts[0] == 'utf-8'
