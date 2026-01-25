@@ -1,96 +1,321 @@
-# Quick Start Guide - LangGraph Agent
+# 🚀 Quick Start Guide - Vecinita Full Stack
 
-## Status: ✅ COMPLETE - All 40 Tests Passing
-
----
-
-## Quick Summary
-
-**What:** Refactored Vecinita from LangChain to LangGraph with 3 tools  
-**Tests:** 40/40 passing (0.93s)  
-**Tools:** db_search, static_response, web_search  
-**Languages:** English, Spanish  
-**Status:** Production Ready  
+Bilingual Q&A assistant with LangGraph agent, web scraper, and React frontend.  
+**Status:** ✅ Production Ready | 108+ Backend Tests Passing
 
 ---
 
-## One-Minute Start
+## 2-Minute Start (Local Full Stack)
 
 ```bash
-# 1. Set environment variables
+# 1. Clone and navigate
+git clone https://github.com/acadiagit/vecinita.git
+cd vecinita
+
+# 2. Use local development environment
+cp .env.local .env
+
+# 3. Start all 6 services (database, API, embedding, agent, frontend)
+docker-compose up
+
+# Services will be available at:
+# Frontend:           http://localhost:5173
+# Agent API:          http://localhost:8000
+# Embedding Service:  http://localhost:8001
+# PostgREST API:      http://localhost:3001
+# pgAdmin:            http://localhost:5050 (admin@example.com/admin)
+# PostgreSQL:         localhost:5432
+```
+
+**What this starts:**
+- ✅ PostgreSQL database (port 5432)
+- ✅ PostgREST REST API (port 3001)
+- ✅ Embedding Service - text embeddings (port 8001)
+- ✅ Agent Service - LangGraph Q&A (port 8000)
+- ✅ Frontend - React/Vite UI (port 5173)
+- ✅ pgAdmin - database management UI (port 5050)
+
+---
+
+## Local Development
+
+### Backend (Python + FastAPI + LangGraph)
+
+```bash
+cd backend
+
+# Install dependencies
+uv sync
+
+# Set environment variables
 export SUPABASE_URL="https://xxxxx.supabase.co"
 export SUPABASE_KEY="your-key"
 export GROQ_API_KEY="your-key"
-export TAVILY_API_KEY="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"  # optional
+export TAVILY_API_KEY="your-key"  # optional
 
-# 2. Start the server
+# Run the agent server
 uv run -m uvicorn src.agent.main:app --reload
 
-# 3. Ask a question
+# Test a question
 curl "http://localhost:8000/ask?question=What%20is%20Vecinita?"
+
+# Run tests (108 tests)
+uv run pytest
+```
+
+### Frontend (React + Vite)
+
+```bash
+cd frontend
+
+# Install dependencies
+npm install
+
+# Run dev server
+npm run dev
+# Frontend runs on http://localhost:5173
+
+# Run unit tests
+npm run test
+
+# Run E2E tests (requires backend running)
+npm run test:e2e
 ```
 
 ---
 
 ## Test Results
 
+### Backend Tests (108 passing)
+
 ```
-✅ db_search_tool:        8/8 PASSED  (Vector search)
-✅ web_search_tool:      12/12 PASSED (Tavily + DuckDuckGo)
-✅ static_response_tool: 20/20 PASSED (FAQ lookup)
+✅ Agent Tests:         6/6 PASSED   (LangGraph integration)
+✅ db_search_tool:      8/8 PASSED   (Vector search)
+✅ web_search_tool:    12/12 PASSED  (Tavily + DuckDuckGo)
+✅ static_response:    20/20 PASSED  (FAQ lookup)
+✅ Scraper Tests:      62/62 PASSED  (Pipeline, loaders, CLI)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✅ TOTAL:                40/40 PASSED
+✅ TOTAL:             108/108 PASSED
 ```
 
-Run tests:
+Run backend tests:
+
 ```bash
-uv run pytest tests/test_db_search_tool.py tests/test_web_search_tool.py tests/test_static_response_tool.py -v
+cd backend
+uv run pytest                    # All tests
+uv run pytest -v                 # Verbose
+uv run pytest --cov              # With coverage
+```
+
+### Frontend Tests
+
+```bash
+cd frontend
+npm run test                     # Unit tests (Vitest)
+npm run test:coverage            # Coverage report
+npm run test:e2e                 # E2E tests (Playwright)
 ```
 
 ---
 
-## Tool Features
+## Project Structure
+
+```
+vecinita/
+├── backend/                      # Python backend
+│   ├── src/
+│   │   ├── agent/               # LangGraph agent & FastAPI
+│   │   │   ├── main.py          # Main application
+│   │   │   └── tools/           # Agent tools
+│   │   │       ├── db_search.py          # Vector DB search
+│   │   │       ├── static_response.py    # FAQ lookup
+│   │   │       └── web_search.py         # Web search
+│   │   ├── scraper/             # Web scraping pipeline
+│   │   │   ├── main.py          # CLI entry
+│   │   │   ├── scraper.py       # Core scraper
+│   │   │   ├── loaders.py       # Content loaders
+│   │   │   ├── processors.py    # Document processing
+│   │   │   └── uploader.py      # Supabase upload
+│   │   └── cli/                 # CLI utilities
+│   ├── scripts/                 # Automation scripts
+│   │   └── data_scrape_load.sh  # Pipeline orchestrator
+│   └── tests/                   # 108 backend tests
+│
+├── frontend/                     # React frontend
+│   ├── src/
+│   │   ├── App.jsx              # Main app
+│   │   └── components/
+│   │       ├── chat/            # Chat components
+│   │       │   ├── ChatWidget.jsx
+│   │       │   ├── MessageBubble.jsx
+│   │       │   └── LinkCard.jsx
+│   │       └── ui/              # shadcn-style components
+│   └── tests/                   # Unit + E2E tests
+│
+├── data/                         # Data files
+│   ├── urls.txt                 # URLs to scrape
+│   └── config/                  # Scraper config
+│
+└── docs/                         # Documentation
+    ├── FINAL_STATUS_REPORT.md
+    ├── LANGGRAPH_REFACTOR_SUMMARY.md
+    └── TEST_COVERAGE_SUMMARY.md
+```
+
+---
+
+## Agent Tools
 
 ### db_search_tool
-- Vector similarity search on Supabase documents
-- HuggingFace embeddings (sentence-transformers)
-- Configurable threshold: 0.3 (default)
-- Returns top 5 most similar documents
+
+- **Function**: Vector similarity search on Supabase documents
+- **Embeddings**: HuggingFace sentence-transformers/all-MiniLM-L6-v2
+- **Threshold**: 0.3 (configurable)
+- **Returns**: Top 5 most similar documents with metadata
+- **Location**: `backend/src/agent/tools/db_search.py`
 
 ### static_response_tool
-- Bilingual FAQ lookup (English/Spanish)
-- Case-insensitive matching
-- Partial query matching
-- 10+ FAQs per language
-- Fallback to English if Spanish not found
+
+- **Function**: Bilingual FAQ lookup (English/Spanish)
+- **Features**: Case-insensitive, partial matching, language fallback
+- **Database**: 10+ FAQs per language
+- **Location**: `backend/src/agent/tools/static_response.py`
+- **Performance**: ~5ms response time
 
 ### web_search_tool
-- **Primary:** Tavily (advanced search, answer extraction)
-- **Fallback:** DuckDuckGo (free, no API key)
-- Detects API key from 3 env var names
-- Automatic provider switching
-- Result normalization
+
+- **Primary**: Tavily API (advanced search with answer extraction)
+- **Fallback**: DuckDuckGo (free, no API key required)
+- **Features**: Auto provider switching, result normalization
+- **Location**: `backend/src/agent/tools/web_search.py`
+- **Config**: Supports 3 env var names for Tavily key
+
+---
+
+## Web Scraper Pipeline
+
+The backend includes a powerful web scraping pipeline:
+
+### Features
+
+- **Multi-loader support**: Unstructured, Playwright, Recursive
+- **Smart fallback**: Tries standard loaders first, falls back to Playwright for JS-heavy sites
+- **Configurable chunking**: RecursiveCharacterTextSplitter (default: 1000 chars, 200 overlap)
+- **Rate limiting**: 2-second delays between requests (configurable)
+- **Streaming mode**: Upload chunks immediately to reduce memory usage
+- **Link extraction**: Tracks outbound links for recursive crawling
+
+### Running the Scraper
+
+```bash
+cd backend
+
+# Basic usage
+uv run python -m src.scraper.main \
+  --input data/urls.txt \
+  --output-file data/chunks.txt \
+  --failed-log data/failed.txt
+
+# With streaming mode (uploads immediately)
+uv run python -m src.scraper.main \
+  --input data/urls.txt \
+  --output-file data/chunks.txt \
+  --failed-log data/failed.txt \
+  --stream
+
+# Force specific loader
+uv run python -m src.scraper.main \
+  --input data/urls.txt \
+  --output-file data/chunks.txt \
+  --failed-log data/failed.txt \
+  --loader playwright
+
+# Full pipeline (clean database + scrape + load)
+bash scripts/data_scrape_load.sh --clean
+```
+
+### Scraper Configuration
+
+Files in `data/config/`:
+
+- **recursive_sites.txt**: Format `<url> <depth>` for crawling (e.g., `https://example.com 2`)
+- **playwright_sites.txt**: Domains requiring Playwright (JS-heavy content)
+- **skip_sites.txt**: Domains to skip entirely
+
+---
+
+## Frontend Features
+
+The React frontend provides a modern chat interface:
+
+### Key Features
+
+- **Responsive Design**: Mobile-first with Tailwind CSS
+- **Font Scaling**: User-adjustable text size (slider in settings)
+- **Language Support**: Auto-detection + manual toggle (EN/ES)
+- **Markdown Rendering**: Rich text with react-markdown + remark-gfm
+- **Source Attribution**: Clickable source links with visual cards
+- **Accessibility**: ARIA labels, keyboard navigation, focus management
+- **Dark Mode Ready**: CSS variable-based theming
+
+### Components
+
+- **ChatWidget**: Main chat interface with message history
+- **MessageBubble**: Renders user/assistant messages with markdown
+- **LinkCard**: Displays source links with hover effects
+- **UI Components**: shadcn/ui-style button, card, dialog, input, slider
+
+### Running Frontend Tests
+
+```bash
+cd frontend
+
+# Unit tests (Vitest)
+npm run test
+npm run test:coverage
+
+# E2E tests (Playwright)
+npm run test:e2e
+
+# Watch mode
+npm run test -- --watch
+```
 
 ---
 
 ## API Usage
 
-### Question with Auto Language Detection
+### Backend Endpoints
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| GET | `/` | Web UI (legacy static HTML) |
+| GET | `/ask` | Ask a question with auto language detection |
+| GET | `/docs` | Interactive API documentation (Swagger) |
+| GET | `/health` | Health check endpoint |
+
+### Example Requests
+
+#### Simple Question
+
 ```bash
 curl "http://localhost:8000/ask?question=What%20is%20Vecinita?"
 ```
 
-### Question with Conversation History
+#### With Conversation History
+
 ```bash
 curl "http://localhost:8000/ask?question=How%20can%20I%20help%3F&thread_id=user-123"
 ```
 
-### Force Language
+#### Force Language
+
 ```bash
 curl "http://localhost:8000/ask?question=Hola&language=es"
 ```
 
-### Response Format
+#### Response Format
+
 ```json
 {
   "question": "What is Vecinita?",
@@ -99,6 +324,18 @@ curl "http://localhost:8000/ask?question=Hola&language=es"
   "thread_id": "user-123",
   "language": "en"
 }
+```
+
+### Frontend Integration
+
+The React frontend communicates with the backend API:
+
+```javascript
+// Example: Sending a question
+const response = await fetch(
+  `${BACKEND_URL}/ask?question=${encodeURIComponent(question)}&thread_id=${threadId}`
+);
+const data = await response.json();
 ```
 
 ---
@@ -156,39 +393,73 @@ docs/
 ## Configuration
 
 ### Required Environment Variables
+
 ```bash
+# Supabase (vector database)
 SUPABASE_URL=https://<project>.supabase.co
-SUPABASE_KEY=<anon-key>
+SUPABASE_KEY=<anon-or-service-key>
+
+# LLM (Groq)
 GROQ_API_KEY=<your-groq-key>
 ```
 
-### Optional
+### Optional Environment Variables
+
 ```bash
-# One of these for web search (or defaults to DuckDuckGo)
-TAVILY_API_KEY=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
+# Web search (Tavily - falls back to DuckDuckGo if not set)
+TAVILY_API_KEY=<your-tavily-key>
+# Alternative env var names also supported:
 TAVILY_API_AI_KEY=<alternative>
 TVLY_API_KEY=<shorthand>
+
+# Frontend backend URL (defaults to http://localhost:8000)
+VITE_BACKEND_URL=http://localhost:8000
 ```
 
-### Tool Configuration (in code)
-```python
-# db_search_tool (src/agent/tools/db_search.py)
-match_threshold = 0.3    # Similarity threshold (0-1)
-match_count = 5          # Number of results
+### Docker Compose Environment
 
-# web_search_tool (src/agent/tools/web_search.py)
+Create a `.env` file in the project root:
+
+```bash
+SUPABASE_URL=https://xxxxx.supabase.co
+SUPABASE_KEY=your-key
+GROQ_API_KEY=your-key
+TAVILY_API_KEY=your-key
+VITE_BACKEND_URL=http://backend:8000
+```
+
+### Tool Configuration (Code Level)
+
+**db_search_tool** (`backend/src/agent/tools/db_search.py`):
+
+```python
+match_threshold = 0.3    # Similarity threshold (0-1)
+match_count = 5          # Number of results to return
+```
+
+**web_search_tool** (`backend/src/agent/tools/web_search.py`):
+
+```python
 max_results = 5          # Results per search
 search_depth = "advanced"  # Tavily only
+```
 
-# static_response_tool (src/agent/tools/static_response.py)
-# FAQ_DATABASE["en"] and FAQ_DATABASE["es"]
+**scraper** (`backend/src/scraper/config.py`):
+
+```python
+CHUNK_SIZE = 1000        # Character chunk size
+CHUNK_OVERLAP = 200      # Overlap between chunks
+RATE_LIMIT_DELAY = 2     # Seconds between requests
 ```
 
 ---
 
 ## Component Status at Startup
 
-When you start the server, you should see:
+### Backend Startup
+
+When you start the backend server, you should see:
+
 ```
 ✅ Supabase client initialized successfully
 ✅ ChatGroq LLM initialized successfully
@@ -196,139 +467,327 @@ When you start the server, you should see:
 ✅ Initialized 3 tools: ['db_search', 'static_response_tool', 'web_search']
 ✅ LangGraph workflow compiled successfully
 ✅ Application startup complete
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+```
+
+### Frontend Startup
+
+```
+  VITE v5.0.0  ready in 423 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+  ➜  press h + enter to show help
+```
+
+### Docker Compose Startup
+
+```
+✅ backend-1   | Application startup complete
+✅ frontend-1  | VITE ready in 423 ms
+✅ All services running
 ```
 
 ---
 
 ## Performance
 
-| Scenario | Time | Provider |
-|----------|------|----------|
+| Scenario | Time | Component |
+|----------|------|-----------|
 | FAQ match | ~5ms | static_response_tool |
 | Database search | ~250ms | db_search_tool |
 | Web search (Tavily) | ~2s | web_search_tool |
 | Web search (DDG) | ~1s | web_search_tool |
-| Full response | 3-6s | All tools + LLM |
+| Full agent response | 3-6s | All tools + LLM |
+| Frontend render | <100ms | React components |
+| Scraper (per URL) | 2-10s | Depends on content size |
 
 ---
 
 ## Troubleshooting
 
-### Server won't start
+### Backend Issues
+
+#### Server won't start
+
 ```bash
 # Check Python version
 python --version  # Should be 3.10+
 
 # Reinstall dependencies
+cd backend
 uv sync
+
+# Check environment variables
+echo $SUPABASE_URL
+echo $GROQ_API_KEY
 ```
 
-### Tavily not working
+#### Tavily not working
+
 ```bash
 # Check API key
 echo $TAVILY_API_KEY
 
-# Falls back to DuckDuckGo automatically
-# To install DDG (optional):
-pip install ddgs
+# Note: Falls back to DuckDuckGo automatically
+# To explicitly use DuckDuckGo, unset the env var:
+unset TAVILY_API_KEY
 ```
 
-### Tests failing
+#### Tests failing
+
 ```bash
+cd backend
+
 # Run with verbose output
+uv run pytest -vv
+
+# Run specific test file
 uv run pytest tests/test_db_search_tool.py -vv
 
 # Check for missing imports
 uv sync
 ```
 
-### Vector search returning nothing
-```bash
-# Check Supabase RPC function exists
-# Check embedding model loaded correctly
-# Lower similarity threshold in db_search.py
+#### Vector search returning nothing
 
-match_threshold = 0.2  # More lenient
+```bash
+# Check Supabase connection
+# Check embedding model loaded correctly
+# Lower similarity threshold in backend/src/agent/tools/db_search.py
+
+match_threshold = 0.2  # More lenient (default: 0.3)
 ```
 
----
+### Frontend Issues
 
-## API Endpoints
+#### Frontend won't start
 
-| Method | Path | Purpose |
-|--------|------|---------|
-| GET | `/` | Web UI |
-| GET | `/ask` | Ask a question |
-| GET | `/docs` | Interactive API docs |
-| GET | `/health` | Health check |
+```bash
+cd frontend
+
+# Reinstall dependencies
+rm -rf node_modules package-lock.json
+npm install
+
+# Check Node version
+node --version  # Should be 16+
+```
+
+#### Frontend can't reach backend
+
+```bash
+# Check backend is running
+curl http://localhost:8000/health
+
+# Set backend URL
+export VITE_BACKEND_URL=http://localhost:8000
+
+# For Docker Compose
+export VITE_BACKEND_URL=http://backend:8000
+```
+
+#### E2E tests failing
+
+```bash
+# Install Playwright browsers
+npx playwright install
+
+# Run with UI
+npm run test:e2e -- --ui
+
+# Check backend is running
+curl http://localhost:8000/health
+```
+
+### Scraper Issues
+
+#### Scraper fails on all URLs
+
+```bash
+# Check internet connection
+# Check rate limiting (reduce RATE_LIMIT_DELAY if needed)
+# Try with Playwright loader
+uv run python -m src.scraper.main --input data/urls.txt --output-file data/chunks.txt --failed-log data/failed.txt --loader playwright
+```
+
+#### Out of memory during scraping
+
+```bash
+# Use streaming mode
+uv run python -m src.scraper.main --input data/urls.txt --output-file data/chunks.txt --failed-log data/failed.txt --stream
+
+# Or reduce chunk size in backend/src/scraper/config.py
+CHUNK_SIZE = 500  # Smaller chunks
+```
 
 ---
 
 ## Testing
 
-### Run all 40 tests
-```bash
-uv run pytest tests/ -v
-```
+### Backend Tests (108 passing)
 
-### Run specific test file
 ```bash
+cd backend
+
+# Run all tests
+uv run pytest
+
+# Run with verbose output
+uv run pytest -v
+
+# Run specific test file
+uv run pytest tests/test_agent_langgraph.py -v
 uv run pytest tests/test_db_search_tool.py -v
-uv run pytest tests/test_web_search_tool.py -v
-uv run pytest tests/test_static_response_tool.py -v
+uv run pytest tests/test_scraper_module.py -v
+
+# Run with coverage
+uv run pytest --cov=src --cov-report=html
+# Open htmlcov/index.html
+
+# Run tests by category
+uv run pytest tests/test_agent*.py      # Agent tests
+uv run pytest tests/test_*_tool.py      # Tool tests
+uv run pytest tests/test_scraper*.py    # Scraper tests
 ```
 
-### With coverage report
+Test breakdown:
+
+- **Agent**: 6 tests (LangGraph integration, endpoints, conversation history)
+- **Tools**: 40 tests (db_search: 8, web_search: 12, static_response: 20)
+- **Scraper**: 62 tests (module: 17, advanced: 15, CLI: 13, enhancements: 17)
+
+### Frontend Tests
+
 ```bash
-uv run pytest --cov=src/agent/tools --cov-report=html
-open htmlcov/index.html
+cd frontend
+
+# Unit tests (Vitest)
+npm run test
+npm run test:coverage
+
+# E2E tests (Playwright) - requires backend running
+npm run test:e2e
+
+# Watch mode for development
+npm run test -- --watch
+
+# Run specific test file
+npm run test src/components/chat/ChatWidget.test.jsx
 ```
 
 ---
 
-## Documentation Files
+## Documentation
 
-1. **FINAL_STATUS_REPORT.md** - Complete project status
-2. **TEST_COVERAGE_SUMMARY.md** - Detailed test breakdown
-3. **LANGGRAPH_REFACTOR_SUMMARY.md** - Architecture deep dive
-4. **LANGGRAPH_IMPLEMENTATION_COMPLETE.md** - Implementation guide
+### Quick References
+
+- **[README.md](README.md)** - Project overview and setup
+- **This file (QUICKSTART.md)** - Fast getting started guide
+
+### Detailed Documentation
+
+- **[docs/FINAL_STATUS_REPORT.md](docs/FINAL_STATUS_REPORT.md)** - Complete project status
+- **[docs/LANGGRAPH_REFACTOR_SUMMARY.md](docs/LANGGRAPH_REFACTOR_SUMMARY.md)** - Architecture deep dive
+- **[docs/TEST_COVERAGE_SUMMARY.md](docs/TEST_COVERAGE_SUMMARY.md)** - Testing strategy
+
+### Component Documentation
+
+- **[backend/README.md](backend/README.md)** - Backend architecture and API
+- **[frontend/README.md](frontend/README.md)** - Frontend setup and components
+- **[backend/tests/README.md](backend/tests/README.md)** - Testing documentation
+- **[frontend/tests/e2e/README.md](frontend/tests/e2e/README.md)** - E2E test guide
+
+---
+
+## Technology Stack
+
+### Backend
+
+- **Framework**: FastAPI
+- **Agent**: LangGraph (LangChain ecosystem)
+- **LLM**: Groq (Llama 3.1 8B)
+- **Embeddings**: HuggingFace sentence-transformers/all-MiniLM-L6-v2
+- **Database**: Supabase (PostgreSQL + pgvector)
+- **Web Scraping**: Playwright, Unstructured, RecursiveUrlLoader
+- **Testing**: pytest (108 tests)
+- **Package Manager**: uv
+
+### Frontend
+
+- **Framework**: React 18
+- **Build Tool**: Vite
+- **Styling**: Tailwind CSS + PostCSS
+- **UI Components**: shadcn/ui (built on Radix UI)
+- **Markdown**: react-markdown + remark-gfm
+- **Icons**: lucide-react
+- **Testing**: Vitest (unit) + Playwright (E2E)
+- **Package Manager**: npm
+
+### DevOps
+
+- **Containerization**: Docker + Docker Compose
+- **CI/CD**: GitHub Actions (test.yml)
+- **Code Coverage**: Codecov
+- **Platforms**: Windows, Ubuntu
 
 ---
 
 ## Key Facts
 
-✅ **40/40 tests passing**  
-✅ **3 production tools implemented**  
-✅ **Bilingual (EN/ES) support**  
-✅ **Multi-turn conversations**  
-✅ **Graceful error handling**  
-✅ **Zero external dependencies for tests**  
-✅ **Mock-friendly architecture**  
-✅ **Type hints throughout**  
-✅ **Comprehensive logging**  
-✅ **Ready to deploy**  
+✅ **108/108 backend tests passing**  
+✅ **Frontend unit + E2E tests passing**  
+✅ **3 production tools implemented** (db_search, static_response, web_search)  
+✅ **Bilingual (EN/ES) support** with auto-detection  
+✅ **Multi-turn conversations** with thread IDs  
+✅ **Powerful web scraper** with multi-loader support  
+✅ **Modern React frontend** with Tailwind + shadcn/ui  
+✅ **Graceful error handling** and fallbacks  
+✅ **Mock-friendly architecture** for testing  
+✅ **Type hints throughout** backend code  
+✅ **Comprehensive logging** for debugging  
+✅ **Docker Compose** for easy deployment  
+✅ **Ready to deploy** to production  
 
 ---
 
 ## Next Steps
 
-1. ✅ Review [FINAL_STATUS_REPORT.md](FINAL_STATUS_REPORT.md)
-2. ✅ Run tests: `uv run pytest tests/ -v`
-3. ✅ Start server: `uv run -m uvicorn src.agent.main:app --reload`
-4. ✅ Test API: `curl "http://localhost:8000/ask?question=Hello"`
-5. ✅ Review [LANGGRAPH_REFACTOR_SUMMARY.md](LANGGRAPH_REFACTOR_SUMMARY.md) for architecture
+### For New Users
+
+1. ✅ Read [README.md](README.md) for project overview
+2. ✅ Run `docker-compose up` to start everything
+3. ✅ Access frontend at <http://localhost:3000>
+4. ✅ Test the API at <http://localhost:8000/docs>
+
+### For Developers
+
+1. ✅ Review [docs/LANGGRAPH_REFACTOR_SUMMARY.md](docs/LANGGRAPH_REFACTOR_SUMMARY.md) for architecture
+2. ✅ Run backend tests: `cd backend && uv run pytest`
+3. ✅ Run frontend tests: `cd frontend && npm run test`
+4. ✅ Explore the codebase with inline comments and docstrings
+
+### For Data Operations
+
+1. ✅ Add URLs to `data/urls.txt`
+2. ✅ Configure scraper in `data/config/`
+3. ✅ Run scraper: `cd backend && bash scripts/data_scrape_load.sh`
+4. ✅ Monitor logs for failed URLs and retry with Playwright
 
 ---
 
 ## Questions?
 
-- **Architecture:** See [LANGGRAPH_REFACTOR_SUMMARY.md](LANGGRAPH_REFACTOR_SUMMARY.md)
-- **Tests:** See [TEST_COVERAGE_SUMMARY.md](TEST_COVERAGE_SUMMARY.md)
-- **Status:** See [FINAL_STATUS_REPORT.md](FINAL_STATUS_REPORT.md)
-- **Code:** Inline comments and docstrings throughout
+- **Architecture**: See [docs/LANGGRAPH_REFACTOR_SUMMARY.md](docs/LANGGRAPH_REFACTOR_SUMMARY.md)
+- **Tests**: See [docs/TEST_COVERAGE_SUMMARY.md](docs/TEST_COVERAGE_SUMMARY.md)
+- **Status**: See [docs/FINAL_STATUS_REPORT.md](docs/FINAL_STATUS_REPORT.md)
+- **Backend**: See [backend/README.md](backend/README.md)
+- **Frontend**: See [frontend/README.md](frontend/README.md)
+- **Issues**: Check [GitHub Issues](https://github.com/acadiagit/vecinita/issues)
 
 ---
 
 **Status:** ✅ Production Ready  
-**Last Updated:** 2025-12-27  
-**Test Coverage:** 100% (40/40 passing)
+**Last Updated:** December 31, 2025  
+**Backend Test Coverage:** 108/108 passing  
+**Frontend Tests:** Passing (unit + E2E)

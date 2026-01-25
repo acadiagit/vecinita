@@ -6,7 +6,8 @@
 .env.production.local
 *.env
 env.txt
-
+.env.production
+.env.prod
 # Python
 __pycache__/
 *.py[cod]
@@ -19,8 +20,8 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
+backend/lib/
+backend/lib64/
 parts/
 sdist/
 var/
@@ -28,7 +29,10 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-
+*.bck
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
 # Virtual Environments
 venv/
 ENV/
@@ -115,4 +119,13 @@ frontend/playwright-report/
 
 # Testing artifacts
 test-results/
+
+# Archived and temporary files
+data/archive/
+data/*.txt
+!data/urls.txt
+!data/README.md
+docs/archive/
+backend/data/output/
 .last-run.json
+*.pdf
