@@ -106,6 +106,7 @@ utils/old_vector_loader
 
 # Ignore other project-specific files
 .venv*
+<<<<<<< HEAD
 
 # Frontend (Vite/Node)
 # Ignore Node.js dependencies and build outputs
@@ -128,4 +129,6 @@ data/*.txt
 docs/archive/
 backend/data/output/
 .last-run.json
+=======
+>>>>>>> origin/main
 *.pdf
