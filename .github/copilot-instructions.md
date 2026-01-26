@@ -5,21 +5,25 @@ Vecinita is a **RAG (Retrieval-Augmented Generation) Q&A Assistant** using LangC
 ## Architecture Overview
 
 ### Data Flow
-1. **Web Scraping** ([src/utils/scraper_to_text.py](src/utils/scraper_to_text.py)): Downloads content from configured URLs using multiple loaders (PyPDF, Unstructured, Playwright for JS-heavy sites)
-2. **Vector Storage** ([src/utils/vector_loader.py](src/utils/vector_loader.py)): Chunks content, generates embeddings (HuggingFace local), stores in Supabase with source attribution
-3. **Q&A Engine** ([src/main.py](src/main.py)): FastAPI app detects query language, retrieves similar docs via vector search, prompts LLM with source context, returns answers with citations
+1. **Web Scraping** ([backend/src/scraper/](backend/src/scraper/)): Downloads content from configured URLs using multiple loaders (PyPDF, Unstructured, Playwright for JS-heavy sites)
+2. **Vector Storage** ([backend/src/utils/](backend/src/utils/)): Chunks content, generates embeddings (HuggingFace local), stores in Supabase with source attribution
+3. **Q&A Engine** ([backend/src/agent/main.py](backend/src/agent/main.py)): FastAPI app detects query language, retrieves similar docs via vector search, prompts LLM with source context, returns answers with citations
 
 ### Key Components
-- **FastAPI Server** (src/main.py): Two main endpoints—`GET /` (UI), `GET /ask` (Q&A logic)
+- **FastAPI Server** ([backend/src/agent/main.py](backend/src/agent/main.py)): Main endpoints—`GET /config`, `GET /ask`, `GET /ask-stream` (streaming Q&A)
+- **Agent Tools** ([backend/src/agent/tools/](backend/src/agent/tools/)):
+  - `db_search_tool` - Vector similarity search on Supabase documents
+  - `static_response_tool` - Bilingual FAQ lookup (EN/ES)
+  - `web_search_tool` - Tavily API + DuckDuckGo fallback
+- **Embedding Service** ([backend/src/embedding_service/](backend/src/embedding_service/)): Separate FastAPI service on port 8001
+- **Frontend** ([frontend/src/](frontend/src/)): React + Vite UI with Tailwind CSS
 - **Supabase PostgreSQL**: Stores document chunks with embeddings; RPC function `search_similar_documents` performs vector similarity search
 - **LLM**: Groq's Llama 3.1 8B (configured via `GROQ_API_KEY`)
-- **Embeddings**: HuggingFace `sentence-transformers/all-MiniLM-L6-v2` (local, fast)
-- **Web UI**: [src/static/index.html](src/static/index.html)—simple form-based interface
 
 ## Data Pipeline & Configuration
 
 ### Orchestration Script
-[scripts/data_scrape_load.sh](scripts/data_scrape_load.sh) automates the full pipeline:
+[backend/scripts/data_scrape_load.sh](backend/scripts/data_scrape_load.sh) automates the full pipeline:
 - Accepts `--clean` flag to truncate database (additive mode is default)
 - Runs scraper in two passes: standard loaders first, then Playwright for failures
 - Loads chunks into Supabase with deduplication via `unique_content_source` constraint
@@ -42,24 +46,72 @@ This project uses **uv** for fast, reliable dependency management and script exe
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-### Running Locally
+### Local Development (Recommended)
+
+**Backend** (FastAPI + LangGraph Agent):
 ```bash
-# Recommended: Sync dependencies and run with uv
+cd backend
 uv sync
 uv run -m uvicorn src.agent.main:app --reload
-
-# Alternative: Direct uvicorn (ensure dependencies installed)
-cd src && uvicorn main:app --reload
 ```
+Runs on `http://localhost:8000` with auto-reload on code changes.
 
-### Docker Development
+**Frontend** (React + Vite):
 ```bash
-docker-compose up      # Run with services
-docker-compose up -d   # Background
-docker-compose down    # Stop & remove containers
+cd frontend
+npm install
+npm run dev
 ```
+Runs on `http://localhost:5173` (or next available port) with HMR.
+
+### Full System Testing (Docker Compose)
+
+For complete end-to-end testing with all services (database, embedding service, etc.):
+```bash
+docker-compose up --build      # Run with services
+docker-compose up -d           # Background
+docker-compose down            # Stop & remove containers
+```
+
+**Use Docker Compose for:**
+- Testing complete data pipeline (scraper → database → search)
+- Verifying multi-service integration
+- Pre-production environment testing
+- CI/CD pipeline validation
+
+**Use local development (`uv`/`npm`) for:**
+- Feature development with fast feedback loops
+- Debugging specific tools or components
+- Unit and integration tests
+- Quick iterations on frontend UI
 
 ### Testing
+
+**For local development tests** (fast, mocked services):
+```bash
+cd backend
+uv run pytest                    # Run all 108 backend tests
+uv run pytest -v                 # Verbose output
+uv run pytest --cov              # With coverage report
+uv run pytest tests/test_agent_langgraph.py -v  # Specific test file
+```
+
+**For frontend tests**:
+```bash
+cd frontend
+npm run test                     # Unit tests (Vitest)
+npm run test:coverage            # Coverage report
+npm run test:e2e                 # E2E tests (requires backend running)
+```
+
+**For full integration tests** (requires Docker Compose + real services):
+```bash
+docker-compose up
+cd backend
+uv run pytest -m integration     # Tests marked with @pytest.mark.integration
+```
+
+**General test commands**:
 ```bash
 # Recommended: Use uv to run tests with isolated dependencies
 uv run pytest
@@ -100,10 +152,11 @@ See [src/main.py](src/main.py) lines 102–138 for prompt templates.
 - **LangSmith ≥0.4.56**: Compatible with NumPy 2.x for tracing
 
 ### Scraper Design
-- **Rate limiting**: 2-second delays between requests (RATE_LIMIT_DELAY in scraper_to_text.py)
+- **Rate limiting**: 2-second delays between requests (RATE_LIMIT_DELAY in [backend/src/scraper/scraper.py](backend/src/scraper/scraper.py))
 - **Loader selection**: Standard (Unstructured) first, fallback to Playwright for JS-heavy sites
 - **Chunking**: RecursiveCharacterTextSplitter with configurable size (default 1000 chars, 200 overlap)
 - **Failure recovery**: Failed URLs logged and re-run with Playwright in second pass
+- **Configuration**: Managed in [data/config/](data/config/) (recursive_sites.txt, playwright_sites.txt, skip_sites.txt)
 
 ### Database Constraints
 - **unique_content_source**: Prevents duplicate content; enables safe re-scraping
@@ -139,3 +192,16 @@ Optional: `DATABASE_URL` (for direct PostgreSQL operations)
 - **UI tests** (Playwright): Require running FastAPI server; mark with `@pytest.mark.ui`
 
 Use `env_vars` fixture to inject test credentials; mock `supabase_client`, `embedding_model`, `llm` for isolated testing.
+
+## Temporary Documentation
+
+Reference and implementation guides are organized in the [tmp/](../tmp/) folder:
+
+- **[tmp/QUICKSTART.md](../tmp/QUICKSTART.md)** - Quick start guide for local development
+- **[tmp/IMPLEMENTATION_STATUS.md](../tmp/IMPLEMENTATION_STATUS.md)** - Current implementation status and phase completion
+- **[tmp/IMPLEMENTATION_COMPLETE.md](../tmp/IMPLEMENTATION_COMPLETE.md)** - Phase 1-2 completion summary
+- **[tmp/FRONTEND_FETCH_FIX.md](../tmp/FRONTEND_FETCH_FIX.md)** - Frontend API connectivity fix details
+- **[tmp/GCP_DEPLOYMENT_QUICK_START.md](../tmp/GCP_DEPLOYMENT_QUICK_START.md)** - Quick GCP deployment 5-step guide
+- **[tmp/MIGRATION_MODAL_TO_CLOUD_RUN.md](../tmp/MIGRATION_MODAL_TO_CLOUD_RUN.md)** - Migration guide from Modal to Cloud Run
+
+For production deployment details, see [docs/GCP_CLOUD_RUN_DEPLOYMENT.md](../docs/GCP_CLOUD_RUN_DEPLOYMENT.md).
