@@ -1,3 +1,9 @@
+# ==============================================================================
+# File Location: src/agent/main.py
+# Description: Main entry point for the Vecinita FastAPI application.
+#              Handles routing, LLM orchestration, and logging.
+# ==============================================================================
+
 import os
 import logging
 import uuid
@@ -23,8 +29,10 @@ from dotenv import load_dotenv
 from src.agent.tools.db_search import create_db_search_tool
 from src.agent.tools.web_search import create_web_search_tool
 from src.agent.tools.static_response import static_response_tool
-# FIX: Use the correct function name found in the file
 from src.agent.data.agent_rules import get_system_rules
+
+# --- NEW: Import the CSV Logger ---
+from src.utils.query_logger import log_interaction
 
 # Load environment variables
 load_dotenv()
@@ -43,8 +51,13 @@ logger.info("Initializing Supabase client...")
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 logger.info("Supabase client initialized successfully")
 
-logger.info("Initializing ChatGroq LLM...")
-llm = ChatGroq(temperature=0, model_name="llama-3.1-8b-instant", groq_api_key=GROQ_API_KEY)
+# --- CRITICAL FIX: Added model_kwargs to enforce tool choice ---
+llm = ChatGroq(
+    temperature=0, 
+    model_name="llama-3.1-8b-instant", 
+    groq_api_key=GROQ_API_KEY,
+    model_kwargs={"tool_choice": "auto", "parallel_tool_calls": False}
+)
 logger.info("ChatGroq LLM initialized successfully")
 
 logger.info("Initializing embedding model: sentence-transformers/all-MiniLM-L6-v2...")
@@ -73,6 +86,10 @@ def agent_node(state: AgentState):
         system_prompt = get_system_rules()
         messages = [SystemMessage(content=system_prompt)] + state["messages"]
         
+        # Debug logging to trace tool usage
+        logger.info(f"Tools being sent to LLM: {[t.name for t in tools]}")
+        logger.info(f"LLM config: model={llm.model_name}, has_tools={hasattr(llm_with_tools, 'kwargs')}")
+
         response = llm_with_tools.invoke(messages)
         return {"messages": [response]}
     except Exception as e:
@@ -147,12 +164,20 @@ async def ask_question(question: str):
         logger.info("Agent execution completed")
         logger.info(f"Agent response: {final_message[:200]}...")
         
+        # --- LOGGING START ---
+        try:
+            log_interaction(question, final_message)
+        except Exception as e:
+            logger.error(f"Logging CSV failed: {e}")
+        # --- LOGGING END ---
+        
         return {"answer": final_message, "thread_id": config["configurable"]["thread_id"]}
         
     except Exception as e:
         logger.error(f"Error processing question '{question}': {e}")
         logger.error("Full traceback:", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
 # Mount the static directory to serve index.html at the root
 # Updated to point to the location we found: src/agent/static
 static_path = "src/agent/static"
@@ -161,6 +186,6 @@ if os.path.exists(static_path):
     app.mount("/", StaticFiles(directory=static_path, html=True), name="static")
     logger.info(f"Serving frontend from {static_path}")
 elif os.path.exists("vecinita-ui/dist"):
-     app.mount("/", StaticFiles(directory="vecinita-ui/dist", html=True), name="static")
+    app.mount("/", StaticFiles(directory="vecinita-ui/dist", html=True), name="static")
 else:
     logger.warning(f"No static frontend directory found at {static_path} or vecinita-ui/dist. Running API only.")

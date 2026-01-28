@@ -9,7 +9,12 @@ WORKDIR /app
 COPY pyproject.toml README.md ./
 
 # Copy source code needed for package installation
+# This WILL include src/agent/static (frontend) and src/agent/data (rules)
 COPY src/ ./src/
+
+# --- NEW: Copy the data directory ---
+# This ensures urls.txt and extracted_links.txt are available to the bot
+COPY data/ ./data/
 
 # Install system dependencies required for building packages (graphviz, build tools)
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -22,15 +27,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 ENV PYTHONUNBUFFERED=1
 ENV TF_ENABLE_ONEDNN_OPTS=0
 RUN pip install --no-cache-dir --upgrade pip
-# Install the package with only embedding optional dependency (skip dev and visualization to reduce size and network issues)
-# Visualization/pygraphviz pulls huge CUDA libraries that cause SSL download failures
+# Install the package with only embedding optional dependency
 RUN pip install --no-cache-dir --retries 5 --default-timeout=1000 ".[embedding]"
 
 # Clean up apt cache after all builds are complete
 RUN rm -rf /var/lib/apt/lists/*
 
-# Pre-cache embedding model to speed up first run (optional)
-RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('sentence-transformers/all-mpnet-base-v2')" || true
+# --- UPDATED: Pre-cache the correct model ---
+# Changed to all-MiniLM-L6-v2 to match what your main.py is actually using
+RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')" || true
 
 # Ensure Playwright browsers are installed
 RUN playwright install --with-deps
