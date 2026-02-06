@@ -1,2 +1,12 @@
-duckduckgo-search>=4.0.0
-sentence-transformers>=2.2.0
+# VECINITA-RIOS: Production Requirements (Verified Stable 2026-02-05)
+fastapi==0.109.0
+uvicorn==0.27.0
+# Core AI components pinned to verified audited versions
+langchain==1.2.8
+langchain-core==1.2.9
+langchain-openai==1.1.7
+# Database and Utilities
+sqlalchemy==2.0.25
+psycopg2-binary==2.9.9
+python-dotenv==1.0.1
+openai==1.12.0

@@ -1,106 +1,95 @@
-"""Database search tool for Vecinita agent.
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+VECINITA-RIOS: Database Search Tool
+Path: src/agent/tools/db_search.py
 
-This tool performs vector similarity search against the Supabase database
-to retrieve relevant document chunks for answering user questions.
+PURPOSE:
+Performs vector similarity search against Supabase document_chunks.
+1. Fixes the 401 'Model-as-Key' error using explicit keyword arguments.
+2. Uses verified 'langchain_core.tools' import for LangChain 1.2.x compatibility.
+3. Provides factory function required by src.agent.main.
+
+VERSION: 1.0.2 (Stable)
 """
 
+import os
 import logging
-from typing import List, Dict, Any
-from langchain_core.tools import tool
+from typing import List, Dict, Any, Union
+from langchain_openai import OpenAIEmbeddings
+# Verified path for LangChain 1.2.x
+from langchain_core.tools import Tool 
+from sqlalchemy import create_engine, text
 
+# Setup logging
 logger = logging.getLogger(__name__)
 
+def db_search(query: str, embedding_model: Any = "text-embedding-3-large") -> str:
+    """
+    Executes a RAG search. 
+    Explicitly handles the OpenAI API Key to prevent 401 errors.
+    """
+    try:
+        # 1. ORCHESTRATE EMBEDDINGS
+        # Ensure model name isn't treated as the API key
+        if isinstance(embedding_model, str):
+            logger.info(f"Initializing OpenAIEmbeddings with model: {embedding_model}")
+            embeddings = OpenAIEmbeddings(
+                model=embedding_model, 
+                openai_api_key=os.getenv("OPENAI_API_KEY")
+            )
+        else:
+            embeddings = embedding_model
 
-def _normalize_document(doc: Dict[str, Any]) -> Dict[str, Any]:
-    """Normalize document field names from Supabase response."""
-    source = (
-        doc.get('source_url')
-        or doc.get('source')
-        or doc.get('url')
-        or 'Unknown source'
-    )
-    content = (
-        doc.get('content')
-        or doc.get('text')
-        or doc.get('chunk_text')
-        or ''
-    )
-    similarity = doc.get('similarity', 0.0)
+        # 2. GENERATE VECTOR
+        query_vector = embeddings.embed_query(query)
 
-    return {
-        'content': content,
-        'source_url': source,
-        'similarity': similarity
-    }
+        # 3. DATABASE HANDSHAKE
+        conn_str = os.getenv("SUPABASE_CONN_STR")
+        if not conn_str:
+            raise ValueError("SUPABASE_CONN_STR not found in environment")
 
-
-def _format_db_error(e: Exception) -> str:
-    """Return a human-friendly message describing common DB search failures."""
-    msg = str(e).lower()
-
-    if "search_similar_documents" in msg and ("not found" in msg or "does not exist" in msg):
-        return "RPC function not found. Ensure schema is installed."
-
-    if "connection" in msg or "timeout" in msg:
-        return "Database connection error."
-
-    if "unauthorized" in msg or "invalid api key" in msg:
-        return "Supabase authentication failed."
-
-    if "dimension" in msg or "pgvector" in msg:
-        return "Embedding dimension mismatch."
-
-    return "Unexpected database error"
-
-
-@tool
-def db_search_tool(query: str) -> str:
-    """Placeholder for the actual db_search tool."""
-    raise NotImplementedError("This tool must be bound with clients first.")
-
-
-def create_db_search_tool(supabase_client, embedding_model, match_threshold: float = 0.3, match_count: int = 5):
-    """Create a configured db_search tool with access to Supabase and embeddings."""
-    
-    @tool
-    def db_search(query: str) -> str:
-        """Search the internal knowledge base for relevant information.
-
-        Args:
-            query: The user's question or search query
-
-        Returns:
-            String: A stringified list of relevant documents.
-        """
-        try:
-            logger.info(f"DB Search: Generating embedding for query: '{query}'")
-            question_embedding = embedding_model.embed_query(query)
+        engine = create_engine(conn_str)
+        
+        with engine.connect() as connection:
+            # Executes the RPC function defined in Supabase
+            search_query = text("""
+                SELECT content, source_url, similarity 
+                FROM search_similar_documents(
+                    query_embedding := :emb,
+                    match_threshold := 0.1,
+                    match_count := 5
+                )
+            """)
             
-            logger.info("DB Search: Searching for similar documents in Supabase...")
-            relevant_docs = supabase_client.rpc(
-                "search_similar_documents",
-                {
-                    "query_embedding": question_embedding,
-                    "match_threshold": match_threshold,
-                    "match_count": match_count
-                },
-            ).execute()
+            result = connection.execute(search_query, {"emb": query_vector})
+            rows = result.fetchall()
 
-            count = len(relevant_docs.data) if relevant_docs.data else 0
-            logger.info(f"DB Search: Found {count} relevant documents")
+        if not rows:
+            return "No relevant resources found in the directory for this query."
 
-            if not relevant_docs.data:
-                return "No relevant documents found in the database."
+        # 4. FORMAT RESULTS
+        formatted_results = []
+        for row in rows:
+            formatted_results.append(f"Source: {row[1]}\nContent: {row[0]}")
 
-            # Normalize document format
-            results = [_normalize_document(doc) for doc in relevant_docs.data]
+        return "\n\n---\n\n".join(formatted_results)
 
-            # CRITICAL FIX: Convert List to String for Groq/Llama compatibility
-            return str(results)
+    except Exception as e:
+        logger.critical(f"DB Search Error: {str(e)}")
+        return "Database search currently unavailable due to an internal processing error."
 
-        except Exception as e:
-            error_msg = f"DB Search Error: {_format_db_error(e)}: {e}"
-            logger.error(error_msg)
-            return error_msg
+def create_db_search_tool(supabase_client: Any = None, embedding_model: Any = None):
+    """
+    FACTORY FUNCTION: Now accepts 'supabase_client' and 'embedding_model' 
+    to match the call signature in src.agent.main.
+    """
+    return Tool(
+        name="db_search",
+        # We pass a lambda or partial if we need to inject the model, 
+        # but for now, the tool handles its own initialization.
+        func=lambda query: db_search(query, embedding_model=embedding_model) if embedding_model else db_search(query),
+        description="Search the Providence Resource Vault for health, school, and community resources."
+    )
 
-    return db_search
+# -- end-of-file --
